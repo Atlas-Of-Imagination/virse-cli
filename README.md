@@ -1,159 +1,209 @@
 # Virse CLI
 
-Virse 的 Rust 命令行客户端，面向交互使用、脚本与 Agent 自动化。通过 Backend API 操作画布、资产、生成任务、智能工具和审美。
+Rust 命令行客户端，面向交互使用、脚本和 Agent。第一阶段已经实现：API Token 认证、画布读取、组合创建元素与生成任务、WebSocket 观察，以及资产读取和下载。
 
-本文记录整体架构与第一阶段范围，作为后续实现的依据。当前仓库只有初始 crate 结构；下文的命令、配置与行为是设计目标，不代表已经实现。后端能力核对日期：2026-10-27。
-
-## Workspace 与职责
-
-一个 Cargo workspace，包含两个 crate，保持单向依赖：
+## 架构
 
 ```text
-virse-cli（bin，计划提供 virse 命令）
-    │ 参数、配置、凭据持久化、交互和输出
-    ▼
-virse-api（lib，可独立使用的异步 Rust SDK）
-    │ 类型化 API、认证头、兼容协议、任务事件流
-    ▼
-Virse Backend（HTTP / WebSocket / SSE）
+virse-cli（bin: virse）
+    参数、环境变量、Profile、凭据文件、恢复记录、输出
+                     ↓
+virse-api（异步 lib）
+    类型化请求与任务、Bearer 认证、HTTP、WebSocket、错误
+                     ↓
+Virse Backend
 ```
 
-当前目录布局可以直接沿用：
-
-```text
-Cargo.toml             # workspace 与 virse-cli package
-src/                   # virse-cli
-virse-api/
-  Cargo.toml           # virse-api package
-  src/                 # SDK
-```
-
-暂不增加其他 crate。各 crate 内按实际业务拆模块，不预建空的抽象层。
-
-| 职责 | virse-api | virse-cli |
+| 职责 | `virse-api` | `virse-cli` |
 | --- | --- | --- |
-| API | 请求和响应类型、分页、上传下载、错误解析 | 命令与参数转换 |
-| 认证 | 接收 Token，添加 Bearer 认证 | 获取、保存、选择和删除 Token |
-| 兼容性 | 声明契约版本、读取兼容策略、解析升级错误 | 更新提示、提示频率和退出码 |
-| 耗时任务 | 提交、查询、订阅、等待、取消 | `--wait`、进度展示和恢复等待 |
-| 本地状态 | 接受调用方明确传入的配置 | Profile、默认上下文、凭据与必要的恢复记录 |
-| 输出 | 结构化结果、错误与类型化事件流 | 人类可读结果、JSON、JSONL 与 stderr |
+| 配置 | 显式接收 Backend 地址与 Token | 解析环境变量与 Profile |
+| API | 请求、响应、权限错误、资产流式下载 | 命令和参数转换 |
+| 生成 | 提交、查询、观察、取消 | 同 key 重试、等待超时、Ctrl+C、恢复记录 |
+| 持久化 | 不读环境、不读写用户文件 | 凭据、默认组织/画布、提交身份 |
+| 输出 | 返回数据、错误、任务快照流 | stdout 结果、stderr 进度/错误、退出码 |
 
-### virse-api：独立客户端
+仓库根是 `virse-cli` package，`virse-api/` 是可独立依赖的 SDK。仅这两个 crate，不依赖前端代理、MCP 或浏览器登录。
 
-- 提供异步 Client，通过显式配置接收 API 地址、凭据、客户端身份和网络选项。
-- 不自行读取环境变量或用户配置，不保存凭据，不打印终端内容，不退出进程。
-- 按认证、组织/空间、画布、资产、生成任务、工具和审美组织 API。
-- 封装底层 HTTP、WebSocket 和 SSE 协议，让调用方通过类型化接口与事件使用服务。
-- 错误保留稳定业务码、HTTP 状态和可用的请求/任务 ID，区分网络错误、鉴权错误、契约不兼容及业务失败。
-- 重试必须考虑请求语义；不能因为网络错误就盲目重发有副作用的请求。
+## 安装与配置
 
-SDK 的公开接口不依赖 CLI 的参数类型或存储方式，未来可独立发布供其他 Rust 应用使用。
-
-### virse-cli：命令行应用
-
-- 将命令参数和本地配置转换成 SDK 调用。
-- 管理 Profile、凭据与默认组织、空间和画布。
-- 负责终端交互、输出格式、进度、退出码和更新指引。
-- 仅在需要跨进程恢复时保存必要的任务与请求身份；具体存储格式在实现时确定。
-
-## 认证与配置
-
-直接访问 Backend，不依赖前端同源代理或 MCP。使用现有 API Token：
-
-```http
-Authorization: Bearer virse_sk_…
+```bash
+cargo install --path . --locked --jobs 2
+virse --help
 ```
 
-支持命名 Profile，将 API 地址、凭据引用和默认上下文绑定在一起，方便在生产与测试环境之间切换。默认组织、空间和画布只是 CLI 参数的默认值，不是 SDK 的全局隐式状态。
+Backend 默认 **`https://api.virse.ai`**，**只能用环境变量覆盖**：
 
-- 凭据支持环境变量、本地保存，以及交互隐藏输入或 stdin 导入。
-- 凭据持久化优先使用系统凭据存储；无此能力的环境提供明确的受限权限文件方案。
-- 普通配置与凭据分开管理，日志和错误输出不包含 Token。
-- 显式命令参数覆盖默认上下文；环境变量、Profile 等完整优先级在实现前固定并文档化。
+```bash
+export VIRSE_BACKEND_URL=https://dev4.virse.ai
+```
 
-## 兼容性与更新
+不支持 `--backend`、`--backend-url` 或 Profile 中的 Backend 地址。变量未设置才使用 production；空值、非法 URL、含账号/密码、查询参数或路径的地址会报错。HTTP 和 WebSocket 使用相同 origin，自动将 HTTPS 转换为 WSS。
 
-区分三个版本，不把产品发布等同于 API 不兼容：
-
-| 版本 | 所有者 | 用途 |
-| --- | --- | --- |
-| API 契约版本 | virse-api | 整数，仅在不兼容协议变更时递增 |
-| SDK 版本 | virse-api package | Rust 客户端自身的发布版本 |
-| CLI 版本 | virse-cli package | 命令行发布与普通更新提示 |
-
-### 复用现有兼容协议
-
-现有兼容性方案位于后端 [PR #599](https://github.com/Atlas-Of-Imagination/virse-systems-monorepo/pull/599) 和前端 [PR #702](https://github.com/Atlas-Of-Imagination/virse-frontend/pull/702)。核对时两者尚未合入，且后端方案仅对 Web 启用门禁，明确豁免 API Key。因此 CLI 接入需要配套后端改造，不能仅添加请求头就认为已得到保护。
-
-复用的协议基础：
-
-- `GET /client-compatibility`：兼容策略读取入口。
-- `X-Virse-Client`、`X-Virse-Contract-Version`、`X-Virse-Build-Id`：客户端身份、契约与构建信息。
-- HTTP `409` + `CLIENT_UPGRADE_REQUIRED`：明确的契约不兼容错误，不能把所有 `409` 当成升级要求。
-- WebSocket `client_upgrade_required` 消息与关闭码 `4409`：连接侧的同类门禁。
-
-后端需要提供独立的 CLI 兼容策略，并明确通用 SDK 调用方的契约声明规则；不能直接将所有 API Key 请求纳入 Web 的最低版本限制，以免影响现有集成。客户端标识用于协议协商，不承担认证或授权职责。通用 SDK 调用方可以声明自己的客户端身份，不统一冒充 CLI。
-
-### 强制更新与普通更新
-
-| 情况 | CLI 行为 |
+| 环境变量 | 用途 |
 | --- | --- |
-| 有新版，但当前仍兼容 | 向 stderr 提示，继续执行命令 |
-| 当前契约不兼容 | 停止业务请求，输出升级指引并以专用非零退出码退出 |
-| 兼容检查网络失败 | 不误判为必须更新；实际 API 请求仍遵守服务端门禁 |
-| `--help`、`--version`、纯本地配置操作 | 不受远端门禁影响 |
+| `VIRSE_BACKEND_URL` | Backend origin；未设置时使用 production |
+| `VIRSE_API_TOKEN` | 当前进程 API Token，优先于保存的凭据 |
+| `VIRSE_CONFIG_DIR` | 覆盖本地状态目录，便于 CI 和隔离测试 |
 
-普通更新检查允许缓存、控制提示频率与关闭，不让每次命令都等待版本查询。正式发布前再确定 CLI 发行元数据来源与不同安装渠道的升级指引；现有兼容端点并不提供 CLI 最新发布版本。
+未指定状态目录时使用系统用户配置目录，例如 Linux 的 `$XDG_CONFIG_HOME/virse` 或 `~/.config/virse`。`--profile <name>` 选择命名 Profile，默认为 `default`；凭据、组织和画布默认值均按 **Profile + Backend** 隔离。Backend 身份用于隔离记录，不是可保存的地址配置。
 
-强制兼容性不能只依赖本地检查或缓存。后端必须在执行不兼容请求前拒绝，HTTP 与 WebSocket 采用一致规则。已收到明确升级要求时，不能因后续网络失败而恢复业务请求，也不能通过关闭普通更新提示绕过门禁。
-
-第一版提供更新提示和升级指引，不自动替换可执行文件。发布顺序应先让后端兼容新旧契约，再发布新客户端，最后按策略提高最低契约版本。
-
-## 耗时任务与事件观察
-
-生成资源等长任务采用提交与观察分离的模型：
-
-```text
-提交请求 → 返回 task_id → 观察状态/事件 → 获得资产与画布绑定结果
+```bash
+virse auth login                    # 隐藏输入 virse_sk_… Token
+# 自动化使用 VIRSE_API_TOKEN，或通过 stdin 导入：
+secret-manager-command | virse auth login --token-stdin
+virse auth status
+virse config set org <org-uuid>
+virse config set canvas <canvas-uuid>
+virse config get
 ```
 
-- 默认提交成功后立即返回任务 ID，显式 `--wait` 才等待完成。
-- 支持独立查询、观察和取消操作，其他进程可以凭任务 ID 继续工作。
-- SDK 封装事件传输：生成任务复用已有 WebSocket 订阅，已有 SSE 的接口继续使用 SSE。
-- 连接恢复时查询任务当前状态以补齐结果，不依赖高频轮询；不承诺后端尚未支持的完整事件历史重放。
-- Ctrl+C 默认只停止本地等待，不取消服务端任务。取消需要显式操作，并忠实反映后端的实际取消能力。
-- 连接中断、等待超时或客户端升级要求，都不能被当作服务端任务已取消或失败。
+登录通过 `/auth/me` 验证成功后保存 Token。Unix 状态目录权限为 `0700`、文件为 `0600`，使用原子替换和写锁。凭据保存在本地文件，尚未接入系统钥匙串。非交互登录必须使用 `--token-stdin`，不提供明文 Token 参数。
 
-### 幂等与恢复
+`auth logout` 仅删除当前 Backend/Profile 的本地凭据，不撤销服务器 Token；如果仍设置 `VIRSE_API_TOKEN`，它仍然生效。
 
-一次提交的网络重试必须复用同一个幂等 key。SDK 暴露必要的请求身份和恢复能力，CLI 负责需要跨进程保留的信息。
+## 从画布到生成资产
 
-提交结果不确定时，不悄悄发起新的生成，也不自动回退到旧入口重复执行。应保留请求身份，通过后端支持的查询或同 key 重放确认受理结果，再决定后续动作。
+### 1. 读取画布和引用
 
-## 面向人、脚本与 Agent 的输出
-
-- stdout 只承载结果；日志、进度与普通更新提示写入 stderr。
-- 提供人类可读输出和稳定的 `--json` 输出；事件观察支持 JSONL。
-- 非交互环境不弹出交互问题，缺少必要参数时明确报错；持续观察需显式选择。
-- 退出码区分参数错误、认证、权限、版本不兼容、任务失败等情况，具体数值在实现前固定。
-- 错误结果包含稳定业务码、可用的请求/任务 ID 和可确定的重试信息，不只返回自由文本。
-
-计划按资源组织命令：`auth`、`canvas`、`asset`、`generation`、`tool`、`aesthetic`。具体子命令和参数后续设计，本文不锁定最终语法。
-
-## 第一阶段
-
-先打通一条完整链路：
-
-```text
-API Token 认证
-  → 兼容性校验
-  → 列出并选择画布
-  → 引用已有内容提交生成
-  → 观察任务完成
-  → 取得资产结果
+```bash
+virse canvas list --org <org-uuid> --limit 50 --json
+virse canvas list --org <org-uuid> --cursor '<next_cursor>' --json
+virse canvas get <canvas-uuid> --json
+virse generation operations --canvas <canvas-uuid> --json
 ```
 
-这条链路同时验证 SDK/CLI 职责边界、认证配置、普通与强制更新、幂等提交、断线后恢复观察，以及脚本输出。之后逐步扩展画布读写、资产操作、工具执行和审美相关命令。
+`canvas list` 使用带组织权限校验的 `/api/v1/resources/query`，只查询 `canvas`，支持游标分页。返回条目的 `id` 是资源目录 ID，**`target_id` 才是后续使用的画布 ID**。组织 ID 来自现有工作空间；首版不提供组织发现命令。
 
-配套工作包括：后端 CLI 兼容策略、CLI 发布元数据与发行方式，以及 SDK 对当前 HTTP/事件契约的覆盖。首阶段不建设 MCP、Web 登录流程、自动安装更新或新的全量 API 抽象层。
+`canvas get` 返回项目和元素，使用元素 `id` 作为引用。操作 Schema 描述业务输入；模型 key 需使用目标环境模型目录中的实际值，CLI 不硬编码默认模型。
+
+### 2. 一次请求放置元素并生成
+
+```bash
+virse generation image \
+  --canvas <canvas-uuid> \
+  --model <model-key> \
+  --prompt '保留 $1 的主体，改为白色背景' \
+  --reference <source-element-uuid> \
+  --x 100 --y 200 --width 512 --height 512 \
+  --wait --json
+```
+
+这是一个 `POST /v2/canvas/projects/{id}/generations` 请求，包含 `operation/input/outputs` 和 `Idempotency-Key`。默认通过 `outputs[].create_element` 指定占位；后端在同一事务中创建占位、任务、输出绑定和必要的额度预占，再异步生成并绑定结果。CLI 不提前单独创建元素，也不自行补绑结果。
+
+- 默认新元素位置 `(0,0)`，显示尺寸 `1024×1024`，可以覆盖；显示尺寸不是模型输出分辨率。
+- 重复 `--reference` 按输入顺序映射 `$1`、`$2`，传递 `canvas_element` 来源，不把引用转换为 URL。Shell 中含 `$1` 的提示词请使用单引号。
+- 对已有元素生成使用 `--target-element <uuid>`，与位置和尺寸参数互斥。
+- 生图快捷命令生成单张图片；默认立即返回已接受的任务快照，只有 `--wait` 才等待完成。
+
+### 3. 通用提交
+
+```bash
+virse generation submit --canvas <canvas-uuid> --file request.json --json
+cat request.json | virse generation submit --canvas <canvas-uuid> --file - --wait
+```
+
+`request.json` 示例（替换实际 model 和元素 ID）：
+
+```json
+{
+  "operation": "image_generate",
+  "input": {
+    "model": "<model-key>",
+    "user_query": "保留 $1 的主体，修改背景",
+    "image_count": 1,
+    "references": {
+      "$1": {
+        "source": {
+          "kind": "canvas_element",
+          "element_id": "00000000-0000-0000-0000-000000000001"
+        }
+      }
+    }
+  },
+  "outputs": [{
+    "output_index": 0,
+    "create_element": {
+      "position": { "x": 100, "y": 200 },
+      "size": { "width": 512, "height": 512 }
+    }
+  }]
+}
+```
+
+可以通过同一入口调用后端已支持的多图、视频、文字和 3D 操作，参数以 `generation operations` 返回的 Schema 为准。首版只对图片提供快捷参数；没有新增 3D 截图渲染能力。现有 API 仍要求明确输出绑定，通用提交不是独立于画布的资产生成接口。
+
+### 4. 观察和恢复
+
+```bash
+virse generation get <task-uuid> --canvas <canvas-uuid> --json
+virse generation watch <task-uuid> --canvas <canvas-uuid> --timeout 900 --json
+virse generation cancel <task-uuid> --canvas <canvas-uuid>
+```
+
+观察通过现有 Canvas WebSocket 的任务订阅进行，接收当前快照与后续更新，按 revision 去重。初次观察及断线恢复时有限查询任务，重连后重新订阅，不周期轮询。
+
+- 等待默认 600 秒，可用 `--timeout` 修改。超时或 Ctrl+C 仅停止本地等待，不取消服务端生成。
+- `needs_attention` 结束本次等待并提示待核对，不伪装成失败，不自动重试供应商。
+- 取消按后端真实能力执行；运行中任务不支持取消时保留服务器错误。
+- 提交会在 stderr 输出幂等 key。首次请求加最多三次自动重试始终使用相同 key 和请求体。
+- 本地记录仅保存 Backend、账号、画布、key、请求摘要与受理后的 task ID，不保存提示词或 Token 副本。恢复记录不自动重放。
+- 请求受理结果不确定时，使用**同一请求**和 `--idempotency-key <原key>` 再次提交确认；不要换新 key。相同 key 搭配不同请求会被拒绝。新的显式提交默认产生新 key。
+
+### 5. 获取资产
+
+```bash
+virse asset get <asset-uuid> --org <org-uuid> --canvas <canvas-uuid> --json
+virse asset download <asset-uuid> --org <org-uuid> --canvas <canvas-uuid> --output result.png
+```
+
+资产 ID 来自任务的 `outputs[].asset_id`。文本等操作以任务 `result` 和画布内容为准，不能假设每个输出都有可下载资产。
+
+下载先读取受权限保护的下载信息，再流式写入临时文件，成功后发布目标文件；已有文件不覆盖，跨源下载/跳转不携带 Backend Token。下载失败不会重新执行生成。
+
+下载保留服务端原始字节，指定文件扩展名不会转换图片格式。
+
+## 输出与退出码
+
+默认输出格式化 JSON，`--json` 输出单行 JSON；`generation watch --json` 每行一个 `task_snapshot` 事件。stdout 只输出结果，进度和错误写 stderr；JSON 模式下错误为 `{"error":{...}}`，包含业务码、HTTP 状态和可用的请求 ID；等待错误附带 `task_id`，受理结果不确定时附带 `idempotency_key`。
+
+| 退出码 | 含义 |
+| --- | --- |
+| 0 | 命令成功；普通查询成功读取失败任务也属于查询成功 |
+| 1 | 其他业务、本地配置或文件错误 |
+| 2 | 参数错误 |
+| 3 / 4 | 认证 / 权限错误 |
+| 5 | 网络、服务或观察连接不可用 |
+| 6 | 等待的任务失败、部分成功或取消 |
+| 7 | 提交结果不确定或任务待核对 |
+| 8 | 等待超时 |
+| 130 | Ctrl+C 停止等待 |
+
+## 独立使用 SDK
+
+```rust,no_run
+use virse_api::Client;
+
+# async fn example() -> virse_api::Result<()> {
+let client = Client::new("https://api.virse.ai", "virse_sk_example")?;
+let identity = client.me().await?;
+# Ok(())
+# }
+```
+
+SDK 的 `submit` 是单次调用，幂等 key 由调用方传入；自动重试和跨进程记录属于 CLI。`watch` 返回可取消的异步快照流，丢弃流不取消任务。SDK 不保存文件，下载返回可流式读取的响应。
+
+## 验证与当前边界
+
+```bash
+cargo fmt --all --check
+cargo clippy --workspace --all-targets -j 2 -- -D warnings
+cargo test --workspace -j 2 -- --test-threads=2
+```
+
+本地测试通过模拟 HTTP/WebSocket 验证协议及 CLI 子进程行为，不访问业务数据库或模型供应商。真实联调需显式设置测试环境 `VIRSE_BACKEND_URL` 和测试 Token；不要让测试生成落到默认 production。
+
+2026-10-27 已在 dev5 完成真实 API Token 联调：画布列表/元素读取、引用已有图片组合创建、Seedream 4 生成、任务观察（running → succeeded）、资产详情与下载、同 key 重放和已完成任务恢复均通过。只新增一个任务和一个元素，原引用元素保持不变。联调修复了画布读取传空 `expand` 被后端拒绝的问题，现使用协议要求的 `expand=none`，并补充回归测试。此记录不代表其他模型、视频/3D 或生产环境已验收。
+
+目标 Backend 需要已部署 V2 生成接口、任务迁移及计费接管，并启用 `CANVAS_GENERATION_TASKS_ENABLED`。服务未启用时原样返回错误，不降级到旧入口重复生成。
+
+本阶段不包含更新检测、兼容性协商、强制升级、系统钥匙串、自动更新、独立元素创建、工具与审美命令。未来更新机制仍区分 API 契约版本、SDK 版本和 CLI 发布版本：协议处理归 SDK，提示和发行渠道处理归 CLI；本轮不发送兼容性请求或版本协商头。

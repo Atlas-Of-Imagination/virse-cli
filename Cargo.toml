@@ -7,7 +7,11 @@ authors = ["uchouT <uchout@virse.ai>"]
 edition = "2024"
 
 [workspace.dependencies]
-tokio = { version = "1.54.1" }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time", "signal", "fs", "io-util", "net", "process"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+futures-util = "0.3"
+uuid = { version = "1", features = ["v4", "serde"] }
 
 [package]
 name = "virse-cli"
@@ -17,3 +21,21 @@ authors.workspace = true
 
 [dependencies]
 virse-api = { version = "0.1.0", path = "virse-api" }
+
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+futures-util.workspace = true
+uuid.workspace = true
+clap = { version = "4", features = ["derive"] }
+directories = "6"
+rpassword = "7"
+sha2 = "0.10"
+tempfile = "3"
+
+[[bin]]
+name = "virse"
+path = "src/main.rs"
+
+[dev-dependencies]
+axum = { version = "0.8", features = ["ws"] }
