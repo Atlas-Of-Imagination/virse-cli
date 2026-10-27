@@ -1,6 +1,10 @@
 mod args;
 mod download;
 mod generation;
+mod resource;
+mod resource_args;
+mod resource_paths;
+mod resource_tree;
 mod storage;
 
 use args::*;
@@ -32,6 +36,12 @@ async fn main() {
                 eprintln!("{}", json!({"error":error}));
             } else {
                 eprintln!("{error}");
+                if let Some(details) = &error.details {
+                    eprintln!(
+                        "{}",
+                        serde_json::to_string_pretty(details).unwrap_or_default()
+                    );
+                }
             }
             error_exit(&error)
         }
@@ -43,7 +53,7 @@ fn error_exit(error: &Error) -> u8 {
     match error.code.as_str() {
         "INVALID_INPUT" => 2,
         "AUTH_REQUIRED" => 3,
-        "SUBMISSION_UNCERTAIN" => 7,
+        "SUBMISSION_UNCERTAIN" | "RESOURCE_MUTATION_UNCERTAIN" | "FOLDER_CREATION_UNCERTAIN" => 7,
         "WAIT_TIMEOUT" => 8,
         "INTERRUPTED" => 130,
         "TRANSPORT_ERROR" | "OBSERVATION_UNAVAILABLE" => 5,
@@ -142,6 +152,9 @@ async fn run(cli: &Cli) -> Result<u8> {
     let canvas = || required(cli.canvas.or(defaults.canvas), "canvas");
     let org = || required(cli.org.or(defaults.org), "org");
     match &cli.command {
+        Command::Resource { command } => {
+            return resource::run(command, &client, &store, &backend, org()?, cli.json).await;
+        }
         Command::Auth { .. } => print(&client.me().await?, cli.json)?,
         Command::Canvas { command } => match command {
             Canvas::List { limit, cursor } => print(

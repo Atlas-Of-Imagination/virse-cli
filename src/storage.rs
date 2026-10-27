@@ -129,6 +129,45 @@ impl Store {
         }
         Ok(name)
     }
+    pub fn resource_command(
+        &self,
+        backend: &str,
+        user: uuid::Uuid,
+        org: uuid::Uuid,
+        key: &str,
+        intent: &serde_json::Value,
+        request: Option<&virse_api::ResourceMutation>,
+    ) -> Result<Option<virse_api::ResourceMutation>> {
+        let _lock = self.lock()?;
+        let identity = serde_json::json!([backend, user, org, key]);
+        let name = format!("resource-command-{}.json", digest(&identity.to_string()));
+        let fingerprint = digest(&intent.to_string());
+        let old: serde_json::Value = self.read(&name)?;
+        if !old.is_null() {
+            if old["intent_digest"] != fingerprint {
+                return Err(Error::new(
+                    "INVALID_INPUT",
+                    "This key belongs to another resource command; use the original command or a new key",
+                ));
+            }
+            let frozen: virse_api::ResourceMutation =
+                serde_json::from_value(old["request"].clone())
+                    .map_err(|_| Error::new("CONFIG_ERROR", "Invalid resource recovery record"))?;
+            if frozen.context.org_id != org {
+                return Err(Error::new(
+                    "CONFIG_ERROR",
+                    "Recovery record belongs to another organization",
+                ));
+            }
+            frozen.validate()?;
+            return Ok(Some(frozen));
+        }
+        if let Some(request) = request {
+            self.save(&name, &serde_json::json!({"identity":identity,"intent_digest":fingerprint,"request":request}))?;
+            return Ok(Some(request.clone()));
+        }
+        Ok(None)
+    }
     pub fn accepted(&self, record: &str, task: &str) -> Result<()> {
         let _lock = self.lock()?;
         let mut value: serde_json::Value = self.read(record)?;

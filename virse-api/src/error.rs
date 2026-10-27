@@ -15,6 +15,8 @@ pub struct Error {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub idempotency_key: Option<Box<str>>,
     pub retryable: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub details: Option<Box<serde_json::Value>>,
 }
 impl Error {
     pub fn new(code: &str, message: impl Into<String>) -> Self {
@@ -26,6 +28,7 @@ impl Error {
             task_id: None,
             idempotency_key: None,
             retryable: false,
+            details: None,
         }
     }
     pub(crate) fn transport() -> Self {

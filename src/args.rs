@@ -19,6 +19,11 @@ pub struct Cli {
 }
 #[derive(Subcommand)]
 pub enum Command {
+    /// Browse and manage resources using paths or IDs.
+    Resource {
+        #[command(subcommand)]
+        command: crate::resource_args::Resource,
+    },
     /// Manage API token credentials for the current backend/profile.
     Auth {
         #[command(subcommand)]

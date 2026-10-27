@@ -2,7 +2,7 @@ use futures_util::StreamExt;
 use std::path::Path;
 use tokio::io::AsyncWriteExt;
 use uuid::Uuid;
-use virse_api::{Client, Error, Result};
+use virse_api::{Client, DownloadInfo, Error, Result};
 
 pub async fn save(
     client: &Client,
@@ -18,7 +18,17 @@ pub async fn save(
         ));
     }
     let info = client.download_info(id, org, canvas).await?;
-    let response = client.download(&info).await?;
+    save_info(client, &info, output).await
+}
+
+pub async fn save_info(client: &Client, info: &DownloadInfo, output: &Path) -> Result<u64> {
+    if output.try_exists().map_err(crate::storage::io_error)? {
+        return Err(Error::new(
+            "OUTPUT_EXISTS",
+            "Output already exists; choose another path",
+        ));
+    }
+    let response = client.download(info).await?;
     let expected = response.content_length();
     let parent = output
         .parent()

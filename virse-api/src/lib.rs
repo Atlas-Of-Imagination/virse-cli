@@ -2,8 +2,11 @@
 mod client;
 mod error;
 mod generation;
+mod resource_types;
+mod resources;
 mod types;
 
 pub use client::{Client, normalize_backend};
 pub use error::{Error, Result};
+pub use resource_types::*;
 pub use types::*;

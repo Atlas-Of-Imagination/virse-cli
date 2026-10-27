@@ -14,6 +14,7 @@ pub struct Client {
     pub(crate) authorization: HeaderValue,
     http: reqwest::Client,
     token: String,
+    expected_user: Option<Uuid>,
 }
 
 pub fn normalize_backend(value: &str) -> Result<String> {
@@ -61,9 +62,15 @@ impl Client {
             authorization,
             http,
             token: token.into(),
+            expected_user: None,
         })
     }
 
+    pub(crate) fn expecting_user(&self, user: Uuid) -> Self {
+        let mut client = self.clone();
+        client.expected_user = Some(user);
+        client
+    }
     pub(crate) fn url(&self, path: &str) -> Result<Url> {
         self.base
             .join(path)
@@ -75,6 +82,10 @@ impl Client {
         error.request_id = error
             .request_id
             .map(|s| s.replace(&self.token, "[REDACTED]"));
+        if let Some(details) = error.details.take() {
+            let sanitized = details.to_string().replace(&self.token, "[REDACTED]");
+            error.details = serde_json::from_str(&sanitized).ok().map(Box::new);
+        }
         error
     }
     pub(crate) async fn request(
@@ -91,6 +102,9 @@ impl Client {
             .header(AUTHORIZATION, self.authorization.clone())
             .query(query)
             .timeout(Duration::from_secs(120));
+        if let Some(user) = self.expected_user {
+            request = request.header("X-Virse-Expected-User", user.to_string());
+        }
         if let Some(body) = body {
             request = request.json(&body);
         }
@@ -286,7 +300,15 @@ fn decode(status: u16, request_id: Option<String>, mut body: Value) -> Result<Va
                     .and_then(Value::as_str)
                     .map(str::to_owned)
             }),
-            retryable: status == 429 || status >= 500,
+            retryable: detail
+                .get("retryable")
+                .and_then(Value::as_bool)
+                .unwrap_or(status == 429 || status >= 500),
+            details: detail
+                .get("details")
+                .filter(|v| !v.is_null())
+                .cloned()
+                .map(Box::new),
             task_id: None,
             idempotency_key: None,
         });

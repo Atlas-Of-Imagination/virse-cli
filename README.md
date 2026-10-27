@@ -1,6 +1,6 @@
 # Virse CLI
 
-Rust 命令行客户端，面向交互使用、脚本和 Agent。第一阶段已经实现：API Token 认证、画布读取、组合创建元素与生成任务、WebSocket 观察，以及资产读取和下载。
+Rust 命令行客户端，面向交互使用、脚本和 Agent。已经实现 API Token 认证、按路径浏览和管理资源、画布读取、组合创建元素与生成任务、WebSocket 观察，以及文件下载。
 
 ## 架构
 
@@ -60,6 +60,77 @@ virse config get
 登录通过 `/auth/me` 验证成功后保存 Token。Unix 状态目录权限为 `0700`、文件为 `0600`，使用原子替换和写锁。凭据保存在本地文件，尚未接入系统钥匙串。非交互登录必须使用 `--token-stdin`，不提供明文 Token 参数。
 
 `auth logout` 仅删除当前 Backend/Profile 的本地凭据，不撤销服务器 Token；如果仍设置 `VIRSE_API_TOKEN`，它仍然生效。
+
+## 像文件系统一样管理资源
+
+资源以当前组织为根目录，文件夹可以嵌套；画布、图片、视频、文档等作为资源项显示。路径区分大小写，含空格时按 Shell 规则加引号。每条命令从组织根目录开始，不改变本机工作目录，不维护隐式远端 `cd` 状态。
+
+```bash
+virse config set org <org-uuid>
+virse resource ls /
+virse resource ls '/素材' --kind image
+virse resource tree / --depth 3
+virse resource tree '/素材' --ids
+virse resource search '产品' '/素材' --kind image --json
+virse resource get '/素材/产品图.jpg' --json
+virse resource download '/素材/产品图.jpg' --output product.jpg
+```
+
+`tree` 默认展示名称和层级；`--ids` 同时显示 ID，`--json` 返回嵌套节点。默认最多显示 3 层、读取 2000 项，可通过 `--depth` 和 `--max-items` 调整。达到边界会明确标记未完全展开，不把部分结果当成整棵树。分页返回中父目录未包含的资源单列展示，不猜测其位置。
+
+`ls` 默认列直接子项，一页 100 项；`--limit` 上限 200，使用返回的 `next_cursor` 配合 `--cursor` 续页。`--recursive` 列后代，`search` 默认递归搜索。支持 `--view all|mine|team-shared|shared|external` 和重复 `--kind` 过滤；共享入口可从列表取得 ID，再直接浏览对应文件夹。续页必须保持同一目录和筛选条件，过期游标需重新查询。
+
+### 路径与 ID
+
+所有资源操作均可通过 `/文件夹/名称` 或 `@<resource-uuid>` 指定资源，也兼容裸 UUID。根目录写作 `/`；相对路径、`.`、`..`、通配符与快捷方式目录穿透暂不支持。
+
+- 后端允许同目录重名。路径解析会读取完整目录的所有页；存在多个同名项时返回候选，不挑选第一个，也不只凭文件类型猜测。
+- 出现歧义、名称包含 `/`，或不可通过可见祖先访问时，使用列表或详情中的 `@UUID`。
+- 只有文件夹能作为目标目录。画布在资源树中是一个文件项，画布元素操作继续使用 `canvas` / `generation` 命令。
+- 资源下载会自动解析文件和访问上下文，不需要指定画布 ID 或资产 ID。
+
+### 创建、改名、移动、复制
+
+```bash
+virse resource mkdir '/素材'
+virse resource mkdir '/素材/产品图'
+virse resource mkdir '新文件夹' --parent @<folder-uuid>
+virse resource rename '/素材/产品图' '产品摄影'
+virse resource move '/素材/产品摄影' '/归档'
+virse resource copy '/归档/产品摄影' '/素材'
+```
+
+`mkdir` 一次创建一个文件夹，父目录必须存在；同名项已存在时拒绝创建。`rename` 的第二个参数是新名称，`move` / `copy` 的第二个参数是已存在的目标文件夹或 `/`，不把它解释成新文件名，不隐式覆盖或合并资源。
+
+移动可能改变哪些人能访问资源。后端要求确认时，CLI 返回变化详情并停止；核对后可显式使用 `--confirm-access-change` 重发。确认后的操作使用新幂等 key，不自动接受权限变化。
+
+### 回收站与恢复
+
+```bash
+virse resource delete '/素材/旧图.jpg'
+virse resource delete @<resource-uuid-1> @<resource-uuid-2>
+virse resource trash --json
+virse resource trash --scope '/共享文件夹' --json
+virse resource restore @<resource-uuid>
+```
+
+`delete`（别名 `rm`）将资源移入回收站；文件夹连同内容处理，与 Web 行为一致。`restore` 使用回收站返回的 ID，恢复位置和访问权限以服务端结果为准。当前不提供彻底删除和清空回收站命令。回收站列表沿用 Web 的可见范围，不能用它证明所有历史删除记录均已列出。
+
+### 失败与重试
+
+改名、移动、复制、删除和恢复均使用后端统一幂等接口，支持 `--idempotency-key`。CLI 在发送前冻结账号、组织、已解析的资源与目标目录；自动重试以及同 key 手动恢复使用这一份请求。因此即使原路径已经改名或删除，同一条命令重放也不会重新选中其他同名资源。
+
+```bash
+virse resource rename '/素材/a.jpg' 'b.jpg' --idempotency-key rename-001 --json
+# 响应丢失时，重复原命令和 key；不要将源路径改成新名称。
+virse resource rename '/素材/a.jpg' 'b.jpg' --idempotency-key rename-001 --json
+```
+
+恢复记录保存在当前配置目录，按 Backend、账号、组织和 key 隔离，含资源 ID、操作参数与指纹，不含 Token。不要在请求结果未知时删除记录。换设备后如没有原记录，应使用原资源 ID 确认状态，不能猜测旧路径对应的资源。
+
+批量结果逐项报告；任一项失败时返回退出码 `6`，不重复执行已成功项。确定失败项需要重新执行时，只提交这些项并使用新 key。网络错误或响应损坏后的最多三次自动重试始终使用原请求；结果仍未知时返回退出码 `7` 和 key。
+
+文件夹创建目前没有后端幂等保障，因此不自动重试。响应丢失时先列父目录确认，CLI 会明确报告“创建结果待确认”。上传/导入留待下一轮实现。
 
 ## 从画布到生成资产
 
@@ -173,8 +244,8 @@ virse asset download <asset-uuid> --org <org-uuid> --canvas <canvas-uuid> --outp
 | 2 | 参数错误 |
 | 3 / 4 | 认证 / 权限错误 |
 | 5 | 网络、服务或观察连接不可用 |
-| 6 | 等待的任务失败、部分成功或取消 |
-| 7 | 提交结果不确定或任务待核对 |
+| 6 | 等待的任务失败、部分成功或取消；资源批次存在失败项 |
+| 7 | 提交/资源操作结果不确定，或任务待核对 |
 | 8 | 等待超时 |
 | 130 | Ctrl+C 停止等待 |
 
@@ -190,6 +261,8 @@ let identity = client.me().await?;
 # }
 ```
 
+SDK 提供 `resources`、`resource`、`resource_summary`、`resource_download_info`、`create_folder`、`resource_trash` 和 `mutate_resources`，以及类型化查询、资源详情和逐项操作结果。通用 `AccessContext` 支持组织、资源或画布访问入口。路径解析、树展示、重试恢复和持久化归 CLI；SDK 不依赖命令参数。
+
 SDK 的 `submit` 是单次调用，幂等 key 由调用方传入；自动重试和跨进程记录属于 CLI。`watch` 返回可取消的异步快照流，丢弃流不取消任务。SDK 不保存文件，下载返回可流式读取的响应。
 
 ## 验证与当前边界
@@ -203,6 +276,8 @@ cargo test --workspace -j 2 -- --test-threads=2
 本地测试通过模拟 HTTP/WebSocket 验证协议及 CLI 子进程行为，不访问业务数据库或模型供应商。真实联调需显式设置测试环境 `VIRSE_BACKEND_URL` 和测试 Token；不要让测试生成落到默认 production。
 
 2026-10-27 已在 dev5 完成真实 API Token 联调：画布列表/元素读取、引用已有图片组合创建、Seedream 4 生成、任务观察（running → succeeded）、资产详情与下载、同 key 重放和已完成任务恢复均通过。只新增一个任务和一个元素，原引用元素保持不变。联调修复了画布读取传空 `expand` 被后端拒绝的问题，现使用协议要求的 `expand=none`，并补充回归测试。此记录不代表其他模型、视频/3D 或生产环境已验收。
+
+同日 dev5 的资源管理联调通过：路径/ID 浏览、树形展示、递归搜索、创建文件夹、改名、移动、复制、回收站、恢复、资源详情与下载，以及改名/删除后的原命令幂等重放。写操作仅针对新建测试目录，测试目录最终移入回收站。访问范围变更确认、分页同名歧义、部分失败和不确定响应另有本地协议测试覆盖，不把这些模拟场景称为已在生产验证。
 
 目标 Backend 需要已部署 V2 生成接口、任务迁移及计费接管，并启用 `CANVAS_GENERATION_TASKS_ENABLED`。服务未启用时原样返回错误，不降级到旧入口重复生成。
 
