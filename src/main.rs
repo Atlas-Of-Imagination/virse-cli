@@ -1,6 +1,8 @@
 mod args;
+mod canvas_add;
 mod download;
 mod generation;
+mod media_args;
 mod resource;
 mod resource_args;
 mod resource_paths;
@@ -53,7 +55,10 @@ fn error_exit(error: &Error) -> u8 {
     match error.code.as_str() {
         "INVALID_INPUT" => 2,
         "AUTH_REQUIRED" => 3,
-        "SUBMISSION_UNCERTAIN" | "RESOURCE_MUTATION_UNCERTAIN" | "FOLDER_CREATION_UNCERTAIN" => 7,
+        "SUBMISSION_UNCERTAIN"
+        | "RESOURCE_MUTATION_UNCERTAIN"
+        | "FOLDER_CREATION_UNCERTAIN"
+        | "CANVAS_PLACEMENT_UNCERTAIN" => 7,
         "WAIT_TIMEOUT" => 8,
         "INTERRUPTED" => 130,
         "TRANSPORT_ERROR" | "OBSERVATION_UNAVAILABLE" => 5,
@@ -162,6 +167,18 @@ async fn run(cli: &Cli) -> Result<u8> {
                 cli.json,
             )?,
             Canvas::Get { id } => print(&client.canvas(*id).await?, cli.json)?,
+            Canvas::Add(args) => {
+                return canvas_add::run(
+                    args,
+                    &client,
+                    &store,
+                    &backend,
+                    org()?,
+                    canvas()?,
+                    cli.json,
+                )
+                .await;
+            }
         },
         Command::Generation { command } => {
             let canvas = canvas()?;
@@ -181,7 +198,41 @@ async fn run(cli: &Cli) -> Result<u8> {
                 }
                 Generation::Image(args) => {
                     return context
-                        .submit(generation::image_request(args)?, &args.submission)
+                        .submit(
+                            generation::media_request(
+                                virse_api::MediaKind::Image,
+                                &args.prompt,
+                                &args.options,
+                            )
+                            .await?,
+                            &args.options.submission,
+                        )
+                        .await;
+                }
+                Generation::Video(args) => {
+                    return context
+                        .submit(
+                            generation::media_request(
+                                virse_api::MediaKind::Video,
+                                &args.prompt,
+                                &args.options,
+                            )
+                            .await?,
+                            &args.options.submission,
+                        )
+                        .await;
+                }
+                Generation::Model3d(args) => {
+                    return context
+                        .submit(
+                            generation::media_request(
+                                virse_api::MediaKind::Model3d,
+                                args.prompt.as_deref().unwrap_or(""),
+                                &args.options,
+                            )
+                            .await?,
+                            &args.options.submission,
+                        )
                         .await;
                 }
                 Generation::Get { id } => print(&client.task(canvas, *id).await?, cli.json)?,

@@ -71,6 +71,8 @@ pub enum Config {
 }
 #[derive(Subcommand)]
 pub enum Canvas {
+    /// Place an existing image, video, GLB, Word or PDF asset on the canvas.
+    Add(crate::media_args::CanvasAdd),
     List {
         #[arg(long, default_value_t = 50, value_parser = clap::value_parser!(u16).range(1..=200))]
         limit: u16,
@@ -92,29 +94,6 @@ pub struct Submission {
     /// Maximum wait duration in seconds.
     pub timeout: u64,
 }
-#[derive(Args)]
-pub struct Image {
-    #[arg(long)]
-    pub model: String,
-    #[arg(long)]
-    pub prompt: String,
-    #[arg(long)]
-    /// Source element ID; repeat to bind $1, $2, ... in prompt order.
-    pub reference: Vec<Uuid>,
-    #[arg(long, conflicts_with_all = ["x", "y", "width", "height"])]
-    /// Bind an existing element instead of creating a new placeholder.
-    pub target_element: Option<Uuid>,
-    #[arg(long, allow_hyphen_values = true)]
-    pub x: Option<f64>,
-    #[arg(long, allow_hyphen_values = true)]
-    pub y: Option<f64>,
-    #[arg(long)]
-    pub width: Option<f64>,
-    #[arg(long)]
-    pub height: Option<f64>,
-    #[command(flatten)]
-    pub submission: Submission,
-}
 #[derive(Subcommand)]
 pub enum Generation {
     /// Discover operations and their input JSON Schemas.
@@ -127,7 +106,12 @@ pub enum Generation {
         options: Submission,
     },
     /// Create an image placeholder and submit single-image generation.
-    Image(Image),
+    Image(crate::media_args::PromptMedia),
+    /// Create a video placeholder and submit asynchronous video generation.
+    Video(crate::media_args::PromptMedia),
+    /// Create a 3D placeholder and generate a model from text or image references.
+    #[command(name = "3d", visible_alias = "model3d")]
+    Model3d(crate::media_args::Model3d),
     Get {
         id: Uuid,
     },

@@ -1,6 +1,6 @@
 # Virse CLI
 
-Rust 命令行客户端，面向交互使用、脚本和 Agent。已经实现 API Token 认证、按路径浏览和管理资源、画布读取、组合创建元素与生成任务、WebSocket 观察，以及文件下载。
+Rust 命令行客户端，面向交互使用、脚本和 Agent。已经实现 API Token 认证、按路径浏览和管理资源、画布读取、已有资产放置、图片/视频/3D 组合创建与生成、WebSocket 观察，以及文件下载。
 
 ## 架构
 
@@ -166,6 +166,54 @@ virse generation image \
 - 对已有元素生成使用 `--target-element <uuid>`，与位置和尺寸参数互斥。
 - 生图快捷命令生成单张图片；默认立即返回已接受的任务快照，只有 `--wait` 才等待完成。
 
+### 视频和 3D 生成
+
+视频和 3D 与图片共用引用、布局、幂等提交、等待和恢复机制：
+
+```bash
+virse generation video --canvas <canvas-uuid> \
+  --model wan-3.0 --prompt '围绕 $1 中的主体缓慢运镜' \
+  --reference <image-element-uuid> \
+  --parameters '{"duration":2,"resolution":"480p","aspect_ratio":"16:9","generate_audio":false}' \
+  --wait --json
+
+virse generation 3d --canvas <canvas-uuid> \
+  --model tripo-h3.1 --prompt '一把方形座面的四脚木凳' \
+  --parameters '{"texture":false,"geometry_quality":"standard","face_limit":3000}' \
+  --wait --json
+
+# 图片参考生成 3D 时可以省略提示词；图片顺序依次绑定 $1、$2……
+virse generation 3d --canvas <canvas-uuid> \
+  --model tripo-h3.1 --reference <image-element-uuid> --wait
+```
+
+三个快捷命令都只创建一个输出，可用 `--target-element` 指定已有的同类型元素。图片默认显示尺寸 `1024×1024`，视频 `512×288`，3D `512×512`；均支持 `--x/--y/--width/--height`。位置默认 `(0,0)`。显示尺寸与生成模型输出尺寸独立。
+
+图片、视频和 3D 均支持 `--parameters '<JSON对象>'` 或 `--parameters-file params.json`，两者互斥。参数直接进入后端的 `input.parameters`；时长、分辨率、音频、几何质量、贴图等字段由所选模型校验，CLI 不硬编码供应商参数默认值。参数文件最大 1 MiB。请按目标环境实际模型目录选 key 和参数；示例不保证每个环境都启用了这些模型。
+
+`--reference` 始终指画布元素 ID，按输入顺序映射引用键；视频首尾帧或多图 3D 的角色遵循后端所选模型规则。直接引用 3D 元素来生图/生视频所需的截图渲染，以及四视图生成/确认不属于本轮快捷命令。更复杂的引用和操作仍使用通用 JSON 提交。
+
+### 将已有资产放入画布
+
+```bash
+virse canvas add --canvas <canvas-uuid> --org <org-uuid> \
+  --resource '/素材/产品视频.mp4' --json
+
+virse canvas add --canvas <canvas-uuid> --org <org-uuid> \
+  --resource @<resource-uuid> --x 1200 --y 100 --name '参考模型'
+
+virse canvas add --canvas <canvas-uuid> --org <org-uuid> \
+  --asset <asset-uuid> --width 800 --height 450 --json
+```
+
+支持已有的图片、视频、GLB、Word 和 PDF，自动识别元素类型；Word/PDF 都使用文档元素。`--resource` 复用资源绝对路径与 ID 解析，`--asset` 直接指定资产 ID，二者必须且只能选一个。不接受文件夹、普通文本、审美或未就绪的资产。
+
+这是一条创建画布元素的 HTTP 请求，不调用模型生成，也不上传文件。未指定布局时，由后端按类型决定尺寸并放在已有内容右侧；指定尺寸时宽高需一起传入。资源入口默认采用资源名称，`--name` 可覆盖；直接资产入口未指定名称时使用后端默认命名。
+
+`canvas add` 支持 `--idempotency-key`。CLI 在发送前保存已解析的资产身份和创建参数；请求结果未知时，用原命令和同一 key 恢复，原资源改名也不会重新解析到别的资产。结果返回 `element` 及创建回执；后端可能为画布绑定独立资产，调用方应使用返回的 `element.content_ref`。
+
+已有资产放置需要后端启用 `CANVAS_HTTP_COMMANDS_ENABLED`，生成需要 `CANVAS_GENERATION_TASKS_ENABLED`；未启用时明确返回错误，不回退旧接口创建第二份节点。Word/PDF 暂无模型生成操作，本轮只支持放置已有文件。
+
 ### 3. 通用提交
 
 ```bash
@@ -201,7 +249,7 @@ cat request.json | virse generation submit --canvas <canvas-uuid> --file - --wai
 }
 ```
 
-可以通过同一入口调用后端已支持的多图、视频、文字和 3D 操作，参数以 `generation operations` 返回的 Schema 为准。首版只对图片提供快捷参数；没有新增 3D 截图渲染能力。现有 API 仍要求明确输出绑定，通用提交不是独立于画布的资产生成接口。
+可以通过同一入口调用后端已支持的多图、文字及其他操作，参数以 `generation operations` 返回的 Schema 为准。图片、视频和 3D 的基础生成已有快捷命令；没有新增 3D 截图渲染能力。现有 API 仍要求明确输出绑定，通用提交不是独立于画布的资产生成接口。
 
 ### 4. 观察和恢复
 
@@ -263,6 +311,8 @@ let identity = client.me().await?;
 
 SDK 提供 `resources`、`resource`、`resource_summary`、`resource_download_info`、`create_folder`、`resource_trash` 和 `mutate_resources`，以及类型化查询、资源详情和逐项操作结果。通用 `AccessContext` 支持组织、资源或画布访问入口。路径解析、树展示、重试恢复和持久化归 CLI；SDK 不依赖命令参数。
 
+SDK 的 `SubmitTask::media` 提供共用的图片/视频/3D 请求构造，`create_asset_element` 和 `CreateAssetElement` 提供已有资产的元素创建接口。所有 HTTP 协议及请求类型放在 SDK；模型参数文件读取和来源路径解析仍由 CLI 负责。
+
 SDK 的 `submit` 是单次调用，幂等 key 由调用方传入；自动重试和跨进程记录属于 CLI。`watch` 返回可取消的异步快照流，丢弃流不取消任务。SDK 不保存文件，下载返回可流式读取的响应。
 
 ## 验证与当前边界
@@ -279,6 +329,8 @@ cargo test --workspace -j 2 -- --test-threads=2
 
 同日 dev5 的资源管理联调通过：路径/ID 浏览、树形展示、递归搜索、创建文件夹、改名、移动、复制、回收站、恢复、资源详情与下载，以及改名/删除后的原命令幂等重放。写操作仅针对新建测试目录，测试目录最终移入回收站。访问范围变更确认、分页同名歧义、部分失败和不确定响应另有本地协议测试覆盖，不把这些模拟场景称为已在生产验证。
 
+同日新增的画布资产能力也完成 dev5 联调：Wan 3.0 参考图生成 2 秒 480p 视频、Tripo H3.1 生成无贴图 GLB，均通过任务观察完成并下载有效原文件；已有图片、视频与 GLB 放置成功，GLB 放置和生成同 key 重放没有新增节点或任务。Word/PDF 放置已覆盖协议测试，该账号未找到现成文档资产，尚未做真实文档放置验收。测试结果保留在 “A testing Canvas”，不代表所有模型或生产环境均已验证。
+
 目标 Backend 需要已部署 V2 生成接口、任务迁移及计费接管，并启用 `CANVAS_GENERATION_TASKS_ENABLED`。服务未启用时原样返回错误，不降级到旧入口重复生成。
 
-本阶段不包含更新检测、兼容性协商、强制升级、系统钥匙串、自动更新、独立元素创建、工具与审美命令。未来更新机制仍区分 API 契约版本、SDK 版本和 CLI 发布版本：协议处理归 SDK，提示和发行渠道处理归 CLI；本轮不发送兼容性请求或版本协商头。
+本阶段不包含更新检测、兼容性协商、强制升级、系统钥匙串、自动更新、空白/非资产元素创建与编辑、工具与审美命令。未来更新机制仍区分 API 契约版本、SDK 版本和 CLI 发布版本：协议处理归 SDK，提示和发行渠道处理归 CLI；本轮不发送兼容性请求或版本协商头。

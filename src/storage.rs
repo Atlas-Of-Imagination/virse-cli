@@ -26,6 +26,15 @@ pub struct Defaults {
     pub org: Option<uuid::Uuid>,
 }
 
+#[derive(Serialize)]
+pub struct PlacementIdentity<'a> {
+    pub backend: &'a str,
+    pub user: uuid::Uuid,
+    pub org: uuid::Uuid,
+    pub canvas: uuid::Uuid,
+    pub key: &'a str,
+}
+
 pub struct Store {
     pub root: PathBuf,
 }
@@ -164,6 +173,43 @@ impl Store {
         }
         if let Some(request) = request {
             self.save(&name, &serde_json::json!({"identity":identity,"intent_digest":fingerprint,"request":request}))?;
+            return Ok(Some(request.clone()));
+        }
+        Ok(None)
+    }
+    pub fn placement_command(
+        &self,
+        identity: &PlacementIdentity<'_>,
+        intent: &serde_json::Value,
+        request: Option<&virse_api::CreateAssetElement>,
+    ) -> Result<Option<virse_api::CreateAssetElement>> {
+        let _lock = self.lock()?;
+        let identity_json = serde_json::to_string(identity)
+            .map_err(|_| Error::new("CONFIG_ERROR", "Cannot encode placement identity"))?;
+        let name = format!("canvas-placement-{}.json", digest(&identity_json));
+        let fingerprint = digest(&intent.to_string());
+        let old: serde_json::Value = self.read(&name)?;
+        if !old.is_null() {
+            if old["intent_digest"] != fingerprint {
+                return Err(Error::new(
+                    "INVALID_INPUT",
+                    "This key belongs to another placement; repeat the original command or use a new key",
+                ));
+            }
+            let frozen: virse_api::CreateAssetElement =
+                serde_json::from_value(old["request"].clone())
+                    .map_err(|_| Error::new("CONFIG_ERROR", "Invalid canvas placement record"))?;
+            if frozen.org_id != identity.org {
+                return Err(Error::new(
+                    "CONFIG_ERROR",
+                    "Placement record belongs to another organization",
+                ));
+            }
+            frozen.validate()?;
+            return Ok(Some(frozen));
+        }
+        if let Some(request) = request {
+            self.save(&name, &serde_json::json!({"identity": identity, "intent_digest": fingerprint, "request": request}))?;
             return Ok(Some(request.clone()));
         }
         Ok(None)

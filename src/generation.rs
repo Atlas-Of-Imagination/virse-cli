@@ -1,49 +1,82 @@
-use crate::{
-    args::{Image, Submission},
-    print,
-    storage::Store,
-};
+use crate::{args::Submission, media_args::MediaOptions, print, storage::Store};
 use futures_util::StreamExt;
 use serde_json::{Value, json};
 use std::time::Duration;
 use uuid::Uuid;
 use virse_api::{
-    Client, Error, GenerationReference, NewElement, OutputTarget, Point, ReferenceSource, Result,
-    Size, SubmitTask, Task,
+    Client, Error, GenerationReference, MediaKind, NewElement, OutputTarget, Point,
+    ReferenceSource, Result, Size, SubmitTask, Task,
 };
 
-pub fn image_request(args: &Image) -> Result<SubmitTask> {
-    if args.model.trim().is_empty() || args.prompt.trim().is_empty() {
-        return Err(Error::new(
-            "INVALID_INPUT",
-            "Model and prompt must not be empty",
-        ));
-    }
-    let mut references = serde_json::Map::new();
-    for (index, id) in args.reference.iter().enumerate() {
-        references.insert(
-            format!("${}", index + 1),
-            serde_json::to_value(GenerationReference {
-                source: ReferenceSource::CanvasElement {
-                    element_id: *id,
-                    expected_asset_id: None,
-                    expected_text: None,
-                },
-            })
-            .map_err(|_| Error::new("INVALID_INPUT", "Invalid reference"))?,
-        );
-    }
-    let body = SubmitTask {
-        operation: "image_generate".into(),
-        input: json!({"model":args.model,"user_query":args.prompt,"image_count":1,"references":references}).as_object().unwrap().clone(),
-        outputs: vec![OutputTarget { output_index: 0, element_id: args.target_element, create_element: args.target_element.is_none().then(|| NewElement {
-            id: None, title: None,
-            position: Point { x: args.x.unwrap_or(0.0), y: args.y.unwrap_or(0.0) },
-            size: Size { width: args.width.unwrap_or(1024.0), height: args.height.unwrap_or(1024.0) },
-        }) }],
+pub async fn media_request(
+    kind: MediaKind,
+    prompt: &str,
+    args: &MediaOptions,
+) -> Result<SubmitTask> {
+    let parameters = match (&args.parameters, &args.parameters_file) {
+        (Some(value), None) => Some(parse_parameters(value)?),
+        (None, Some(path)) => {
+            if tokio::fs::metadata(path)
+                .await
+                .map_err(crate::storage::io_error)?
+                .len()
+                > 1024 * 1024
+            {
+                return Err(Error::new("INVALID_INPUT", "Parameters exceed 1 MiB"));
+            }
+            let value = tokio::fs::read_to_string(path)
+                .await
+                .map_err(crate::storage::io_error)?;
+            Some(parse_parameters(&value)?)
+        }
+        (None, None) => None,
+        _ => {
+            return Err(Error::new(
+                "INVALID_INPUT",
+                "Choose parameters or parameters-file",
+            ));
+        }
     };
-    body.validate()?;
-    Ok(body)
+    let references = args
+        .reference
+        .iter()
+        .map(|id| GenerationReference {
+            source: ReferenceSource::CanvasElement {
+                element_id: *id,
+                expected_asset_id: None,
+                expected_text: None,
+            },
+        })
+        .collect();
+    let (width, height) = kind.default_size();
+    let output = OutputTarget {
+        output_index: 0,
+        element_id: args.target_element,
+        create_element: args.target_element.is_none().then(|| NewElement {
+            id: None,
+            title: None,
+            position: Point {
+                x: args.x.unwrap_or(0.0),
+                y: args.y.unwrap_or(0.0),
+            },
+            size: Size {
+                width: args.width.unwrap_or(width),
+                height: args.height.unwrap_or(height),
+            },
+        }),
+    };
+    SubmitTask::media(kind, &args.model, prompt, references, parameters, output)
+}
+fn parse_parameters(value: &str) -> Result<serde_json::Map<String, Value>> {
+    if value.len() > 1024 * 1024 {
+        return Err(Error::new("INVALID_INPUT", "Parameters exceed 1 MiB"));
+    }
+    let value: Value = serde_json::from_str(value)
+        .map_err(|_| Error::new("INVALID_INPUT", "Parameters must be a JSON object"))?;
+    value
+        .as_object()
+        .cloned()
+        .ok_or_else(|| Error::new("INVALID_INPUT", "Parameters must be a JSON object"))
 }
 
 pub struct SubmissionContext<'a> {
@@ -78,6 +111,14 @@ impl SubmissionContext<'_> {
                 Ok(task) => {
                     accepted = Some(task);
                     break;
+                }
+                Err(e)
+                    if matches!(
+                        e.code.as_str(),
+                        "GENERATION_TASKS_NOT_ENABLED" | "GENERATION_ADMISSION_PAUSED"
+                    ) =>
+                {
+                    return Err(e);
                 }
                 Err(e) if e.retryable || e.code == "INVALID_RESPONSE" => {
                     if attempt == 3 {

@@ -10,3 +10,8 @@ pub use client::{Client, normalize_backend};
 pub use error::{Error, Result};
 pub use resource_types::*;
 pub use types::*;
+
+mod canvas;
+mod media;
+pub use canvas::*;
+pub use media::MediaKind;
