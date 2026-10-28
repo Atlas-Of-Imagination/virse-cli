@@ -159,3 +159,49 @@ pub struct DownloadInfo {
     #[serde(flatten)]
     pub extra: Map<String, Value>,
 }
+impl DownloadInfo {
+    pub fn content(&self) -> crate::Result<Option<crate::AssetContent>> {
+        self.extra
+            .get("content")
+            .filter(|value| !value.is_null())
+            .map(|value| {
+                serde_json::from_value(value.clone()).map_err(|_| crate::Error::protocol())
+            })
+            .transpose()
+    }
+    /// Ensure a previously read asset and this byte descriptor refer to the same content.
+    /// Older backends without content metadata remain usable for unbound downloads.
+    pub fn check_revision(&self, asset: &Value) -> crate::Result<()> {
+        if let Some(content) = asset.get("content").filter(|v| !v.is_null()) {
+            let revision = content
+                .get("revision")
+                .and_then(Value::as_u64)
+                .ok_or_else(crate::Error::protocol)?;
+            let download_revision = self
+                .extra
+                .get("content")
+                .and_then(|v| v.get("revision"))
+                .and_then(Value::as_u64)
+                .ok_or_else(crate::Error::protocol)?;
+            if revision != download_revision {
+                return Err(crate::Error {
+                    status: Some(409),
+                    details: Some(Box::new(serde_json::json!({
+                        "expected_revision":revision,"current_revision":download_revision
+                    }))),
+                    ..crate::Error::new(
+                        "content_changed",
+                        "Asset changed while preparing the download; read it again",
+                    )
+                });
+            }
+        }
+        Ok(())
+    }
+    pub fn source_version(&self) -> Option<&str> {
+        self.extra.get("source_version").and_then(Value::as_str)
+    }
+    pub fn object_version(&self) -> Option<&str> {
+        self.extra.get("object_version").and_then(Value::as_str)
+    }
+}

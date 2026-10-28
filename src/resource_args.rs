@@ -79,6 +79,12 @@ pub struct MutationOptions {
 }
 #[derive(Subcommand)]
 pub enum Resource {
+    /// Upload one local file into an existing resource folder.
+    Upload(crate::resource_upload::UploadArgs),
+    /// Replace a file's content using its last-read server revision.
+    Replace(crate::resource_upload::ReplaceArgs),
+    /// Observe organization changes using WebSocket hints and resumable cursors.
+    Watch(crate::resource_watch::WatchArgs),
     /// Inspect and manage resource access rules.
     Permissions {
         #[command(subcommand)]

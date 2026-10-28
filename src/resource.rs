@@ -23,6 +23,17 @@ pub async fn run(
 ) -> Result<u8> {
     let mut resolver = Resolver::new(client, org);
     match command {
+        Resource::Upload(args) => {
+            return crate::resource_upload::upload(args, client, store, backend, org, json_output)
+                .await;
+        }
+        Resource::Replace(args) => {
+            return crate::resource_upload::replace(args, client, store, backend, org, json_output)
+                .await;
+        }
+        Resource::Watch(args) => {
+            return crate::resource_watch::run(args, client, org, json_output).await;
+        }
         Resource::Permissions { command } => {
             return crate::sharing::permissions(command, client, org, json_output).await;
         }
@@ -69,7 +80,9 @@ pub async fn run(
             let info = client.resource_download_info(org, item.id).await?;
             let size = download::save_info(client, &info, output).await?;
             print(
-                &json!({"resource_id":item.id,"path":output,"bytes":size}),
+                &json!({"resource_id":item.id,"path":output,"bytes":size,
+                    "content":info.extra.get("content"),
+                    "source_version":info.source_version(),"object_version":info.object_version()}),
                 json_output,
             )?;
         }

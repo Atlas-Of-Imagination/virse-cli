@@ -97,15 +97,18 @@ impl Client {
             .and_then(Value::as_str)
             .and_then(|s| Uuid::parse_str(s).ok())
             .ok_or_else(Error::protocol)?;
-        self.download_info_in(
-            asset_id,
-            &AccessContext {
-                org_id: org,
-                dentry_id: Some(id),
-                canvas_space_id: None,
-            },
-        )
-        .await
+        let info = self
+            .download_info_in(
+                asset_id,
+                &AccessContext {
+                    org_id: org,
+                    dentry_id: Some(id),
+                    canvas_space_id: None,
+                },
+            )
+            .await?;
+        info.check_revision(&asset)?;
+        Ok(info)
     }
     /// Single attempt; replay this exact request/key, not a fresh path resolution.
     pub async fn mutate_resources(

@@ -1,5 +1,10 @@
 //! Async Virse client. Configuration, persistence and terminal output belong to callers.
+mod asset_types;
+mod assets;
+mod changes;
 mod client;
+pub use asset_types::*;
+pub use changes::*;
 mod error;
 mod generation;
 mod resource_types;

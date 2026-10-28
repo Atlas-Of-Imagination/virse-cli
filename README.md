@@ -130,7 +130,54 @@ virse resource rename '/素材/a.jpg' 'b.jpg' --idempotency-key rename-001 --jso
 
 批量结果逐项报告；任一项失败时返回退出码 `6`，不重复执行已成功项。确定失败项需要重新执行时，只提交这些项并使用新 key。网络错误或响应损坏后的最多三次自动重试始终使用原请求；结果仍未知时返回退出码 `7` 和 key。
 
-文件夹创建目前没有后端幂等保障，因此不自动重试。响应丢失时先列父目录确认，CLI 会明确报告“创建结果待确认”。上传/导入留待下一轮实现。
+文件夹创建目前没有后端幂等保障，因此不自动重试。响应丢失时先列父目录确认，CLI 会明确报告“创建结果待确认”。
+
+### 上传与替换内容
+
+统一上传/替换需要后端部署资产内容 API（后端 PR #612）并完成对应迁移。旧环境不自动改走旧上传入口。
+
+```bash
+virse resource upload ./photo.png '/素材' --conflict rename --json
+virse resource upload ./photo.png @<folder-uuid> --idempotency-key upload-001
+virse resource get '/素材/photo.png' --json
+# expected-revision 取自上一步 asset.content.revision，不是画布或模型编辑版本。
+virse resource replace '/素材/photo.png' ./edited.png --expected-revision 3 --json
+```
+
+单次上传一个本地普通文件，目标是已有目录或 `/`。支持图片、视频、DOCX、PDF、GLB，单文件最多 **100 MiB**，实际格式由服务器检查；不靠改扩展名转换格式。上传完成才返回成功，普通文件上传不创建生成任务，也不自动放置画布元素。可以再用既有 `canvas add --resource` 放置。
+
+`--conflict rename|skip|error` 默认为 `rename`。`skip` 的 `skipped=true` 只说明同名跳过，不能说明服务器字节与本地一致。命令返回服务器的资产、资源项和内容版本，不建立本地文档同步绑定。
+
+替换保留资产 ID，要求相同资产类型，Word/PDF 不能互换。`--expected-revision` 必须显式提供；当前版本不一致直接报冲突，不自动更新版本重试。GLB 若需要清除既有编辑状态，必须同时传 `--reset-model-state --expected-state-revision <读取到的模型编辑版本>`；此命令不代替 3D assembly 保存。
+
+上传与替换在提交前保存原始字节、文件名、账号、组织、目标 ID、请求参数和幂等 key。状态按 Backend/账号/组织/key 隔离，私有文件保存在配置目录，进度写 stderr，结果写 stdout。响应丢失时重复原命令与同一个 key；普通重试检查本地内容未变，且不会重新解析已经移动或改名的资源路径。
+
+```bash
+# 本地原件已移动或删除时，明确使用已保存的字节恢复。
+virse resource upload ./photo.png '/素材' --idempotency-key upload-001 --resume
+```
+
+`--resume` 要求既有恢复记录和原 key，使用冻结的请求，不读取当前本地文件。已完成操作也向后端确认；如果文件后来又被修改，保留 `content_changed` / `revision_conflict` 及完成版本详情，不返回过期的缓存成功。结果未知时退出码为 `7`，不要换 key 盲目新建或删除可能已经提交的资源。恢复记录包含文件副本，可能占用与上传文件相近的本机空间。
+
+下载保持后端 URL 中的版本参数，检查详情与下载描述的内容版本；服务端提供大小或 SHA-256 时，校验通过才发布目标文件。未知校验和保持未知，不编造值。内容冲突原样报告；已有目标文件不会被覆盖。
+
+### 实时观察资源变化
+
+```bash
+virse resource watch --json
+virse resource watch --cursor '<上次处理完的 next_cursor>' --json
+virse resource watch --timeout 60 --json
+```
+
+观察当前组织，JSON 模式逐行输出事件页，每页带 `type=page`、`items`、`next_cursor`、`has_more` 和 `bootstrap`；处理完整页后才保存其游标。重连提示为 `type=notice`，不作为新的事件检查点。无 cursor 时先输出当前基线，只观察此后变化，不自动输出一份初始资源树。CLI 不缓存资源，也不隐式保存观察游标。
+
+需要初始快照的消费者先读取 `resource ls --json` 的全部分页，再把同一快照返回的 `sync_cursor` 交给 `watch`，不能在全量结束后另取最新水位。`next_cursor` 是目录分页游标，`sync_cursor` 才是变更游标；独立执行的多次 `tree` 查询不构成一个全局快照。
+
+WebSocket 只唤醒 HTTP 按游标补齐；连接就绪、收到通知和重连时补齐到 `has_more=false`，没有周期 HTTP 轮询。API Token 仅放握手 Header。网络恢复次数有限，失败保留最后输出的 cursor 供再次续接。`--timeout` 到期正常退出，Ctrl+C 退出 `130`。
+
+`scope_invalidated` 表示应丢弃该组织的消费者缓存并重新读取；CLI 不推测隐藏对象。`cursor_expired` / `sync_reset_required` 要求调用者重新基线和全量读取，权限撤销则停止观察。后端未开启 changes 时明确返回 `changes_not_enabled`，不做轮询降级。
+
+SDK 同时提供 `resolve_asset_context`、`asset_detail`、`assets`、`upload_asset`、`replace_asset_content`、`presentation_info_in`、`changes` 和 `watch_changes`。上传接收显式字节与参数，SDK 不读取文件、不存凭据或游标、不自动重试写入。展示描述仍用安全下载传输消费，保留 representation 与版本参数；展示读取不会提升原件下载权限。
 
 ## 资源权限与分享
 
@@ -461,6 +508,8 @@ cargo test --workspace -j 2 -- --test-threads=2
 ```
 
 本地测试通过模拟 HTTP/WebSocket 验证协议及 CLI 子进程行为，不访问业务数据库或模型供应商。真实联调需显式设置测试环境 `VIRSE_BACKEND_URL` 和测试 Token；不要让测试生成落到默认 production。
+
+2026-10-28 统一资产接入：本地全仓 **133 项测试通过**，新增测试覆盖上传/替换与同 key 恢复、快捷方式权限入口、版本冲突、下载完整性、查询同步游标及 WS 补漏/重连/权限撤销。`cargo fmt --all --check` 和 Clippy `-D warnings` 通过。dev5 实际探测中，资产上下文、目录创建/读取可用，但统一上传返回 `503 mutation_unavailable`，changes 返回 `503 changes_not_enabled`；CLI 已验证上传结果未知时保留恢复记录并退出 `7`。成功上传、替换及实时订阅的 dev5 端到端验收仍待后端就绪，不将本地协议测试当作线上成功验收。
 
 2026-10-27 已在 dev5 完成真实 API Token 联调：画布列表/元素读取、引用已有图片组合创建、Seedream 4 生成、任务观察（running → succeeded）、资产详情与下载、同 key 重放和已完成任务恢复均通过。只新增一个任务和一个元素，原引用元素保持不变。联调修复了画布读取传空 `expand` 被后端拒绝的问题，现使用协议要求的 `expand=none`，并补充回归测试。此记录不代表其他模型、视频/3D 或生产环境已验收。
 

@@ -123,9 +123,19 @@ impl Client {
         form: reqwest::multipart::Form,
         key: Option<&str>,
     ) -> Result<Value> {
+        self.multipart_request_method(Method::POST, path, form, key)
+            .await
+    }
+    pub(crate) async fn multipart_request_method(
+        &self,
+        method: Method,
+        path: &str,
+        form: reqwest::multipart::Form,
+        key: Option<&str>,
+    ) -> Result<Value> {
         let mut request = self
             .http
-            .post(self.url(path)?)
+            .request(method, self.url(path)?)
             .header(AUTHORIZATION, self.authorization.clone())
             .timeout(Duration::from_secs(300))
             .multipart(form);
@@ -256,6 +266,12 @@ impl Client {
     }
     /// Returns a streaming response. No token is attached to external URLs, even after redirects.
     pub async fn download(&self, info: &DownloadInfo) -> Result<reqwest::Response> {
+        if !matches!(
+            info.delivery.as_str(),
+            "authenticated_stream" | "signed_url" | "external_url"
+        ) {
+            return Err(Error::protocol());
+        }
         let mut url = self.base.join(&info.url).map_err(|_| Error::protocol())?;
         let mut authenticated = info.delivery == "authenticated_stream";
         if authenticated && url.origin() != self.base.origin() {
@@ -291,6 +307,14 @@ impl Client {
                 continue;
             }
             if !response.status().is_success() {
+                // Protected streams use the API error envelope. Preserve revision conflicts
+                // without attempting to interpret arbitrary external-storage error bodies.
+                if authenticated {
+                    return match self.read_json_response(response).await {
+                        Err(error) => Err(error),
+                        Ok(_) => Err(Error::protocol()),
+                    };
+                }
                 return Err(Error {
                     status: Some(response.status().as_u16()),
                     ..Error::new("DOWNLOAD_FAILED", "Download request failed")

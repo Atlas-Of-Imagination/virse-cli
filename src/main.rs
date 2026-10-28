@@ -7,6 +7,8 @@ mod resource;
 mod resource_args;
 mod resource_paths;
 mod resource_tree;
+mod resource_upload;
+mod resource_watch;
 mod share_args;
 mod sharing;
 mod storage;
@@ -71,10 +73,11 @@ fn error_exit(error: &Error) -> u8 {
         | "CANVAS_PLACEMENT_UNCERTAIN"
         | "SHARE_MUTATION_UNCERTAIN"
         | "TOOL_MUTATION_UNCERTAIN"
+        | "ASSET_WRITE_UNCERTAIN"
         | "TOOL_PUBLISH_UNCERTAIN" => 7,
         "WAIT_TIMEOUT" => 8,
         "INTERRUPTED" => 130,
-        "TRANSPORT_ERROR" | "OBSERVATION_UNAVAILABLE" => 5,
+        "TRANSPORT_ERROR" | "OBSERVATION_UNAVAILABLE" | "CHANGES_UNAVAILABLE" => 5,
         _ => match error.status {
             Some(401) => 3,
             Some(403) => 4,

@@ -28,6 +28,8 @@ pub struct ResourcePage {
     pub next_cursor: Option<String>,
     pub snapshot: String,
     pub truncated: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sync_cursor: Option<String>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResourceDetail {
