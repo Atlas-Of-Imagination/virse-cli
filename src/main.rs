@@ -10,6 +10,10 @@ mod resource_tree;
 mod share_args;
 mod sharing;
 mod storage;
+mod tool_args;
+mod tool_project;
+mod tool_publish;
+mod tools;
 
 use args::*;
 use clap::Parser;
@@ -65,7 +69,9 @@ fn error_exit(error: &Error) -> u8 {
         | "RESOURCE_MUTATION_UNCERTAIN"
         | "FOLDER_CREATION_UNCERTAIN"
         | "CANVAS_PLACEMENT_UNCERTAIN"
-        | "SHARE_MUTATION_UNCERTAIN" => 7,
+        | "SHARE_MUTATION_UNCERTAIN"
+        | "TOOL_MUTATION_UNCERTAIN"
+        | "TOOL_PUBLISH_UNCERTAIN" => 7,
         "WAIT_TIMEOUT" => 8,
         "INTERRUPTED" => 130,
         "TRANSPORT_ERROR" | "OBSERVATION_UNAVAILABLE" => 5,
@@ -99,6 +105,11 @@ fn required(value: Option<uuid::Uuid>, name: &str) -> Result<uuid::Uuid> {
 }
 
 async fn run(cli: &Cli) -> Result<u8> {
+    if let Command::Tool { command } = &cli.command
+        && let Some(result) = tools::offline(command, cli.json).await
+    {
+        return result;
+    }
     let backend = storage::backend()?;
     let store = storage::Store::open()?;
     if cli.profile.is_empty() {
@@ -168,6 +179,18 @@ async fn run(cli: &Cli) -> Result<u8> {
             return resource::run(command, &client, &store, &backend, org()?, cli.json).await;
         }
         Command::Auth { .. } => print(&client.me().await?, cli.json)?,
+        Command::Tool { command } => {
+            return tools::run(
+                command,
+                &client,
+                &store,
+                &backend,
+                cli.org.or(defaults.org),
+                cli.canvas.or(defaults.canvas),
+                cli.json,
+            )
+            .await;
+        }
         Command::Canvas { command } => match command {
             Canvas::List { limit, cursor } => print(
                 &client.canvases(org()?, *limit, cursor.as_deref()).await?,

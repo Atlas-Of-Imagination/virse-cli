@@ -32,10 +32,14 @@ directories = "6"
 rpassword = "7"
 sha2 = "0.10"
 tempfile = "3"
+zip = { version = "8.6", default-features = false, features = ["deflate"] }
+yaml_serde = "0.10"
+rustix = { version = "1", features = ["fs"] }
 
 [[bin]]
 name = "virse"
 path = "src/main.rs"
 
 [dev-dependencies]
+base64 = "0.22"
 axum = { version = "0.8", features = ["ws"] }

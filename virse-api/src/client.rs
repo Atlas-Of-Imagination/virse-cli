@@ -115,6 +115,33 @@ impl Client {
             request = request.header("Idempotency-Key", key);
         }
         let response = request.send().await.map_err(|_| Error::transport())?;
+        self.read_json_response(response).await
+    }
+    pub(crate) async fn multipart_request(
+        &self,
+        path: &str,
+        form: reqwest::multipart::Form,
+        key: Option<&str>,
+    ) -> Result<Value> {
+        let mut request = self
+            .http
+            .post(self.url(path)?)
+            .header(AUTHORIZATION, self.authorization.clone())
+            .timeout(Duration::from_secs(300))
+            .multipart(form);
+        if let Some(user) = self.expected_user {
+            request = request.header("X-Virse-Expected-User", user.to_string());
+        }
+        if let Some(key) = key {
+            if key.is_empty() || key.len() > 200 || HeaderValue::from_str(key).is_err() {
+                return Err(Error::new("INVALID_INPUT", "Invalid idempotency key"));
+            }
+            request = request.header("Idempotency-Key", key);
+        }
+        let response = request.send().await.map_err(|_| Error::transport())?;
+        self.read_json_response(response).await
+    }
+    pub(crate) async fn read_json_response(&self, response: reqwest::Response) -> Result<Value> {
         let status = response.status().as_u16();
         let request_id = response
             .headers()

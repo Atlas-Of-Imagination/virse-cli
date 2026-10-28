@@ -214,6 +214,42 @@ impl Store {
         }
         Ok(None)
     }
+    pub fn tool_run_command(
+        &self,
+        identity: &PlacementIdentity<'_>,
+        intent: &serde_json::Value,
+        request: Option<&virse_api::ToolRunRequest>,
+    ) -> Result<Option<virse_api::ToolRunRequest>> {
+        let _lock = self.lock()?;
+        let identity_json = serde_json::to_string(identity)
+            .map_err(|_| Error::new("CONFIG_ERROR", "Cannot encode tool run identity"))?;
+        let name = format!("tool-run-{}.json", digest(&identity_json));
+        let fingerprint = digest(&intent.to_string());
+        let old: serde_json::Value = self.read(&name)?;
+        if !old.is_null() {
+            if old["intent_digest"] != fingerprint {
+                return Err(Error::new(
+                    "INVALID_INPUT",
+                    "This key belongs to another tool run; repeat the original command or use a new key",
+                ));
+            }
+            let frozen: virse_api::ToolRunRequest = serde_json::from_value(old["request"].clone())
+                .map_err(|_| Error::new("CONFIG_ERROR", "Invalid canvas tool run record"))?;
+            if frozen.org_id != identity.org {
+                return Err(Error::new(
+                    "CONFIG_ERROR",
+                    "Tool run record belongs to another organization",
+                ));
+            }
+            frozen.validate()?;
+            return Ok(Some(frozen));
+        }
+        if let Some(request) = request {
+            self.save(&name, &serde_json::json!({"identity": identity, "intent_digest": fingerprint, "request": request}))?;
+            return Ok(Some(request.clone()));
+        }
+        Ok(None)
+    }
     pub fn accepted(&self, record: &str, task: &str) -> Result<()> {
         let _lock = self.lock()?;
         let mut value: serde_json::Value = self.read(record)?;

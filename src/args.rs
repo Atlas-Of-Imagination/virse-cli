@@ -19,6 +19,11 @@ pub struct Cli {
 }
 #[derive(Subcommand)]
 pub enum Command {
+    /// Create, publish, manage and run intelligent tools.
+    Tool {
+        #[command(subcommand)]
+        command: crate::tool_args::Tool,
+    },
     /// Browse and manage resources using paths or IDs.
     Resource {
         #[command(subcommand)]

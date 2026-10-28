@@ -1,6 +1,6 @@
 # Virse CLI
 
-Rust 命令行客户端，面向交互使用、脚本和 Agent。已经实现 API Token 认证、按路径浏览和管理资源、画布读取、已有资产放置、图片/视频/3D 组合创建与生成、WebSocket 观察，以及文件下载。
+Rust 命令行客户端，面向交互使用、脚本和 Agent。支持 API Token 认证、资源与权限管理、画布资产放置、图片/视频/3D 生成，以及智能工具的本地创作、版本发布和画布运行。
 
 ## 架构
 
@@ -342,6 +342,80 @@ virse asset download <asset-uuid> --org <org-uuid> --canvas <canvas-uuid> --outp
 
 下载保留服务端原始字节，指定文件扩展名不会转换图片格式。
 
+## 本地创作和运行智能工具
+
+工具使用现有技能包格式：`SKILL.md` 定义执行行为，可选 `interface.json` 定义输入表单与输出，`meta.json` 保存作者元数据，参考资料和脚本随包交付。CLI 不在本机执行包内脚本。新增的普通作者包发布能力对应工作区 Issue #116，须先部署配套后端迁移与接口；旧环境仍可使用原有的工具查询和 V2 运行能力。
+
+```bash
+virse tool init ./my-tool --name 'My tool'
+virse tool validate ./my-tool
+virse tool publish ./my-tool --org <org-uuid>
+virse tool publish ./my-tool --org <org-uuid> --resume
+virse tool list --view created --org <org-uuid> --json
+virse tool get <tool-id> --org <org-uuid> --json
+virse tool versions <tool-id> --org <org-uuid> --json
+virse tool pull <tool-id> --output ./downloaded-tool --org <org-uuid>
+virse tool pull <tool-id> --output ./historical-tool --version 1.0.0 --org <org-uuid>
+```
+
+`init` 和 `validate` 是离线命令，不需要 Token 或 Backend 配置；后端仍会进行权威内容校验。首次发布默认个人范围，`--scope team` 显式选择团队；更新不显式传 scope 时保留已有范围，显式传入则与发布事务一起调整。仅改变范围不会增加正式版本。更新必须基于本地绑定的远端版本，不能自动覆盖 Web 或另一 CLI 的更新。存在活跃 Creator 编辑时，需要先处理原编辑会话。
+
+发布沿用原有上传、草稿与正式发布体系，不需要 Creator Agent 再制作一遍本地完整包。正式版本首次为 `1.0.0`，后续由后端递增 patch。历史源码拉取与当前远端发布基线分别保存，历史内容重新发布产生新正式版本，不倒退或改写历史。
+
+本地包限制 ZIP 不超过 20 MiB、展开不超过 100 MiB、最多 2048 项；拒绝路径穿越、别名/重复条目、符号链接、硬链接与特殊文件。根目录 `meta.json` 用于发布元数据，不进入执行包；嵌套同名文件仍作为附带资料保留。Git、凭据、依赖和构建缓存不进入包，校验输出会列出排除项。
+
+当前版本化包更新支持名称、简介、详情、封面及包内执行说明/输入定义。其他声明字段若与已有发布元数据不同，会明确拒绝，不静默丢弃。
+
+拉取仅允许作者读取自己的源码，默认拒绝覆盖已有目录。项目绑定和发布恢复记录按 Backend、账号、组织隔离，不进入发布包。网络中断后保留本次请求快照与阶段信息，用 `--resume` 继续原发布；不要删除恢复记录后反复创建新工具。
+
+明确拒绝（例如参数错误或个人空间不允许团队范围）后，可以修正输入再发起发布；已经成功创建的草稿身份会保留，不重复创建工具。结果未知仍须先用 `--resume` 重放原快照。遇到过期基线时不会自动重基；若已有上传修订，可显式放弃后再拉取到新目录、合并本地改动：
+
+```bash
+virse tool draft abandon <tool-id> <revision-id> --org <org-uuid>
+virse tool pull <tool-id> --output ./fresh-tool --org <org-uuid>
+```
+
+放弃草稿不改变当前正式版本。拉取安装中断时不会把半成品目录当作已绑定项目；保留现场并换一个空目标目录重试。
+
+### 工具管理
+
+```bash
+virse tool list --view mine --org <org-uuid>
+virse tool list --view store --query '白底图' --org <org-uuid>
+virse tool scope <tool-id> personal --org <org-uuid>
+virse tool scope <tool-id> team --org <org-uuid>
+virse tool add <tool-id> --org <org-uuid>
+virse tool disable <tool-id> --org <org-uuid>
+virse tool enable <tool-id> --org <org-uuid>
+virse tool star <tool-id> --org <org-uuid>
+virse tool unstar <tool-id> --org <org-uuid>
+virse tool remove <tool-id> --org <org-uuid>
+virse tool delete <tool-id> --org <org-uuid>
+```
+
+`remove` 仅移出个人添加列表；`delete` 删除作者工具并遵从后端发布状态限制。团队范围只开放已发布内容，团队成员不因此获得编辑权。商城公开/定向分发及管理员操作不在本轮命令范围内。`created` 列表支持 `--limit/--offset`，`store` 支持 `--category`；查询与权限由后端处理。
+
+### 在画布使用
+
+```bash
+virse tool schema <tool-id> --canvas <canvas-uuid> --org <org-uuid> --json
+virse tool run <tool-id> --inputs inputs.json --canvas <canvas-uuid> --org <org-uuid> --wait --json
+virse tool run <tool-id> --instruction '完成这个任务' --canvas <canvas-uuid> --org <org-uuid>
+virse tool runs watch <run-id> --canvas <canvas-uuid> --org <org-uuid> --json
+virse tool runs get <run-id> --canvas <canvas-uuid> --org <org-uuid> --json
+virse tool runs cancel <run-id> --canvas <canvas-uuid> --org <org-uuid>
+virse tool runs interrupt <run-id> --canvas <canvas-uuid> --org <org-uuid>
+virse tool runs resume <run-id> --canvas <canvas-uuid> --org <org-uuid>
+```
+
+输入 JSON 的键是 Schema 中的字段 ID；资产字段使用 `canvas_element`、`asset` 或 `aesthetic` 来源对象，由后端校验、编译并固定引用。无表单工具使用 `--instruction`。`--inputs -` 从 stdin 读取，`--locale zh|en` 控制执行语言。
+
+可用 `--version` 选择正式版本，或 `--version-id` 指定构建产物 ID，二者互斥；Release ID 不等于构建产物 ID。CLI 在读取 Schema 后固定执行产物，防止准备输入时线上升级导致版本错配。默认由后端创建工具节点，也支持 `--target-element` 或显式布局。
+
+运行默认立即返回 `run_id`，`--wait` 才等待。独立观察走 Canvas WebSocket `canvas_run_updated`，在连接就绪及重连后补读快照，不定时轮询。JSON 观察每行一个 `run_snapshot`。Ctrl+C 只停止观察；`cancel`、`interrupt`、`resume` 分别按服务端允许的真实状态执行。`needs_attention` 不自动重投，产物位于 `result.outputs`。
+
+工具运行支持 `--idempotency-key`：重复原命令与 key 复用已固定的版本、输入和目标。结果未知时不要换 key。工具列表管理或运行控制操作没有额外幂等回执时，不盲目自动重发；先读取当前状态再决定后续操作。
+
 ## 输出与退出码
 
 默认输出格式化 JSON，`--json` 输出单行 JSON；`generation watch --json` 每行一个 `task_snapshot` 事件。stdout 只输出结果，进度和错误写 stderr；JSON 模式下错误为 `{"error":{...}}`，包含业务码、HTTP 状态和可用的请求 ID；等待错误附带 `task_id`，受理结果不确定时附带 `idempotency_key`。
@@ -398,4 +472,13 @@ cargo test --workspace -j 2 -- --test-threads=2
 
 目标 Backend 需要已部署 V2 生成接口、任务迁移及计费接管，并启用 `CANVAS_GENERATION_TASKS_ENABLED`。服务未启用时原样返回错误，不降级到旧入口重复生成。
 
-本阶段不包含更新检测、兼容性协商、强制升级、系统钥匙串、自动更新、空白/非资产元素创建与编辑、工具与审美命令。未来更新机制仍区分 API 契约版本、SDK 版本和 CLI 发布版本：协议处理归 SDK，提示和发行渠道处理归 CLI；本轮不发送兼容性请求或版本协商头。
+本阶段不包含更新检测、兼容性协商、强制升级、系统钥匙串、自动更新、空白/非资产元素编辑、Creator 对话式制作 CLI、社区审核/管理员工具运营与审美训练调优命令。未来更新机制仍区分 API 契约版本、SDK 版本和 CLI 发布版本：协议处理归 SDK，提示和发行渠道处理归 CLI；本轮不发送兼容性请求或版本协商头。
+
+
+### 本地工具包验收记录（2026-10-28）
+
+后端配套 PR：Atlas-Of-Imagination/virse-systems-monorepo#615；需求：virse_workspace#116；产品说明 PR：virse_workspace#117。
+
+dev5 已通过标准 labeldeploy 部署该后端，新增迁移在目标表结构上重复执行校验通过后自动应用。真实 API Token 完成了本地初始化/校验、首次发布 1.0.0、更新 1.0.1、历史源码拉取并重新发布 1.0.2、同内容无变化发布，以及原子团队范围发布和错误范围纠正。工具运行使用固定 1.0.0 产物，WebSocket 观察到成功，并在测试画布产生了指定文字节点。
+
+真实联调使用同一个作者账号；跨作者源码隔离、团队普通成员权限、Creator 兼容与故障注入以隔离 PostgreSQL/协议测试验证，尚未完成双账号浏览器验收。后端 PR 尚待正式合入，其他环境须先迁移和部署配套接口。
