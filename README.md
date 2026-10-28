@@ -391,6 +391,24 @@ virse asset download <asset-uuid> --org <org-uuid> --canvas <canvas-uuid> --outp
 
 ## 本地创作和运行智能工具
 
+新创作使用公共 `/v2/skills` 接口，Web Creator 与 CLI 复用后端包校验和正式版本服务。
+需要部署配套后端（包含 #615 的迁移）。旧发布日志可继续用 `--resume` 恢复；不会将未确认的旧请求转换成新创建。
+
+```bash
+virse tool validate ./my-tool --remote --org <org-uuid> --json
+virse tool build ./my-tool --org <org-uuid> --json
+virse tool run <tool-id> --artifact-id <artifact-id> --canvas <canvas-uuid> --org <org-uuid> --wait
+virse tool publish --tool-id <tool-id> --artifact-id <artifact-id> --org <org-uuid>
+```
+
+`build` 保存不可变产物但不发布，不占正式版本号。未发布产物只允许作者在所属组织的可访问画布上显式运行。
+`publish <directory>` 保留为构建加发布的快捷命令，不要求测试成功。`--artifact-id` 是运行时 `--version-id` 的别名。
+发布响应中的 `validation.warnings` 是建议，不阻止发布；缺少或过短的 `when_to_use`、不确定的动态文件引用不再是硬错误。
+离线校验提供快速反馈，`validate --remote` 获取后端权威报告。上传代码不会在校验阶段执行。
+
+Codex／Claude Code 的本地创作指南位于 [skills/smart-tool-creator/SKILL.md](skills/smart-tool-creator/SKILL.md)，不自动安装到用户环境。
+
+
 工具使用现有技能包格式：`SKILL.md` 定义执行行为，可选 `interface.json` 定义输入表单与输出，`meta.json` 保存作者元数据，参考资料和脚本随包交付。CLI 不在本机执行包内脚本。新增的普通作者包发布能力对应工作区 Issue #116，须先部署配套后端迁移与接口；旧环境仍可使用原有的工具查询和 V2 运行能力。
 
 ```bash

@@ -16,7 +16,10 @@ use virse_api::{
 pub async fn offline(command: &Tool, json: bool) -> Option<Result<u8>> {
     let result = match command {
         Tool::Init { directory, name } => crate::tool_project::init(directory, name.as_deref()),
-        Tool::Validate { directory } => crate::tool_project::validate(directory),
+        Tool::Validate {
+            directory,
+            remote: false,
+        } => crate::tool_project::validate(directory),
         _ => return None,
     };
     Some(result.and_then(|value| {
@@ -35,31 +38,80 @@ pub async fn run(
     json: bool,
 ) -> Result<u8> {
     match command {
-        Tool::Init { .. } | Tool::Validate { .. } => {
+        Tool::Validate {
+            directory,
+            remote: true,
+        } => {
+            let package = crate::tool_project::pack(directory)?;
+            let report = client
+                .tool_validate_package(required(org, "org")?, package.bytes)
+                .await?;
+            let code = if report.get("valid").and_then(Value::as_bool) == Some(true) {
+                0
+            } else {
+                2
+            };
+            print(&report, json)?;
+            return Ok(code);
+        }
+        Tool::Init { .. } | Tool::Validate { remote: false, .. } => {
             return offline(command, json)
                 .await
                 .ok_or_else(|| Error::new("INVALID_INPUT", "Not an offline tool command"))?;
         }
+        Tool::Build { directory, resume } => {
+            let user = account(client).await?;
+            let identity =
+                crate::tool_publish::AuthoringIdentity::new(backend, user, required(org, "org")?)?;
+            print(
+                &crate::tool_publish::author(
+                    client,
+                    directory,
+                    &store.root,
+                    &identity,
+                    None,
+                    *resume,
+                    true,
+                )
+                .await?,
+                json,
+            )?;
+        }
         Tool::Publish {
             directory,
+            artifact_id,
+            tool_id,
             scope,
             resume,
         } => {
             let user = account(client).await?;
             let identity =
                 crate::tool_publish::AuthoringIdentity::new(backend, user, required(org, "org")?)?;
-            print(
-                &crate::tool_publish::publish(
+            let result = if let Some(artifact) = artifact_id {
+                crate::tool_publish::publish_artifact(
+                    client,
+                    &identity,
+                    required(*tool_id, "tool-id")?,
+                    *artifact,
+                    scope.map(|s| s.as_str()),
+                )
+                .await?
+            } else {
+                let directory = directory
+                    .as_ref()
+                    .ok_or_else(|| Error::new("INVALID_INPUT", "directory is required"))?;
+                crate::tool_publish::author(
                     client,
                     directory,
                     &store.root,
                     &identity,
                     scope.map(|s| s.as_str()),
                     *resume,
+                    false,
                 )
-                .await?,
-                json,
-            )?;
+                .await?
+            };
+            print(&result, json)?;
         }
         Tool::Pull {
             tool_id,
