@@ -132,6 +132,67 @@ virse resource rename '/素材/a.jpg' 'b.jpg' --idempotency-key rename-001 --jso
 
 文件夹创建目前没有后端幂等保障，因此不自动重试。响应丢失时先列父目录确认，CLI 会明确报告“创建结果待确认”。上传/导入留待下一轮实现。
 
+## 资源权限与分享
+
+权限和分享同样使用资源路径或 `@UUID`，`--org` 是当前操作身份所在的工作空间。
+
+```bash
+virse resource permissions get '/素材' --json
+
+# 先查看影响，再明确执行；--dry-run 不修改权限。
+virse resource permissions set '/素材' --member <user-uuid> --role use --dry-run --json
+virse resource permissions set '/素材' --member <user-uuid> --role use --json
+virse resource permissions set '/素材' --member '<user-uuid>@<org-uuid>' --role edit
+virse resource permissions set '/素材' --group <group-uuid> --role view
+virse resource permissions set '/素材' --email collaborator@example.com --role view
+virse resource permissions set '/素材' --org-members --role view
+virse resource permissions set '/素材' --link --role none
+
+# rule UUID 来自 permissions get 返回的 rules[].rule_id。
+virse resource permissions remove '/素材' <rule-uuid> --dry-run --json
+virse resource permissions remove '/素材' <rule-uuid> --json
+virse resource permissions clear '/素材' --dry-run --json
+virse resource permissions clear '/素材' --json
+```
+
+| 角色参数 | 含义 | 可用于 |
+| --- | --- | --- |
+| `none` | 无本层授权 | 全体成员、链接 |
+| `view` | 可查看 | 所有授权对象 |
+| `use` | 可使用 | 所有授权对象 |
+| `edit` | 可编辑 | 所有授权对象 |
+| `manage` | 可管理 | 成员、邮箱 |
+
+一次 `set` 选择一个对象：`--member`、`--group`、`--email`、`--org-members` 或 `--link`。裸成员 UUID 使用当前 `--org` 作为该成员的工作空间身份；跨工作空间身份用 `UUID@ORG_UUID` 明确指定。`--org-members` 始终作用于资源所属组织的全体成员，不是把当前会话组织添加到资源上；个人空间没有该受众，后端会明确拒绝。
+
+`get` 返回完整规则、继承来源、我的有效权限，以及 `can_manage`、`max_role`、`removable` 等服务端能力。只能查看者仍能读取名单。CLI 不改写权限求解逻辑，不允许修改继承/创建者行，也不通过降低本层权限伪装成已经关闭继承访问。
+
+`set` / `remove` 在写入前读取当前名单并调用服务端影响预览；预览失败时停止写入。加 `--dry-run` 只返回拟变更和影响，正常命令显式执行一次变更。预览和写入不是原子事务，以服务端返回的新状态为准。`remove` 成功后重新读取名单；如果写入成功但刷新失败，仍报告 `applied=true`，并附带 `refresh_error`，不会误报成写入失败。
+
+`clear` 只清除当前资源本层规则并将本层链接权限设为零，不删除资源、不作废地址，也不清除继承规则。其 `--dry-run` 列出当前设置，不编造合并后的受影响人数。执行成功后返回当前完整名单，可能仍然存在有效访问权。
+
+分享写接口尚无请求级幂等回执，本轮不提供 `--idempotency-key` 或自动重试；断线、超时或损坏响应导致结果未知时退出码为 `7`，先重读名单再决定下一步。
+
+### 分享链接与认领
+
+```bash
+# 不猜测前端域名：默认保留后端返回的相对地址。
+virse resource share link '/素材' --json
+# 明确前端 origin 时输出完整浏览器链接。
+virse resource share link '/素材' --web-origin https://www.virse.ai
+
+virse resource share resolve 'https://www.virse.ai/s/<token>' --json
+virse resource share resolve 'https://www.virse.ai/canvas/<canvas-uuid>?share=<token>' --json
+virse resource share claim 'https://www.virse.ai/s/<token>' --org <receiving-org-uuid> --json
+virse resource share claim --resource <resource-uuid> --org <receiving-org-uuid> --json
+```
+
+获取链接不会赋予访问权。后端可能在读取设置时生成一个权限为零的地址；实际访问仍需要登录并通过权限校验。CLI 保留后端实际返回的地址形式，支持普通资源 `/s/<token>` 和画布 `/canvas/<uuid>?share=<token>`，不将画布地址重新拼成其他形式。可用 `--web-origin` 显式指定 Web 域名；它不改变 Backend 配置。
+
+解析支持原始 token、相对地址和完整 HTTP(S) URL，始终向已配置的 Backend 发请求，不访问粘贴 URL 的主机。画布地址中的画布 ID 与分享 token 一起传给后端校验。返回 `claimable=true` 只表示存在可认领邀请，不自动接受；必须显式运行 `claim`，邮箱是否匹配、所选工作空间是否可用均由后端判断。
+
+邮箱授权创建待接受记录，不代表对方已经获得权限；本轮 CLI 不发送邮件。`claim` 成功返回服务端定位与权限，可再次 `resolve` 刷新。用户组的创建/成员管理、组织级分享总闸管理不在本轮范围内。
+
 ## 从画布到生成资产
 
 ### 1. 读取画布和引用
@@ -293,7 +354,7 @@ virse asset download <asset-uuid> --org <org-uuid> --canvas <canvas-uuid> --outp
 | 3 / 4 | 认证 / 权限错误 |
 | 5 | 网络、服务或观察连接不可用 |
 | 6 | 等待的任务失败、部分成功或取消；资源批次存在失败项 |
-| 7 | 提交/资源操作结果不确定，或任务待核对 |
+| 7 | 提交/资源/分享操作结果不确定，或任务待核对 |
 | 8 | 等待超时 |
 | 130 | Ctrl+C 停止等待 |
 
@@ -310,6 +371,8 @@ let identity = client.me().await?;
 ```
 
 SDK 提供 `resources`、`resource`、`resource_summary`、`resource_download_info`、`create_folder`、`resource_trash` 和 `mutate_resources`，以及类型化查询、资源详情和逐项操作结果。通用 `AccessContext` 支持组织、资源或画布访问入口。路径解析、树展示、重试恢复和持久化归 CLI；SDK 不依赖命令参数。
+
+SDK 的 `share_settings`、`set_share_rule`、`remove_share_rule`、`share_impact`、`clear_share_settings`、`resolve_share` 和 `claim_share` 封装现有权限协议；`ShareAddress` 统一解析分享地址。权限规则、影响、解析和认领结果均使用公开类型，不依赖 CLI。
 
 SDK 的 `SubmitTask::media` 提供共用的图片/视频/3D 请求构造，`create_asset_element` 和 `CreateAssetElement` 提供已有资产的元素创建接口。所有 HTTP 协议及请求类型放在 SDK；模型参数文件读取和来源路径解析仍由 CLI 负责。
 
@@ -330,6 +393,8 @@ cargo test --workspace -j 2 -- --test-threads=2
 同日 dev5 的资源管理联调通过：路径/ID 浏览、树形展示、递归搜索、创建文件夹、改名、移动、复制、回收站、恢复、资源详情与下载，以及改名/删除后的原命令幂等重放。写操作仅针对新建测试目录，测试目录最终移入回收站。访问范围变更确认、分页同名歧义、部分失败和不确定响应另有本地协议测试覆盖，不把这些模拟场景称为已在生产验证。
 
 同日新增的画布资产能力也完成 dev5 联调：Wan 3.0 参考图生成 2 秒 480p 视频、Tripo H3.1 生成无贴图 GLB，均通过任务观察完成并下载有效原文件；已有图片、视频与 GLB 放置成功，GLB 放置和生成同 key 重放没有新增节点或任务。Word/PDF 放置已覆盖协议测试，该账号未找到现成文档资产，尚未做真实文档放置验收。测试结果保留在 “A testing Canvas”，不代表所有模型或生产环境均已验证。
+
+2026-10-28 权限与分享接入已通过 dev5 联调：查看完整名单、影响预览、设置测试邮箱的待接受规则、移除、清空本层规则、获取及解析链接均通过。只操作新建空目录，链接权限始终为零，没有给真实协作者新增权限；测试目录最终移入回收站。跨账号邀请认领、只读成员、继承规则不可修改、预览失败和写入响应丢失通过协议测试覆盖，尚未做双账号真实验收。完整本地回归共 40 项通过。
 
 目标 Backend 需要已部署 V2 生成接口、任务迁移及计费接管，并启用 `CANVAS_GENERATION_TASKS_ENABLED`。服务未启用时原样返回错误，不降级到旧入口重复生成。
 

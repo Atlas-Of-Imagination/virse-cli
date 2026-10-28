@@ -79,6 +79,16 @@ pub struct MutationOptions {
 }
 #[derive(Subcommand)]
 pub enum Resource {
+    /// Inspect and manage resource access rules.
+    Permissions {
+        #[command(subcommand)]
+        command: crate::share_args::Permissions,
+    },
+    /// Get or resolve a resource address and accept invitations.
+    Share {
+        #[command(subcommand)]
+        command: crate::share_args::Share,
+    },
     /// List a folder's children, with optional search and cursor pagination.
     #[command(visible_alias = "list")]
     Ls(Listing),

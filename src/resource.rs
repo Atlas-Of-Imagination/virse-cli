@@ -23,6 +23,12 @@ pub async fn run(
 ) -> Result<u8> {
     let mut resolver = Resolver::new(client, org);
     match command {
+        Resource::Permissions { command } => {
+            return crate::sharing::permissions(command, client, org, json_output).await;
+        }
+        Resource::Share { command } => {
+            return crate::sharing::share(command, client, org, json_output).await;
+        }
         Resource::Ls(options) => listing(client, &mut resolver, options, None, json_output).await?,
         Resource::Search { query, options } => {
             listing(client, &mut resolver, options, Some(query), json_output).await?

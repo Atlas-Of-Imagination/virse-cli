@@ -7,6 +7,8 @@ mod resource;
 mod resource_args;
 mod resource_paths;
 mod resource_tree;
+mod share_args;
+mod sharing;
 mod storage;
 
 use args::*;
@@ -55,10 +57,15 @@ fn error_exit(error: &Error) -> u8 {
     match error.code.as_str() {
         "INVALID_INPUT" => 2,
         "AUTH_REQUIRED" => 3,
+        "no_share_permission"
+        | "no_permission"
+        | "not_org_member"
+        | "external_sharing_disabled" => 4,
         "SUBMISSION_UNCERTAIN"
         | "RESOURCE_MUTATION_UNCERTAIN"
         | "FOLDER_CREATION_UNCERTAIN"
-        | "CANVAS_PLACEMENT_UNCERTAIN" => 7,
+        | "CANVAS_PLACEMENT_UNCERTAIN"
+        | "SHARE_MUTATION_UNCERTAIN" => 7,
         "WAIT_TIMEOUT" => 8,
         "INTERRUPTED" => 130,
         "TRANSPORT_ERROR" | "OBSERVATION_UNAVAILABLE" => 5,
