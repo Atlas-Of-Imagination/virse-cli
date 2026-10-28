@@ -39,3 +39,6 @@ pub use discovery::*;
 
 mod shortcuts;
 pub use shortcuts::*;
+
+mod workflows;
+pub use workflows::*;

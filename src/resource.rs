@@ -19,10 +19,26 @@ pub async fn run(
     store: &Store,
     backend: &str,
     org: Uuid,
+    canvas: Option<Uuid>,
     json_output: bool,
 ) -> Result<u8> {
     let mut resolver = Resolver::new(client, org);
     match command {
+        Resource::Import(args) => {
+            return crate::batch::create(args, client, store, backend, org, json_output).await;
+        }
+        Resource::Extra(extra) => {
+            return crate::resource_ops::run(
+                extra,
+                client,
+                store,
+                backend,
+                org,
+                canvas,
+                json_output,
+            )
+            .await;
+        }
         Resource::Preview {
             target,
             output,
@@ -84,7 +100,11 @@ pub async fn run(
                 )?;
             }
         },
-        Resource::Download { target, output } => {
+        Resource::Download {
+            target,
+            output,
+            resume,
+        } => {
             if output.try_exists().map_err(crate::storage::io_error)? {
                 return Err(Error::new(
                     "OUTPUT_EXISTS",
@@ -93,7 +113,18 @@ pub async fn run(
             }
             let item = resolver.item(target).await?;
             let info = client.resource_download_info(org, item.id).await?;
-            let size = download::save_info(client, &info, output).await?;
+            let size = if *resume {
+                let user = crate::workflow_state::user(client).await?;
+                crate::download_resume::save(
+                    client,
+                    &info,
+                    output,
+                    &json!([backend, user, org, "resource", item.id]),
+                )
+                .await?
+            } else {
+                download::save_info(client, &info, output).await?
+            };
             print(
                 &json!({"resource_id":item.id,"path":output,"bytes":size,
                     "content":info.extra.get("content"),

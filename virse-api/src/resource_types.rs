@@ -118,6 +118,7 @@ pub enum ResourceOperation {
     Copy,
     Trash,
     Restore,
+    Purge,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResourceDestination {

@@ -180,7 +180,11 @@ impl Client {
                 None,
             )
             .await?;
-        parse(value["dentry"].take())
+        let folder: ResourceItem = parse(value["dentry"].take())?;
+        if !folder.is_folder() || folder.parent_id != parent {
+            return Err(Error::protocol());
+        }
+        Ok(folder)
     }
     pub async fn resource_trash(
         &self,

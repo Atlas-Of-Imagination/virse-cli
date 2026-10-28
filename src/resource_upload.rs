@@ -105,7 +105,7 @@ fn digest(bytes: &[u8]) -> String {
 
 /// Open the parent by descriptor so a swapped symlink cannot redirect the file
 /// open. NONBLOCK prevents a FIFO supplied as FILE from hanging the command.
-fn open_file(path: &Path, create: bool, private: bool) -> Result<File> {
+pub(crate) fn open_file(path: &Path, create: bool, private: bool) -> Result<File> {
     let parent = path
         .parent()
         .filter(|p| !p.as_os_str().is_empty())
@@ -165,13 +165,11 @@ fn open_file(path: &Path, create: bool, private: bool) -> Result<File> {
     Ok(file)
 }
 
-fn read_file(path: &Path, limit: u64, private: bool) -> Result<Vec<u8>> {
+pub(crate) fn read_file(path: &Path, limit: u64, private: bool) -> Result<Vec<u8>> {
     let mut file = open_file(path, false, private)?;
     let before = file.metadata().map_err(crate::storage::io_error)?;
     if before.len() > limit {
-        return Err(invalid(
-            "File exceeds the 100 MiB upload limit (or receipt size limit)",
-        ));
+        return Err(invalid(format!("File exceeds the {limit}-byte read limit")));
     }
     let mut bytes = Vec::new();
     (&mut file)
@@ -180,7 +178,7 @@ fn read_file(path: &Path, limit: u64, private: bool) -> Result<Vec<u8>> {
         .map_err(crate::storage::io_error)?;
     let after = file.metadata().map_err(crate::storage::io_error)?;
     if bytes.len() as u64 > limit {
-        return Err(invalid("File exceeds the 100 MiB upload limit"));
+        return Err(invalid(format!("File exceeds the {limit}-byte read limit")));
     }
     let mut changed = before.len() != after.len()
         || after.len() != bytes.len() as u64
@@ -218,7 +216,7 @@ fn atomic_save(path: &Path, bytes: &[u8]) -> Result<()> {
 }
 
 /// Create missing state directories without following symlink components.
-fn private_directory(path: &Path) -> Result<()> {
+pub(crate) fn private_directory(path: &Path) -> Result<()> {
     if fs::symlink_metadata(path).is_err() {
         let parent = path
             .parent()

@@ -1,11 +1,17 @@
 mod args;
+mod batch;
 mod canvas_add;
+mod canvas_edit;
+mod delivery;
 mod discovery;
+mod discussions;
 mod download;
+mod download_resume;
 mod generation;
 mod media_args;
 mod resource;
 mod resource_args;
+mod resource_ops;
 mod resource_paths;
 mod resource_tree;
 mod resource_upload;
@@ -14,10 +20,13 @@ mod share_args;
 mod sharing;
 mod shortcuts;
 mod storage;
+mod task_commands;
 mod tool_args;
+mod tool_extra;
 mod tool_project;
 mod tool_publish;
 mod tools;
+mod workflow_state;
 
 use args::*;
 use clap::Parser;
@@ -78,10 +87,14 @@ fn error_exit(error: &Error) -> u8 {
         | "ASSET_WRITE_UNCERTAIN"
         | "CANVAS_CREATION_UNCERTAIN"
         | "MODEL_PREFERENCE_UNCERTAIN"
+        | "WORKFLOW_UNCERTAIN"
         | "TOOL_PUBLISH_UNCERTAIN" => 7,
         "WAIT_TIMEOUT" => 8,
         "INTERRUPTED" => 130,
-        "TRANSPORT_ERROR" | "OBSERVATION_UNAVAILABLE" | "CHANGES_UNAVAILABLE" => 5,
+        "TRANSPORT_ERROR"
+        | "OBSERVATION_UNAVAILABLE"
+        | "CHANGES_UNAVAILABLE"
+        | "DOWNLOAD_INCOMPLETE" => 5,
         _ => match error.status {
             Some(401) => 3,
             Some(403) => 4,
@@ -112,6 +125,11 @@ fn required(value: Option<uuid::Uuid>, name: &str) -> Result<uuid::Uuid> {
 }
 
 async fn run(cli: &Cli) -> Result<u8> {
+    if let Command::Batch { command } = &cli.command
+        && let Some(result) = batch::offline(command, &storage::Store::open()?, cli.json)
+    {
+        return result;
+    }
     if let Command::Tool { command } = &cli.command
         && let Some(result) = tools::offline(command, cli.json).await
     {
@@ -182,6 +200,9 @@ async fn run(cli: &Cli) -> Result<u8> {
     let canvas = || required(cli.canvas.or(defaults.canvas), "canvas");
     let org = || required(cli.org.or(defaults.org), "org");
     match &cli.command {
+        Command::Batch { command } => {
+            return batch::run(command, &client, &store, &backend, cli.org, cli.json).await;
+        }
         Command::Space {
             command: discovery::Space::List,
         } => print(&client.organizations().await?, cli.json)?,
@@ -190,9 +211,27 @@ async fn run(cli: &Cli) -> Result<u8> {
         }
         Command::Balance => print(&client.balance(org()?).await?, cli.json)?,
         Command::Resource { command } => {
-            return resource::run(command, &client, &store, &backend, org()?, cli.json).await;
+            return resource::run(
+                command,
+                &client,
+                &store,
+                &backend,
+                org()?,
+                cli.canvas.or(defaults.canvas),
+                cli.json,
+            )
+            .await;
         }
         Command::Auth { .. } => print(&client.me().await?, cli.json)?,
+        Command::Tool {
+            command: tool_args::Tool::Cover { command },
+        } => return tool_extra::cover(command, &client, cli.json).await,
+        Command::Tool {
+            command: tool_args::Tool::Place(args),
+        } => {
+            return tool_extra::place(args, &client, &store, &backend, org()?, canvas()?, cli.json)
+                .await;
+        }
         Command::Tool { command } => {
             return tools::run(
                 command,
@@ -206,6 +245,23 @@ async fn run(cli: &Cli) -> Result<u8> {
             .await;
         }
         Command::Canvas { command } => match command {
+            Canvas::Edit(command) => {
+                return canvas_edit::run(
+                    command,
+                    &canvas_edit::Context {
+                        client: &client,
+                        store: &store,
+                        backend: &backend,
+                        org: org()?,
+                        canvas: canvas()?,
+                        compact: cli.json,
+                    },
+                )
+                .await;
+            }
+            Canvas::Discussion(command) => {
+                return discussions::run(command, &client, canvas()?, cli.json).await;
+            }
             Canvas::Create(args) => {
                 return discovery::create_canvas(args, &client, org()?, cli.json).await;
             }
@@ -240,6 +296,7 @@ async fn run(cli: &Cli) -> Result<u8> {
                 json: cli.json,
             };
             match command {
+                Generation::Tasks(command) => return task_commands::run(command, &context).await,
                 Generation::Outpaint(args) => {
                     return context
                         .submit(args.request().await?, &args.options.submission)
@@ -335,8 +392,20 @@ async fn run(cli: &Cli) -> Result<u8> {
                 .await;
             }
             Asset::Get { id } => print(&client.asset(*id, org()?, canvas()?).await?, cli.json)?,
-            Asset::Download { id, output } => {
-                let size = download::save(&client, *id, org()?, canvas()?, output).await?;
+            Asset::Download { id, output, resume } => {
+                let size = if *resume {
+                    let user = workflow_state::user(&client).await?;
+                    let info = client.download_info(*id, org()?, canvas()?).await?;
+                    download_resume::save(
+                        &client,
+                        &info,
+                        output,
+                        &json!([backend, user, org()?, canvas()?, "asset", id]),
+                    )
+                    .await?
+                } else {
+                    download::save(&client, *id, org()?, canvas()?, output).await?
+                };
                 print(&json!({"asset_id":id,"path":output,"bytes":size}), cli.json)?;
             }
         },

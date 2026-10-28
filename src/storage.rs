@@ -256,7 +256,7 @@ impl Store {
         value["task_id"] = task.into();
         self.save(record, &value)
     }
-    fn read<T: DeserializeOwned + Default>(&self, name: &str) -> Result<T> {
+    pub(crate) fn read<T: DeserializeOwned + Default>(&self, name: &str) -> Result<T> {
         let path = self.root.join(name);
         match std::fs::read(&path) {
             Ok(bytes) => {
@@ -281,7 +281,7 @@ impl Store {
             Err(e) => Err(io_error(e)),
         }
     }
-    fn lock(&self) -> Result<std::fs::File> {
+    pub(crate) fn lock(&self) -> Result<std::fs::File> {
         std::fs::create_dir_all(&self.root).map_err(io_error)?;
         #[cfg(unix)]
         {
@@ -307,7 +307,7 @@ impl Store {
         })?;
         Ok(file)
     }
-    fn save(&self, name: &str, value: &impl Serialize) -> Result<()> {
+    pub(crate) fn save(&self, name: &str, value: &impl Serialize) -> Result<()> {
         atomic_write(
             &self.root.join(name),
             &serde_json::to_vec_pretty(value)

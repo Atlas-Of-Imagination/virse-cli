@@ -19,6 +19,11 @@ pub struct Cli {
 }
 #[derive(Subcommand)]
 pub enum Command {
+    /// Manage private local upload/import batches.
+    Batch {
+        #[command(subcommand)]
+        command: crate::batch::Batch,
+    },
     /// Discover personal and team workspaces.
     Space {
         #[command(subcommand)]
@@ -88,6 +93,10 @@ pub enum Config {
 }
 #[derive(Subcommand)]
 pub enum Canvas {
+    #[command(flatten)]
+    Edit(crate::canvas_edit::CanvasExtra),
+    #[command(subcommand)]
+    Discussion(crate::discussions::Discussion),
     /// Create a canvas in an existing resource folder.
     Create(crate::discovery::CreateCanvas),
     /// List the media/document content projection, separate from canvas layout.
@@ -117,6 +126,8 @@ pub struct Submission {
 }
 #[derive(Subcommand)]
 pub enum Generation {
+    #[command(flatten)]
+    Tasks(crate::task_commands::TaskCommands),
     /// Extend a prepared mask image using a server-authorized asset reference.
     Outpaint(crate::shortcuts::Outpaint),
     /// Generate text into a new or existing text element.
@@ -170,6 +181,8 @@ pub enum Asset {
     },
     Download {
         id: Uuid,
+        #[arg(long)]
+        resume: bool,
         #[arg(long)]
         output: PathBuf,
     },

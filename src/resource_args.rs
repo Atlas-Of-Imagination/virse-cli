@@ -87,6 +87,10 @@ pub struct MutationOptions {
 }
 #[derive(Subcommand)]
 pub enum Resource {
+    /// Snapshot local files/directories into a resumable upload batch.
+    Import(crate::batch::Import),
+    #[command(flatten)]
+    Extra(crate::resource_ops::ResourceExtra),
     /// Save the authorized preview/display representation; does not change download rights.
     Preview {
         target: String,
@@ -137,6 +141,8 @@ pub enum Resource {
     /// Download a resource file; no canvas or asset ID is required.
     Download {
         target: String,
+        #[arg(long)]
+        resume: bool,
         #[arg(long)]
         output: PathBuf,
     },
