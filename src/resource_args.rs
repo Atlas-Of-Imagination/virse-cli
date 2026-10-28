@@ -70,6 +70,14 @@ pub struct Listing {
     pub limit: u16,
     #[arg(long)]
     pub cursor: Option<String>,
+    #[arg(long, value_enum, default_value = "name")]
+    pub sort: crate::discovery::Sort,
+    #[arg(long, value_enum, default_value = "asc")]
+    pub order: crate::discovery::Order,
+    #[arg(long)]
+    pub created_by_me: bool,
+    #[arg(long, value_enum)]
+    pub access: Vec<crate::discovery::Access>,
 }
 #[derive(Args)]
 pub struct MutationOptions {
@@ -79,6 +87,14 @@ pub struct MutationOptions {
 }
 #[derive(Subcommand)]
 pub enum Resource {
+    /// Save the authorized preview/display representation; does not change download rights.
+    Preview {
+        target: String,
+        #[arg(long)]
+        output: PathBuf,
+        #[arg(long, value_enum, default_value = "preview")]
+        representation: crate::discovery::Representation,
+    },
     /// Upload one local file into an existing resource folder.
     Upload(crate::resource_upload::UploadArgs),
     /// Replace a file's content using its last-read server revision.
@@ -140,7 +156,8 @@ pub enum Resource {
     },
     /// Move into an existing folder, or / for the root.
     Move {
-        source: String,
+        #[arg(required=true,num_args=1..)]
+        sources: Vec<String>,
         destination: String,
         /// Explicitly accept a change in who can access the moved resource.
         #[arg(long)]
@@ -150,7 +167,8 @@ pub enum Resource {
     },
     /// Copy into an existing folder, or / for the root.
     Copy {
-        source: String,
+        #[arg(required=true,num_args=1..)]
+        sources: Vec<String>,
         destination: String,
         #[command(flatten)]
         options: MutationOptions,

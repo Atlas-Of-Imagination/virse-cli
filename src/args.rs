@@ -19,6 +19,18 @@ pub struct Cli {
 }
 #[derive(Subcommand)]
 pub enum Command {
+    /// Discover personal and team workspaces.
+    Space {
+        #[command(subcommand)]
+        command: crate::discovery::Space,
+    },
+    /// Read available models and manage personal favorites.
+    Model {
+        #[command(subcommand)]
+        command: crate::discovery::Model,
+    },
+    /// Read this space's balance, budget and license information.
+    Balance,
     /// Create, publish, manage and run intelligent tools.
     Tool {
         #[command(subcommand)]
@@ -76,6 +88,10 @@ pub enum Config {
 }
 #[derive(Subcommand)]
 pub enum Canvas {
+    /// Create a canvas in an existing resource folder.
+    Create(crate::discovery::CreateCanvas),
+    /// List the media/document content projection, separate from canvas layout.
+    Contents(crate::discovery::Contents),
     /// Place an existing image, video, GLB, Word or PDF asset on the canvas.
     Add(crate::media_args::CanvasAdd),
     List {
@@ -101,6 +117,14 @@ pub struct Submission {
 }
 #[derive(Subcommand)]
 pub enum Generation {
+    /// Extend a prepared mask image using a server-authorized asset reference.
+    Outpaint(crate::shortcuts::Outpaint),
+    /// Generate text into a new or existing text element.
+    Text(crate::shortcuts::Text),
+    /// Remove an image background using the V2 task pipeline.
+    RemoveBg(crate::shortcuts::Process),
+    /// Upscale an image using the requested model and scale.
+    Upscale(crate::shortcuts::Upscale),
     /// Discover operations and their input JSON Schemas.
     Operations,
     /// Submit operation/input/outputs JSON from a file, or - for stdin.
@@ -133,6 +157,14 @@ pub enum Generation {
 }
 #[derive(Subcommand)]
 pub enum Asset {
+    /// Save an authorized preview or display representation of an asset.
+    Preview {
+        id: Uuid,
+        #[arg(long)]
+        output: PathBuf,
+        #[arg(long, value_enum, default_value = "preview")]
+        representation: crate::discovery::Representation,
+    },
     Get {
         id: Uuid,
     },

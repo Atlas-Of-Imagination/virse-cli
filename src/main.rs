@@ -1,5 +1,6 @@
 mod args;
 mod canvas_add;
+mod discovery;
 mod download;
 mod generation;
 mod media_args;
@@ -11,6 +12,7 @@ mod resource_upload;
 mod resource_watch;
 mod share_args;
 mod sharing;
+mod shortcuts;
 mod storage;
 mod tool_args;
 mod tool_project;
@@ -74,6 +76,8 @@ fn error_exit(error: &Error) -> u8 {
         | "SHARE_MUTATION_UNCERTAIN"
         | "TOOL_MUTATION_UNCERTAIN"
         | "ASSET_WRITE_UNCERTAIN"
+        | "CANVAS_CREATION_UNCERTAIN"
+        | "MODEL_PREFERENCE_UNCERTAIN"
         | "TOOL_PUBLISH_UNCERTAIN" => 7,
         "WAIT_TIMEOUT" => 8,
         "INTERRUPTED" => 130,
@@ -178,6 +182,13 @@ async fn run(cli: &Cli) -> Result<u8> {
     let canvas = || required(cli.canvas.or(defaults.canvas), "canvas");
     let org = || required(cli.org.or(defaults.org), "org");
     match &cli.command {
+        Command::Space {
+            command: discovery::Space::List,
+        } => print(&client.organizations().await?, cli.json)?,
+        Command::Model { command } => {
+            return discovery::models(command, &client, org()?, cli.json).await;
+        }
+        Command::Balance => print(&client.balance(org()?).await?, cli.json)?,
         Command::Resource { command } => {
             return resource::run(command, &client, &store, &backend, org()?, cli.json).await;
         }
@@ -195,6 +206,12 @@ async fn run(cli: &Cli) -> Result<u8> {
             .await;
         }
         Command::Canvas { command } => match command {
+            Canvas::Create(args) => {
+                return discovery::create_canvas(args, &client, org()?, cli.json).await;
+            }
+            Canvas::Contents(args) => {
+                return discovery::contents(args, &client, org()?, cli.json).await;
+            }
             Canvas::List { limit, cursor } => print(
                 &client.canvases(org()?, *limit, cursor.as_deref()).await?,
                 cli.json,
@@ -223,6 +240,31 @@ async fn run(cli: &Cli) -> Result<u8> {
                 json: cli.json,
             };
             match command {
+                Generation::Outpaint(args) => {
+                    return context
+                        .submit(args.request().await?, &args.options.submission)
+                        .await;
+                }
+                Generation::Text(args) => {
+                    return context.submit(args.request()?, &args.submission).await;
+                }
+                Generation::RemoveBg(args) => {
+                    return context
+                        .submit(
+                            args.request(virse_api::ImageProcess::RemoveBackground)?,
+                            &args.submission,
+                        )
+                        .await;
+                }
+                Generation::Upscale(args) => {
+                    return context
+                        .submit(
+                            args.options
+                                .request(virse_api::ImageProcess::Upscale { times: args.scale })?,
+                            &args.options.submission,
+                        )
+                        .await;
+                }
                 Generation::Operations => print(&client.operations(canvas).await?, cli.json)?,
                 Generation::Submit { file, options } => {
                     return context
@@ -276,6 +318,22 @@ async fn run(cli: &Cli) -> Result<u8> {
             }
         }
         Command::Asset { command } => match command {
+            Asset::Preview {
+                id,
+                output,
+                representation,
+            } => {
+                return discovery::asset_preview(
+                    &client,
+                    org()?,
+                    *id,
+                    cli.canvas.or(defaults.canvas),
+                    *representation,
+                    output,
+                    cli.json,
+                )
+                .await;
+            }
             Asset::Get { id } => print(&client.asset(*id, org()?, canvas()?).await?, cli.json)?,
             Asset::Download { id, output } => {
                 let size = download::save(&client, *id, org()?, canvas()?, output).await?;

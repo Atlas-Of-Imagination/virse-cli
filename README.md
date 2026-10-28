@@ -61,6 +61,32 @@ virse config get
 
 `auth logout` 仅删除当前 Backend/Profile 的本地凭据，不撤销服务器 Token；如果仍设置 `VIRSE_API_TOKEN`，它仍然生效。
 
+## 空间、模型与余额
+
+```bash
+virse space list --json
+virse config set org <org-uuid>
+virse model list --mode image --mode video --json
+virse model list --favorites --include-disabled --json
+virse model get <model-key> --json
+virse model favorite <model-key>
+virse model unfavorite <model-key>
+virse balance --json
+```
+
+空间列表返回服务端提供的个人/团队类型和 `my_role`，不自动改变默认组织。模型查询要求明确的组织（`--org` 或 Profile 默认值），默认读取图片、文本、视频和 3D 四类；保留可用性原因、参数限制、价格与收藏信息。`get` 返回同一 model key 的所有模式条目。模型目录价格不替代一次具体任务的有效报价；余额/预算中的未知或不限额值保持原样，不按 0 推断。
+
+收藏更新仅发送一次；结果不确定时退出 7，先重读目录确认。余额查询不购买、不调整预算。
+
+## 创建画布与读取内容
+
+```bash
+virse canvas create '新画布' --parent '/项目' --json
+virse canvas contents '/项目/新画布' --kind document --document-type pdf --limit 50 --offset 0
+```
+
+创建返回 `canvas_space_id` 与目录资源 `dentry.id`；需要默认画布时显式执行 `config set canvas`。创建接口没有幂等合同，响应不确定时先列目标目录，不自动重发。`contents` 的目标是**画布资源路径或资源 ID**，不是画布 Space ID；返回媒体/文档/审美的 Content 投影，与节点布局分开。支持名称搜索、类型、文档子类、排序及 offset 分页，`has_more` 时继续读取；不是快照分页。
+
 ## 像文件系统一样管理资源
 
 资源以当前组织为根目录，文件夹可以嵌套；画布、图片、视频、文档等作为资源项显示。路径区分大小写，含空格时按 Shell 规则加引号。每条命令从组织根目录开始，不改变本机工作目录，不维护隐式远端 `cd` 状态。
@@ -89,6 +115,18 @@ virse resource download '/素材/产品图.jpg' --output product.jpg
 - 只有文件夹能作为目标目录。画布在资源树中是一个文件项，画布元素操作继续使用 `canvas` / `generation` 命令。
 - 资源下载会自动解析文件和访问上下文，不需要指定画布 ID 或资产 ID。
 
+### 筛选、排序与预览
+
+```bash
+virse resource ls '/素材' --sort modified-at --order desc --created-by-me --access edit --access manage
+virse resource preview '/素材/a.png' --output preview.jpg
+virse asset preview <asset-uuid> --canvas <canvas-uuid> --output preview.jpg
+```
+
+`--sort name|created-at|modified-at|size|custom`、`--order asc|desc`、`--created-by-me` 和可重复的 `--access view|use|edit|manage` 同样适用于 `search`。当前只支持“本人创建”筛选，不提供任意创建者 UUID 参数；续页保留相同条件。
+
+预览默认 `--representation preview`，取真实图片缩略图、视频/模型封面或文档展示内容；需要视频/模型交互展示字节时可显式选择 `content`。不存在的封面直接报错，不回退到原件；保留版本参数、同源认证和原子文件写入规则。输出文件扩展名不会改变格式。
+
 ### 创建、改名、移动、复制
 
 ```bash
@@ -98,9 +136,11 @@ virse resource mkdir '新文件夹' --parent @<folder-uuid>
 virse resource rename '/素材/产品图' '产品摄影'
 virse resource move '/素材/产品摄影' '/归档'
 virse resource copy '/归档/产品摄影' '/素材'
+virse resource move '/素材/a.png' '/素材/b.png' '/归档'
+virse resource copy @<id-1> @<id-2> '/素材'
 ```
 
-`mkdir` 一次创建一个文件夹，父目录必须存在；同名项已存在时拒绝创建。`rename` 的第二个参数是新名称，`move` / `copy` 的第二个参数是已存在的目标文件夹或 `/`，不把它解释成新文件名，不隐式覆盖或合并资源。
+`mkdir` 一次创建一个文件夹，父目录必须存在；同名项已存在时拒绝创建。`rename` 的第二个参数是新名称，`move` / `copy` 的最后一个参数是已存在的目标文件夹或 `/`，前面的一个或多个参数是来源，不把它解释成新文件名，不隐式覆盖或合并资源。
 
 移动可能改变哪些人能访问资源。后端要求确认时，CLI 返回变化详情并停止；核对后可显式使用 `--confirm-access-change` 重发。确认后的操作使用新幂等 key，不自动接受权限变化。
 
@@ -531,3 +571,25 @@ cargo test --workspace -j 2 -- --test-threads=2
 dev5 已通过标准 labeldeploy 部署该后端，新增迁移在目标表结构上重复执行校验通过后自动应用。真实 API Token 完成了本地初始化/校验、首次发布 1.0.0、更新 1.0.1、历史源码拉取并重新发布 1.0.2、同内容无变化发布，以及原子团队范围发布和错误范围纠正。工具运行使用固定 1.0.0 产物，WebSocket 观察到成功，并在测试画布产生了指定文字节点。
 
 真实联调使用同一个作者账号；跨作者源码隔离、团队普通成员权限、Creator 兼容与故障注入以隔离 PostgreSQL/协议测试验证，尚未完成双账号浏览器验收。后端 PR 尚待正式合入，其他环境须先迁移和部署配套接口。
+
+## 常用生成快捷命令
+
+```bash
+virse generation text --model <text-model> --prompt '写一段说明' --reference <element-id> --wait
+virse generation remove-bg --model <remove-bg-model> --source-element <image-element-id> --wait
+virse generation upscale --model <upscale-model> --source-asset <image-asset-id> --scale 4 --wait
+virse resource upload ./expanded-mask.png '/素材' --json
+virse generation outpaint --model <outpaint-model> --mask-asset <uploaded-mask-asset-id> --prompt '延伸背景' --reference <source-element-id> --wait
+```
+
+这些命令复用 V2 占位/任务提交、幂等 key、观察与恢复，不新增轮询。默认建立新输出节点；`--target-element` 更新指定同类型节点。去背景/放大要求且只接受一个 `--source-element` 或 `--source-asset`，放大倍数仍由所选模型能力校验。文本可带 `--mode`，不把图像参数误传给文本接口。
+
+扩图需要配套后端的蒙版资产引用支持。先准备好包含原图、扩展范围与蒙版的图片并上传，再传 `--mask-asset`，或用 `--mask-element` 引用已有画布图片；CLI 不生成画板草稿，也不要求用户取得桶路径。扩图支持现有 `--parameters` / `--parameters-file`、布局、引用和等待参数。蒙版身份及内容版本由服务端固定，后续替换或撤权不会静默改用新字节。
+
+完整未实现范围见 [CLI 能力缺口](docs/CLI-GAPS.md)。
+
+### 本轮常用能力验收
+
+2026-10-28：dev5 已实测空间及角色列表、余额、模型目录/收藏与恢复、创建画布、内容投影、资源筛选、批量移动及同 key 重放、批量复制、资源预览与画布副本预览。模型收藏已恢复，临时测试目录已移入回收站。放置现有资产可能产生副本，后续访问使用放置响应里的新资产 ID。
+
+生成快捷命令及扩图蒙版引用已做本地协议/权限/版本回归；本轮未调用收费模型供应商验收，不把请求构造或模拟结果写成真实生成成功。扩图先部署配套后端 PR，再使用新命令。

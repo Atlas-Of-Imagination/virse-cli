@@ -23,6 +23,21 @@ pub async fn run(
 ) -> Result<u8> {
     let mut resolver = Resolver::new(client, org);
     match command {
+        Resource::Preview {
+            target,
+            output,
+            representation,
+        } => {
+            return crate::discovery::resource_preview(
+                client,
+                org,
+                target,
+                *representation,
+                output,
+                json_output,
+            )
+            .await;
+        }
         Resource::Upload(args) => {
             return crate::resource_upload::upload(args, client, store, backend, org, json_output)
                 .await;
@@ -164,6 +179,10 @@ async fn listing(
         && query.query.is_none();
     query.limit = options.limit;
     query.cursor = options.cursor.clone();
+    query.sort = options.sort.wire().into();
+    query.direction = options.order.wire().into();
+    query.created_by_me = options.created_by_me;
+    query.access_levels = options.access.iter().map(|a| a.number()).collect();
     let page = client.resources(&query).await?;
     if json_output {
         print(&page, true)?;
@@ -210,25 +229,25 @@ fn intent(command: &Resource) -> Result<Intent<'_>> {
             options,
         },
         Resource::Move {
-            source,
+            sources,
             destination,
             confirm_access_change,
             options,
         } => Intent {
             op: ResourceOperation::Move,
-            targets: vec![source],
+            targets: sources.iter().map(String::as_str).collect(),
             name: None,
             destination: Some(destination),
             confirm: *confirm_access_change,
             options,
         },
         Resource::Copy {
-            source,
+            sources,
             destination,
             options,
         } => Intent {
             op: ResourceOperation::Copy,
-            targets: vec![source],
+            targets: sources.iter().map(String::as_str).collect(),
             name: None,
             destination: Some(destination),
             confirm: false,
@@ -268,6 +287,12 @@ async fn mutate(
     json_output: bool,
 ) -> Result<u8> {
     let intent = intent(command)?;
+    if !(1..=200).contains(&intent.targets.len()) {
+        return Err(Error::new(
+            "INVALID_INPUT",
+            "A resource batch must contain 1..200 sources",
+        ));
+    }
     let key = intent
         .options
         .idempotency_key
@@ -362,7 +387,7 @@ async fn mutate(
                 }
                 if confirmation {
                     eprintln!(
-                        "Moving changes who can access this resource. Review the returned details; to accept, rerun with --confirm-access-change and a new idempotency key"
+                        "Moving changes who can access this resource. Review the returned details; to accept, retry only failed items with --confirm-access-change and a new idempotency key. Do not include succeeded items"
                     );
                 }
                 return Ok(if succeeded { 0 } else { 6 });
