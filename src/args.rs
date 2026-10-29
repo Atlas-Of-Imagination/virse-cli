@@ -19,6 +19,10 @@ pub struct Cli {
 }
 #[derive(Subcommand)]
 pub enum Command {
+    Composer {
+        #[command(subcommand)]
+        command: crate::composer::Composer,
+    },
     /// Manage private local upload/import batches.
     Batch {
         #[command(subcommand)]

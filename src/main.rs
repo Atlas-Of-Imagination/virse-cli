@@ -2,6 +2,7 @@ mod args;
 mod batch;
 mod canvas_add;
 mod canvas_edit;
+mod composer;
 mod delivery;
 mod discovery;
 mod discussions;
@@ -202,6 +203,20 @@ async fn run(cli: &Cli) -> Result<u8> {
     let canvas = || required(cli.canvas.or(defaults.canvas), "canvas");
     let org = || required(cli.org.or(defaults.org), "org");
     match &cli.command {
+        Command::Composer { command } => {
+            return composer::run(
+                command,
+                &canvas_edit::Context {
+                    client: &client,
+                    store: &store,
+                    backend: &backend,
+                    org: org()?,
+                    canvas: canvas()?,
+                    compact: cli.json,
+                },
+            )
+            .await;
+        }
         Command::Batch { command } => {
             return batch::run(command, &client, &store, &backend, cli.org, cli.json).await;
         }
