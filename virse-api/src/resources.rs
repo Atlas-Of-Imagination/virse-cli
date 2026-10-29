@@ -15,6 +15,15 @@ impl Client {
         if query.context.dentry_id.is_some()
             || query.context.canvas_space_id.is_some()
             || !(1..=200).contains(&query.limit)
+            || query
+                .access_levels
+                .iter()
+                .any(|level| !(1..=4).contains(level))
+            || !matches!(
+                query.sort.as_str(),
+                "custom" | "name" | "created_at" | "modified_at" | "size"
+            )
+            || !matches!(query.direction.as_str(), "asc" | "desc")
         {
             return Err(Error::new(
                 "INVALID_INPUT",
@@ -171,7 +180,11 @@ impl Client {
                 None,
             )
             .await?;
-        parse(value["dentry"].take())
+        let folder: ResourceItem = parse(value["dentry"].take())?;
+        if !folder.is_folder() || folder.parent_id != parent {
+            return Err(Error::protocol());
+        }
+        Ok(folder)
     }
     pub async fn resource_trash(
         &self,

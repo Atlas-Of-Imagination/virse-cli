@@ -84,6 +84,10 @@ pub struct ResourceQuery {
     pub sort: String,
     pub direction: String,
     pub entry_points: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub created_by_me: bool,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub access_levels: Vec<u8>,
     pub cursor: Option<String>,
     pub limit: u16,
 }
@@ -99,6 +103,8 @@ impl ResourceQuery {
             sort: "name".into(),
             direction: "asc".into(),
             entry_points: false,
+            created_by_me: false,
+            access_levels: vec![],
             cursor: None,
             limit: 200,
         }
@@ -112,6 +118,7 @@ pub enum ResourceOperation {
     Copy,
     Trash,
     Restore,
+    Purge,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResourceDestination {

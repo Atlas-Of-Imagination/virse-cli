@@ -96,6 +96,10 @@ impl Client {
         body: Option<Value>,
         key: Option<&str>,
     ) -> Result<Value> {
+        let empty_write = matches!(
+            method,
+            Method::POST | Method::PUT | Method::PATCH | Method::DELETE
+        );
         let mut request = self
             .http
             .request(method, self.url(path)?)
@@ -107,6 +111,9 @@ impl Client {
         }
         if let Some(body) = body {
             request = request.json(&body);
+        } else if empty_write {
+            // Some gateways reject a body-less POST/DELETE without an explicit length.
+            request = request.header("Content-Length", "0").body("");
         }
         if let Some(key) = key {
             if key.is_empty() || key.len() > 200 || HeaderValue::from_str(key).is_err() {
@@ -266,6 +273,15 @@ impl Client {
     }
     /// Returns a streaming response. No token is attached to external URLs, even after redirects.
     pub async fn download(&self, info: &DownloadInfo) -> Result<reqwest::Response> {
+        self.download_range(info, None, None).await
+    }
+    /// Range response may be 206 or a full 200 after If-Range mismatch; caller must not blindly append.
+    pub async fn download_range(
+        &self,
+        info: &DownloadInfo,
+        start: Option<u64>,
+        if_range: Option<&str>,
+    ) -> Result<reqwest::Response> {
         if !matches!(
             info.delivery.as_str(),
             "authenticated_stream" | "signed_url" | "external_url"
@@ -288,6 +304,14 @@ impl Client {
                 return Err(Error::new("UNTRUSTED_DOWNLOAD", "Invalid download URL"));
             }
             let mut request = self.http.get(url.clone());
+            if let Some(start) = start {
+                request = request.header("Range", format!("bytes={start}-"));
+            }
+            if let Some(value) = if_range {
+                let header = HeaderValue::from_str(value)
+                    .map_err(|_| Error::new("INVALID_INPUT", "Invalid If-Range validator"))?;
+                request = request.header("If-Range", header);
+            }
             if authenticated {
                 request = request.header(AUTHORIZATION, self.authorization.clone());
             }

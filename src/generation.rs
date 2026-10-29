@@ -13,30 +13,7 @@ pub async fn media_request(
     prompt: &str,
     args: &MediaOptions,
 ) -> Result<SubmitTask> {
-    let parameters = match (&args.parameters, &args.parameters_file) {
-        (Some(value), None) => Some(parse_parameters(value)?),
-        (None, Some(path)) => {
-            if tokio::fs::metadata(path)
-                .await
-                .map_err(crate::storage::io_error)?
-                .len()
-                > 1024 * 1024
-            {
-                return Err(Error::new("INVALID_INPUT", "Parameters exceed 1 MiB"));
-            }
-            let value = tokio::fs::read_to_string(path)
-                .await
-                .map_err(crate::storage::io_error)?;
-            Some(parse_parameters(&value)?)
-        }
-        (None, None) => None,
-        _ => {
-            return Err(Error::new(
-                "INVALID_INPUT",
-                "Choose parameters or parameters-file",
-            ));
-        }
-    };
+    let parameters = read_media_parameters(args).await?;
     let references = args
         .reference
         .iter()
@@ -249,4 +226,33 @@ pub async fn read_request(file: &str) -> Result<SubmitTask> {
         .map_err(|_| Error::new("INVALID_INPUT", "Expected operation, input and outputs"))?;
     request.validate()?;
     Ok(request)
+}
+
+pub async fn read_media_parameters(
+    args: &MediaOptions,
+) -> Result<Option<serde_json::Map<String, Value>>> {
+    Ok(match (&args.parameters, &args.parameters_file) {
+        (Some(value), None) => Some(parse_parameters(value)?),
+        (None, Some(path)) => {
+            if tokio::fs::metadata(path)
+                .await
+                .map_err(crate::storage::io_error)?
+                .len()
+                > 1024 * 1024
+            {
+                return Err(Error::new("INVALID_INPUT", "Parameters exceed 1 MiB"));
+            }
+            let value = tokio::fs::read_to_string(path)
+                .await
+                .map_err(crate::storage::io_error)?;
+            Some(parse_parameters(&value)?)
+        }
+        (None, None) => None,
+        _ => {
+            return Err(Error::new(
+                "INVALID_INPUT",
+                "Choose parameters or parameters-file",
+            ));
+        }
+    })
 }

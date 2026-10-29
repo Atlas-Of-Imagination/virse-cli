@@ -33,3 +33,12 @@ mod tool_types;
 mod tools;
 pub use tool_authoring::*;
 pub use tool_types::*;
+
+mod discovery;
+pub use discovery::*;
+
+mod shortcuts;
+pub use shortcuts::*;
+
+mod workflows;
+pub use workflows::*;

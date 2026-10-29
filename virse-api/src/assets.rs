@@ -158,3 +158,36 @@ impl Client {
         )
     }
 }
+
+impl Client {
+    /// Resolve through the requested resource/shortcut's authorization, never retry through another anchor.
+    pub async fn resource_presentation_info(
+        &self,
+        org: Uuid,
+        resource: Uuid,
+        representation: AssetRepresentation,
+    ) -> Result<DownloadInfo> {
+        let detail = self.resource(org, resource).await?;
+        let asset = detail
+            .asset
+            .ok_or_else(|| Error::new("NOT_PRESENTABLE", "Resource has no displayable asset"))?;
+        let id = asset
+            .get("id")
+            .and_then(Value::as_str)
+            .and_then(|s| Uuid::parse_str(s).ok())
+            .ok_or_else(Error::protocol)?;
+        let info = self
+            .presentation_info_in(
+                id,
+                &AccessContext {
+                    org_id: org,
+                    dentry_id: Some(resource),
+                    canvas_space_id: None,
+                },
+                representation,
+            )
+            .await?;
+        info.check_revision(&asset)?;
+        Ok(info)
+    }
+}

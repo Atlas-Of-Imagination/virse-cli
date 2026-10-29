@@ -45,6 +45,9 @@ impl Client {
                 };
                 if socket.send(Message::Text(json!({"type":"generation_subscribe","data":{"task_ids":[task_id]}}).to_string().into())).await.is_err() { continue; }
                 let mut heartbeat = tokio::time::interval(Duration::from_secs(20));
+                // The first interval tick is immediate; subscribe already wrote to the socket.
+                // Delay ping so a closing peer cannot discard buffered final snapshots.
+                heartbeat.tick().await;
                 let mut last_received = tokio::time::Instant::now();
                 let mut subscribed = false;
                 let connected_at = tokio::time::Instant::now();

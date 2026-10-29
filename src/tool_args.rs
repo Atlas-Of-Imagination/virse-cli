@@ -107,6 +107,13 @@ pub enum ToolDraft {
 }
 #[derive(Subcommand)]
 pub enum Tool {
+    /// Upload a cover image for use in local tool metadata.
+    Cover {
+        #[command(subcommand)]
+        command: crate::tool_extra::Cover,
+    },
+    /// Create a pinned tool instance without starting a run.
+    Place(crate::tool_extra::Place),
     /// Initialize a native authoring project locally (no API credentials needed).
     Init {
         directory: PathBuf,
