@@ -7,8 +7,11 @@ use tokio_tungstenite::tungstenite::{Message, client::IntoClientRequest};
 use uuid::Uuid;
 
 fn decode_run(value: Value, canvas: Uuid, id: Option<Uuid>) -> Result<ToolRun> {
+    decode_canvas_run(value, canvas, id, "tool")
+}
+fn decode_canvas_run(value: Value, canvas: Uuid, id: Option<Uuid>, kind: &str) -> Result<ToolRun> {
     let run: ToolRun = serde_json::from_value(value).map_err(|_| Error::protocol())?;
-    if run.kind != "tool" || run.canvas_id != canvas || id.is_some_and(|id| run.run_id != id) {
+    if run.kind != kind || run.canvas_id != canvas || id.is_some_and(|id| run.run_id != id) {
         return Err(Error::protocol());
     }
     Ok(run)
@@ -110,6 +113,76 @@ impl Client {
         org: Uuid,
         id: Uuid,
     ) -> impl Stream<Item = Result<ToolRun>> + '_ {
+        self.watch_canvas_run(canvas, org, id, "tool")
+    }
+    pub fn watch_aesthetic_training(
+        &self,
+        canvas: Uuid,
+        org: Uuid,
+        id: Uuid,
+    ) -> impl Stream<Item = Result<ToolRun>> + '_ {
+        self.watch_canvas_run(canvas, org, id, "aesthetic_training")
+    }
+    pub async fn aesthetic_training(&self, canvas: Uuid, org: Uuid, id: Uuid) -> Result<ToolRun> {
+        self.read_canvas_run(canvas, org, id, "aesthetic_training")
+            .await
+    }
+    pub async fn aesthetic_training_action(
+        &self,
+        canvas: Uuid,
+        org: Uuid,
+        id: Uuid,
+        action: ToolRunAction,
+    ) -> Result<ToolRun> {
+        let action = match action {
+            ToolRunAction::Cancel => "cancel",
+            ToolRunAction::Resume => "resume",
+            _ => {
+                return Err(Error::new(
+                    "INVALID_INPUT",
+                    "Running training cannot be interrupted",
+                ));
+            }
+        };
+        let value = self
+            .request(
+                Method::POST,
+                &format!("v2/aesthetics/canvases/{canvas}/training-runs/{id}/{action}"),
+                &[("org_id", org.to_string())],
+                None,
+                None,
+            )
+            .await?;
+        decode_canvas_run(value, canvas, Some(id), "aesthetic_training")
+    }
+    async fn read_canvas_run(
+        &self,
+        canvas: Uuid,
+        org: Uuid,
+        id: Uuid,
+        kind: &str,
+    ) -> Result<ToolRun> {
+        if kind == "tool" {
+            return self.tool_run(canvas, org, id).await;
+        }
+        let value = self
+            .request(
+                Method::GET,
+                &format!("v2/aesthetics/canvases/{canvas}/training-runs/{id}"),
+                &[("org_id", org.to_string())],
+                None,
+                None,
+            )
+            .await?;
+        decode_canvas_run(value, canvas, Some(id), kind)
+    }
+    fn watch_canvas_run(
+        &self,
+        canvas: Uuid,
+        org: Uuid,
+        id: Uuid,
+        kind: &'static str,
+    ) -> impl Stream<Item = Result<ToolRun>> + '_ {
         async_stream::try_stream! {
             let mut revision: Option<u64> = None;
             let mut failures = 0u32;
@@ -153,7 +226,7 @@ impl Client {
                     Ok(Ok(true)) => {}, Ok(Err(error)) => Err(error)?, _ => continue,
                 }
                 // Socket buffers events while GET is in flight. Revision guards discard old replay.
-                let run = match self.tool_run(canvas, org, id).await {
+                let run = match self.read_canvas_run(canvas, org, id, kind).await {
                     Ok(run) => run,
                     Err(error) if error.retryable => continue,
                     Err(error) => { Err(error)?; unreachable!() },
@@ -187,7 +260,7 @@ impl Client {
                                 Some("canvas_run_updated") => {
                                     if value["project_id"].as_str() != Some(canvas.to_string().as_str())
                                         || value["run"]["run_id"].as_str() != Some(id.to_string().as_str()) { continue; }
-                                    let run = decode_run(value["run"].clone(), canvas, Some(id))?;
+                                    let run = decode_canvas_run(value["run"].clone(), canvas, Some(id), kind)?;
                                     if revision.is_some_and(|r| run.revision <= r) { continue; }
                                     revision = Some(run.revision);
                                     failures = 0;

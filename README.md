@@ -605,3 +605,24 @@ virse generation outpaint --model <outpaint-model> --mask-asset <uploaded-mask-a
 dev5 已验证本机批次的准备/暂停/恢复及成功项不重传，资源标记与排序，节点/组合/连线修改与原子排版，复制及同 key 重放，讨论评论生命周期，媒体删除恢复，画布另存及重放，文件下载与ZIP，任务列表、封面上传、待运行工具实例及重放。测试工具已恢复禁用。SDK 已修正空 POST/DELETE 的 Content-Length，兼容网关的411检查。
 
 空目录永久删除通过；包含画布和资产的测试目录在移入回收站后，永久删除连续返回后端 `503 mutation_unavailable`。目录仍列在回收站，原 key 和恢复记录保留；该环境问题需要单独排查后端，不声称复杂子树永久删除或完整清空已通过真实验收。本轮没有清空账号已有回收站、没有跨账号共享移除验收，也没有重试收费模型任务；这些分支用协议测试验证。
+
+## 审美创作（现有能力）
+
+`aesthetic` 使用 `/v2/aesthetics` 公共门面，保留现有训练、草稿和保存语义，不引入本地审美包或正式版本。
+
+```bash
+virse aesthetic call create --data '{"name":"柔和光线","image_ids":["<image-id>"],"organization_id":"<org-id>","defer_dentry":true}'
+virse aesthetic train --canvas <canvas-id> --org <org-id> --idempotency-key <key> --data '{"name":"柔和光线","image_ids":["<image-id>"],"defer_dentry":true}'
+virse aesthetic watch <run-id> --canvas <canvas-id> --org <org-id>
+virse aesthetic call test-canvas --data '{"style_id":"<style-id>","org_id":"<org-id>"}'
+virse aesthetic call start-draft --data '{"style_id":"<style-id>","canvas_id":"<test-canvas-id>","org_id":"<org-id>"}'
+virse aesthetic call context --id <session-id>
+virse aesthetic call revise --id <session-id> --data '{"expected_revision":0,"summary":"修改后的完整审美正文"}'
+virse aesthetic call snapshot --id <session-id> --data '{"expected_revision":1}'
+virse aesthetic call save-draft --id <session-id> --data '{"expected_revision":1}'
+virse aesthetic call save-resource --data '{"style_id":"<style-id>","org_id":"<org-id>","drive":"personal"}'
+```
+
+`call` 的 JSON 沿用现有接口字段；编辑正式资源需要时传入已有资源访问上下文 `dentry_id`。`context` 仅供拥有编辑权限的调用者读取；普通详情仍隐藏内部正文。写入不自动重试；修订冲突应重新读取并审阅，不能静默覆盖。训练 watch 不轮询，Ctrl+C 不取消任务。训练取消只对 queued 生效。
+
+本地 Agent 指南见 [skills/aesthetic-creator/SKILL.md](skills/aesthetic-creator/SKILL.md)，不会自动安装。

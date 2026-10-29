@@ -42,3 +42,6 @@ pub use shortcuts::*;
 
 mod workflows;
 pub use workflows::*;
+
+mod aesthetics;
+pub use aesthetics::*;

@@ -19,6 +19,11 @@ pub struct Cli {
 }
 #[derive(Subcommand)]
 pub enum Command {
+    /// Existing aesthetic training, drafts and saving.
+    Aesthetic {
+        #[command(subcommand)]
+        command: crate::aesthetics::Aesthetic,
+    },
     /// Manage private local upload/import batches.
     Batch {
         #[command(subcommand)]
