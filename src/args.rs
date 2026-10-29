@@ -126,6 +126,8 @@ pub struct Submission {
 }
 #[derive(Subcommand)]
 pub enum Generation {
+    /// Edit an image by instruction, optionally using a black/white PNG mask.
+    Edit(crate::image_edit::Edit),
     #[command(flatten)]
     Tasks(crate::task_commands::TaskCommands),
     /// Extend a prepared mask image using a server-authorized asset reference.

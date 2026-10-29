@@ -7,6 +7,8 @@ pub use asset_types::*;
 pub use changes::*;
 mod error;
 mod generation;
+mod image_edit;
+pub use image_edit::{MAX_IMAGE_MASK_BYTES, UploadedImageMask};
 mod resource_types;
 mod resources;
 mod types;

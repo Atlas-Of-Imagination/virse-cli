@@ -8,6 +8,7 @@ mod discussions;
 mod download;
 mod download_resume;
 mod generation;
+mod image_edit;
 mod media_args;
 mod resource;
 mod resource_args;
@@ -88,6 +89,7 @@ fn error_exit(error: &Error) -> u8 {
         | "CANVAS_CREATION_UNCERTAIN"
         | "MODEL_PREFERENCE_UNCERTAIN"
         | "WORKFLOW_UNCERTAIN"
+        | "MASK_UPLOAD_UNCERTAIN"
         | "TOOL_PUBLISH_UNCERTAIN" => 7,
         "WAIT_TIMEOUT" => 8,
         "INTERRUPTED" => 130,
@@ -296,6 +298,9 @@ async fn run(cli: &Cli) -> Result<u8> {
                 json: cli.json,
             };
             match command {
+                Generation::Edit(args) => {
+                    return image_edit::run(args, &context, org()?).await;
+                }
                 Generation::Tasks(command) => return task_commands::run(command, &context).await,
                 Generation::Outpaint(args) => {
                     return context
