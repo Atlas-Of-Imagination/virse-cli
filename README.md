@@ -572,6 +572,10 @@ dev5 已通过标准 labeldeploy 部署该后端，新增迁移在目标表结�
 
 真实联调使用同一个作者账号；跨作者源码隔离、团队普通成员权限、Creator 兼容与故障注入以隔离 PostgreSQL/协议测试验证，尚未完成双账号浏览器验收。后端 PR 尚待正式合入，其他环境须先迁移和部署配套接口。
 
+## Composer
+
+已支持 Composer 节点管理、发送和继续对话、分页历史、WebSocket 观察及协作式停止。用法与消息恢复限制见 [Composer CLI](docs/COMPOSER.md)。
+
 ## 常用生成快捷命令
 
 图片内容编辑已提供 `generation edit`：支持源元素/资产、文字指令、本地或资产 PNG 蒙版；默认新建结果，沿用异步任务和 WebSocket 等待。用法及恢复边界见 [图片内容编辑](docs/IMAGE-EDIT.md)。

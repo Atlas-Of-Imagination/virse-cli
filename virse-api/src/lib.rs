@@ -44,3 +44,6 @@ pub use shortcuts::*;
 
 mod workflows;
 pub use workflows::*;
+
+mod composer;
+pub use composer::*;
