@@ -1,0 +1,141 @@
+name: release
+
+on:
+  push:
+    tags:
+      - v[0-9]+.*
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check release version
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import tomllib
+          from pathlib import Path
+
+          version = tomllib.loads(Path('Cargo.toml').read_text())['package']['version']
+          tag = os.environ['RELEASE_TAG']
+          if tag != f'v{version}':
+              raise SystemExit(f'Tag {tag} does not match Cargo.toml version {version}')
+          PY
+
+  build:
+    needs: validate
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: x86_64-unknown-linux-musl, os: ubuntu-24.04 }
+          - { target: aarch64-unknown-linux-musl, os: ubuntu-24.04 }
+          - { target: x86_64-unknown-linux-gnu, os: ubuntu-22.04 }
+          - { target: aarch64-apple-darwin, os: macos-latest }
+          - { target: x86_64-apple-darwin, os: macos-latest }
+          - { target: x86_64-pc-windows-msvc, os: windows-latest }
+          - { target: aarch64-pc-windows-msvc, os: windows-latest }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: taiki-e/setup-cross-toolchain-action@v1
+        if: runner.os == 'Linux'
+        with:
+          target: ${{ matrix.target }}
+          runner: none
+      # 先构建并保存所有平台产物，全部成功后才创建 Release。
+      - uses: taiki-e/upload-rust-binary-action@v1
+        id: package
+        with:
+          bin: virse
+          target: ${{ matrix.target }}
+          archive: $bin-${{ github.ref_type == 'tag' && github.ref_name || github.sha }}-$target
+          tar: unix
+          zip: windows
+          checksum: sha256
+          include: README.md,docs
+          locked: true
+          dry-run: true
+          dry-run-intended: true
+      - name: Smoke test native binary
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          host=$(rustc -vV | sed -n 's/^host: //p')
+          if [ "$TARGET" = "$host" ]; then
+            binary="target/$TARGET/release/virse"
+            if [ "$RUNNER_OS" = Windows ]; then binary="$binary.exe"; fi
+            "$binary" --version
+            "$binary" --help
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: virse-${{ matrix.target }}
+          path: |
+            ${{ steps.package.outputs.tar }}
+            ${{ steps.package.outputs.zip }}
+            ${{ steps.package.outputs.sha256 }}
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: build
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: virse-*
+          path: dist
+          merge-multiple: true
+      - name: Verify archive checksums
+        working-directory: dist
+        run: sha256sum --check ./*.sha256
+      - name: Refuse to replace a published release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh api --paginate "repos/$GITHUB_REPOSITORY/releases" --jq '.[] | {tag_name, draft}' > "$RUNNER_TEMP/releases.jsonl"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          for line in (Path(os.environ['RUNNER_TEMP']) / 'releases.jsonl').read_text().splitlines():
+              release = json.loads(line)
+              if release['tag_name'] == os.environ['RELEASE_TAG'] and not release['draft']:
+                  raise SystemExit('Release is already published; use a new version tag')
+          PY
+      - uses: taiki-e/create-gh-release-action@v1
+        with:
+          draft: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload assets and publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release upload "$RELEASE_TAG" dist/* --clobber
+          gh release edit "$RELEASE_TAG" --draft=false

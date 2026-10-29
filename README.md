@@ -26,6 +26,10 @@ Virse Backend
 
 ## 安装与配置
 
+从 [GitHub Releases](https://github.com/Atlas-Of-Imagination/virse-cli/releases) 下载对应平台的压缩包及 `.sha256` 校验文件，校验并解压后，将 `virse`（Windows 为 `virse.exe`）放入 PATH 中的目录。发布平台和维护者发版步骤见 [二进制发布](docs/RELEASING.md)。
+
+也可以从源码安装：
+
 ```bash
 cargo install --path . --locked --jobs 2
 virse --help
