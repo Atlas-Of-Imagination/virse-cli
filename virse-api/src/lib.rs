@@ -50,3 +50,6 @@ pub use aesthetics::*;
 
 mod composer;
 pub use composer::*;
+
+mod cli_auth;
+pub use cli_auth::*;

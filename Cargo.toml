@@ -20,6 +20,9 @@ edition.workspace = true
 authors.workspace = true
 
 [dependencies]
+base64 = "0.22"
+getrandom = "0.3"
+url = "2"
 virse-api = { version = "0.1.0", path = "virse-api" }
 
 tokio.workspace = true

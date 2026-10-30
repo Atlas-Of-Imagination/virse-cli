@@ -48,7 +48,9 @@ export VIRSE_BACKEND_URL=https://dev4.virse.ai
 未指定状态目录时使用系统用户配置目录，例如 Linux 的 `$XDG_CONFIG_HOME/virse` 或 `~/.config/virse`。`--profile <name>` 选择命名 Profile，默认为 `default`；凭据、组织和画布默认值均按 **Profile + Backend** 隔离。Backend 身份用于隔离记录，不是可保存的地址配置。
 
 ```bash
-virse auth login                    # 隐藏输入 virse_sk_… Token
+virse auth login                    # 浏览器登录并授权独立 API token
+virse auth login --device           # SSH / 无浏览器环境，短暂轮询等待授权
+virse auth login --no-browser       # 本机回调模式，仅打印链接
 # 自动化使用 VIRSE_API_TOKEN，或通过 stdin 导入：
 secret-manager-command | virse auth login --token-stdin
 virse auth status
@@ -57,9 +59,13 @@ virse config set canvas <canvas-uuid>
 virse config get
 ```
 
-登录通过 `/auth/me` 验证成功后保存 Token。Unix 状态目录权限为 `0700`、文件为 `0600`，使用原子替换和写锁。凭据保存在本地文件，尚未接入系统钥匙串。非交互登录必须使用 `--token-stdin`，不提供明文 Token 参数。
+浏览器授权要求后端部署 `/auth/cli` 接口与迁移，并配置对应 Web 授权页面和加密密钥。生产确认授权时执行人机验证，开发环境沿用豁免。浏览器确认后 CLI 使用 PKCE 领取独立 API token；失败或 Ctrl+C 后重复 `auth login` 恢复原请求，过期时先 `auth logout` 再发起。
 
-`auth logout` 仅删除当前 Backend/Profile 的本地凭据，不撤销服务器 Token；如果仍设置 `VIRSE_API_TOKEN`，它仍然生效。
+手工 `--token-stdin` 登录通过 `/auth/me` 验证成功后保存 Token。Unix 状态目录权限为 `0700`、文件为 `0600`，使用原子替换和写锁。凭据保存在本地文件，尚未接入系统钥匙串。非交互登录必须使用 `--token-stdin`，不提供明文 Token 参数。
+
+`auth status` 显示 environment/browser/manual 凭据来源。浏览器模式的 `auth logout` 先撤销这次授权创建的 key，再清除本地记录；服务端失败时保留记录以便重试。手工导入仅清除本地凭据，环境变量中的 Token 不会被撤销。若环境变量覆盖了浏览器授权，需先 unset VIRSE_API_TOKEN 再退出该浏览器授权。
+
+授权 URL 和用户核对码可以显示，API token、PKCE verifier 和领取秘密仅保存于私有本地状态。授权请求有效期十分钟，签发回执可用原证明在五分钟内重领同一枚 key；API token 按现有规则不过期，可在网页 API token 列表中撤销。`--no-browser` 仍要求浏览器能访问 CLI 的本机端口，跨机器请用 `--device`。
 
 ## 空间、模型与余额
 

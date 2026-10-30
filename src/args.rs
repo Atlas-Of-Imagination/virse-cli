@@ -58,7 +58,7 @@ pub enum Command {
     /// Manage API token credentials for the current backend/profile.
     Auth {
         #[command(subcommand)]
-        command: Auth,
+        command: Option<Auth>,
     },
     /// Read or set default organization and canvas.
     Config {
@@ -84,8 +84,12 @@ pub enum Command {
 #[derive(Subcommand)]
 pub enum Auth {
     Login {
-        #[arg(long)]
+        #[arg(long, conflicts_with_all=["device", "no_browser"])]
         token_stdin: bool,
+        #[arg(long)]
+        device: bool,
+        #[arg(long)]
+        no_browser: bool,
     },
     Status,
     Logout,
