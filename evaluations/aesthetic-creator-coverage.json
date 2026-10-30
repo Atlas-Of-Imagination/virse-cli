@@ -1,0 +1,110 @@
+[
+  {
+    "atom_id": "AES-001",
+    "reference": "skills/aesthetic-creator/references/create-and-train.md",
+    "heading": "创建或更新审美",
+    "scenario": "从有权读取的参考图建立暂未入目录的审美，或只修改现有展示信息。"
+  },
+  {
+    "atom_id": "AES-002",
+    "reference": "shared/context/aesthetics.md",
+    "heading": "读取普通详情",
+    "scenario": "查看只读审美的参考图与资格，不进入作者私有context。"
+  },
+  {
+    "atom_id": "AES-003",
+    "reference": "skills/aesthetic-creator/references/save-and-cleanup.md",
+    "heading": "将审美保存为目录资源",
+    "scenario": "将训练完成草稿存入指定目录，核对真实dentry；已有资源不被误作移动。"
+  },
+  {
+    "atom_id": "AES-004",
+    "reference": "skills/aesthetic-creator/references/create-and-train.md",
+    "heading": "替换参考图",
+    "scenario": "对可编辑审美整集替换参考图，区分修改受理、重训和pending提交。"
+  },
+  {
+    "atom_id": "AES-005",
+    "reference": "skills/aesthetic-creator/references/draft-and-test.md",
+    "heading": "建立私有测试画布",
+    "scenario": "为可编辑源审美建立或接回专用私有测试画布。"
+  },
+  {
+    "atom_id": "AES-006",
+    "reference": "skills/aesthetic-creator/references/save-and-cleanup.md",
+    "heading": "清理专用测试画布",
+    "scenario": "清理现场，正确处理deleted=false和retained_for_run。"
+  },
+  {
+    "atom_id": "AES-007",
+    "reference": "skills/aesthetic-creator/references/draft-and-test.md",
+    "heading": "创建或读取草稿会话",
+    "scenario": "用真实测试画布和源审美开草稿，记录源style与draft style两份身份。"
+  },
+  {
+    "atom_id": "AES-008",
+    "reference": "skills/aesthetic-creator/references/draft-and-test.md",
+    "heading": "创建或读取草稿会话",
+    "scenario": "读取自己的草稿状态、当前revision和保存索引，不发送GET body。"
+  },
+  {
+    "atom_id": "AES-009",
+    "reference": "skills/aesthetic-creator/references/draft-and-test.md",
+    "heading": "读取作者上下文",
+    "scenario": "有编辑授权时读取草稿完整正文和参考资产，不公开给普通详情。"
+  },
+  {
+    "atom_id": "AES-010",
+    "reference": "skills/aesthetic-creator/references/draft-and-test.md",
+    "heading": "修订完整正文",
+    "scenario": "外部Agent用expected_revision替换完整summary；冲突先比较，不启动内置Agent。"
+  },
+  {
+    "atom_id": "AES-011",
+    "reference": "skills/aesthetic-creator/references/save-and-cleanup.md",
+    "heading": "保存选定草稿修订",
+    "scenario": "保存所选已有修订回源审美，核对savedRevision与source冲突。"
+  },
+  {
+    "atom_id": "AES-012",
+    "reference": "skills/aesthetic-creator/references/save-and-cleanup.md",
+    "heading": "恢复会话内旧修订",
+    "scenario": "将已有版本追加成新修订，单独确认是否要再保存源审美。"
+  },
+  {
+    "atom_id": "AES-013",
+    "reference": "skills/aesthetic-creator/references/draft-and-test.md",
+    "heading": "固定测试快照",
+    "scenario": "冻结当前或指定修订，记录快照styleId并绑定实际生成测试。"
+  },
+  {
+    "atom_id": "AES-014",
+    "reference": "skills/aesthetic-creator/references/create-and-train.md",
+    "heading": "提交可观察的训练",
+    "scenario": "提交1–100图片训练，保留完整原body和key；受理未知不换key再收费。"
+  },
+  {
+    "atom_id": "AES-015",
+    "reference": "skills/aesthetic-creator/references/create-and-train.md",
+    "heading": "查询与观察训练",
+    "scenario": "get读取原run，分别判断查询成功、训练终态与保存。"
+  },
+  {
+    "atom_id": "AES-016",
+    "reference": "skills/aesthetic-creator/references/create-and-train.md",
+    "heading": "查询与观察训练",
+    "scenario": "watch按裸run快照观察；本地超时与Ctrl+C不取消训练。"
+  },
+  {
+    "atom_id": "AES-017",
+    "reference": "skills/aesthetic-creator/references/create-and-train.md",
+    "heading": "取消与恢复训练",
+    "scenario": "仅在queued且服务端允许时取消，核对实际快照。"
+  },
+  {
+    "atom_id": "AES-018",
+    "reference": "skills/aesthetic-creator/references/create-and-train.md",
+    "heading": "取消与恢复训练",
+    "scenario": "原拥有者接续允许的queued run，不把resume当失败断点恢复。"
+  }
+]

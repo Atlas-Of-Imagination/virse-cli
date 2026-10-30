@@ -650,3 +650,29 @@ virse aesthetic call save-resource --data '{"style_id":"<style-id>","org_id":"<o
 `call` 的 JSON 沿用现有接口字段；编辑正式资源需要时传入已有资源访问上下文 `dentry_id`。`context` 仅供拥有编辑权限的调用者读取；普通详情仍隐藏内部正文。写入不自动重试；修订冲突应重新读取并审阅，不能静默覆盖。训练 watch 不轮询，Ctrl+C 不取消任务。训练取消只对 queued 生效。
 
 本地 Agent 指南见 [skills/aesthetic-creator/SKILL.md](skills/aesthetic-creator/SKILL.md)，不会自动安装。
+
+## 配套 Skills
+
+Agent 根据任务选择入口，再读取当前需要的参考。每个包自带必要产品背景与共享合同，明确任务可以跳过 `virse` 导航。
+
+| 入口 | 使用场景 |
+| --- | --- |
+| [virse](skills/virse/SKILL.md) | 连接、身份、空间、余额与入口导航 |
+| [virse-assets](skills/virse-assets/SKILL.md) | 资源查找整理、上传替换、导入回收与文件交付 |
+| [virse-canvas](skills/virse-canvas/SKILL.md) | 理解画布、放置内容、生成输入连线、排版与讨论 |
+| [virse-sharing](skills/virse-sharing/SKILL.md) | 有效权限、继承、改权撤权、链接与邀请 |
+| [virse-creation](skills/virse-creation/SKILL.md) | 图片、视频、3D 与文本创作、实际效果检查与迭代 |
+| [virse-tools](skills/virse-tools/SKILL.md) | 发现管理已有工具、固定产物运行与控制 |
+| [smart-tool-creator](skills/smart-tool-creator/SKILL.md) | 外部 Agent 编写原生包、构建测试与发布 |
+| [aesthetic-creator](skills/aesthetic-creator/SKILL.md) | 外部 Agent 创建训练审美、修订测试与保存 |
+| [virse-composer](skills/virse-composer/SKILL.md) | 按任务选择画布内创作家、继续会话与核查结果 |
+
+直接将所需的完整 Skill 文件夹放到宿主支持的技能目录；不要只复制 `SKILL.md`。例如 Codex 项目目录使用 `.agents/skills/`。当前仓库内的 `skills/` 已包含完整参考，也可用标准库 Python 导出独立文件夹：
+
+```bash
+python3 scripts/package_skills.py --check
+python3 scripts/package_skills.py --output /tmp/virse-skill-bundle
+python3 evaluations/check_coverage.py
+```
+
+导出目录必须尚不存在。安装 CLI 二进制与安装 Skill 是两项独立操作。命令覆盖可在构建 CLI 后用 `python3 evaluations/check_coverage.py --binary target/debug/virse` 核对；审美请求绑定用 `python3 evaluations/check_aesthetic_requests.py --binary target/debug/virse` 在本地回环验证。源码依据与配套部署边界见 [合同依据](evaluations/source-contracts.json)。

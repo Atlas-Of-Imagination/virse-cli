@@ -1,0 +1,3 @@
+interface:
+  display_name: "Virse 审美制作"
+  short_description: "从参考素材创建训练审美，修订作者草稿，比较测试快照并保存"

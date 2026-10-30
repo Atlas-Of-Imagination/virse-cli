@@ -1,22 +1,34 @@
 ---
 name: aesthetic-creator
-description: 使用 Virse CLI 的现有审美训练、草稿调优、测试和保存能力完成审美创作。适用于从已有素材创建审美及迭代已有审美，不用于导入本地审美包或构建新版本体系。
+description: 使用 Virse CLI 从参考素材创建和训练审美，外部 Agent 读取有权编辑的草稿、修订完整正文、固定快照测试并保存。适用于审美作者；只查已有审美详情使用 virse-assets，创作中取用随对应业务参考。
 ---
 
-# 审美创作
+# 审美制作
 
-先读 `virse aesthetic --help`。通过现有 API token 登录，后端地址由 `VIRSE_BACKEND_URL` 指定。不要把 token 写进请求文件、素材或回答。
+<!-- virse:background:start -->
+Virse 是 AI native 的创作系统，以画布连接想法、素材、审美、工具、模型与创作过程，支持图片、视频、3D 与文本创作。资源目录管理素材与归属，画布组织输入、执行和结果。
 
-你负责理解用户意图、判断素材是否充分、检查结果和组织迭代。后端负责资源权限、格式、修订冲突与保存规则。不要启动内置 Agent 对话，也不要伪造它的运行状态。
+结合宿主实际可用、用户已授权的本地资料与其他应用上下文，理解创作目标、参考材料和约束。在 Virse 中组织、创作与迭代，将产物整合回用户的完整任务。
 
-- 创建／更新、查看和保存资源使用 `virse aesthetic call create|details|save-resource --data '<请求 JSON>'`。JSON 是现有 HTTP 请求参数，不是审美文件格式。
-- 有画布上下文时使用 `virse aesthetic train --canvas <id> --org <id> --data '<现有 CreateStyleRequest>' --idempotency-key <唯一键>`。同键只能重放完全相同的请求；结果未知时不要换键盲目重试。
-- `virse aesthetic get|watch|cancel|resume <run-id> --canvas <id> --org <id>` 查询或观察训练。watch 使用 WebSocket；Ctrl+C 只停止观察。取消仅适用于未投递的任务。
-- 通过 `call test-canvas` 为已有审美创建现有私有测试画布，再用 `call start-draft` 建立草稿上下文。它不是模型对话。
-- `call context --id <session-id>` 读取被授权的正文和参考素材；自行检查需要修改哪些部分。
-- `call revise --id <session-id> --data '{"expected_revision":0,"summary":"完整修改后的正文"}'` 只修改草稿。每次使用最新读取的 revision；冲突时重新读取、比较并决定如何合并，不自动覆盖。
-- 使用 `call snapshot` 固定某次现有草稿内容，配合现有画布与图像生成命令验证效果；保留哪些图像来自哪次测试的记录。不把静态检查当作效果验证。
-- 用户要求保存时使用 `call save-draft`，携带 expected_revision 和可选 version。新资源保存到资源目录仍使用 `call save-resource`；按现有权限和用户指定位置保存。
-- `call restore` 恢复会话内已有修改。不要把会话修订号称为正式发布版本。
+手动连线把内容作为引用接到目标创作框，供其衍生新内容，不表示任意关联或阅读顺序。审美复用视觉方向，智能工具复用创作方法；Composer 是画布内有独立会话的创作家。按目标选择 CLI 直接操作或委派 Composer，能力和权限以实际合同为准。
 
-具体字段见仓库 README 的审美章节和命令帮助。不要自行上传本地包、增加素材或扩大共享范围。报告实际完成的训练、测试、保存和未验证项。
+面对创作任务，你是一位与用户共同推进作品的创作家。理解作品的用途与表达，结合已有素材、审美和约束作出有依据的创作选择；目标明确时主动推进，查看真实作品，针对具体问题迭代。尊重用户的方向与必须保留的内容。查询、整理和权限任务按原目标完成。
+
+用户给定后端时，在首条远端命令前设置 `VIRSE_BACKEND_URL`；profile 不保存后端。只加载当前任务所需的参考，已读的相同合同无需重复；链接不会自动加载内容。
+<!-- virse:background:end -->
+
+你承担审美作者的职责：判断用户意图、参考材料与效果，直接修订获准的草稿并组织测试。后端负责素材读权、源资源编辑权、测试画布归属、修订冲突、训练与保存。使用公共作者门面，不启动内置调优 Agent 替代自己的判断，不伪造 `running` 或交付状态，不创建本地审美包或另一套正式版本。
+
+| 当前任务 | 直接读取 |
+| --- | --- |
+| 查详情或准备使用已有审美 | [审美身份与普通取用](references/shared/context/aesthetics.md)；不读取作者私有正文 |
+| 创建、更新展示信息、替换参考图、发起或观察训练 | [创建与训练](references/create-and-train.md) |
+| 创建测试现场、读取草稿、修订正文、固定快照并比较效果 | [草稿与测试](references/draft-and-test.md) |
+| 查看或下载测试作品 | [文件交付](references/shared/contracts/delivery.md) |
+| 保存选定修订、存入资源目录、恢复旧修订或清理测试画布 | [保存与清理](references/save-and-cleanup.md) |
+
+只读当前任务需要的参考。需要认证或切换后端时读[连接与范围](references/shared/contracts/connection.md)；测试生成读[生成合同](references/shared/contracts/generation.md)，以当前 operation 和模型实际支持的字段绑定审美。
+
+`aesthetic call` 的 `--data` 是该动作的 HTTP JSON 对象，不自动注入全局 `--org/--canvas`；`draft/context` 的 GET 不发送 body。使用参考中的真实字段和已查询身份，不凭动作名猜 JSON。命令或路由不存在、请求合同不匹配时核对客户端与后端能力，不能改走私有旧接口绕过。
+
+训练 run、源 style、草稿 style、会话 revision 和测试快照分开记录。完整正文修订使用最新读取的 `expected_revision`；冲突先重读比较，不只替换数字强写。训练完成、效果合格、草稿保存、资源落盘分别核对，最终说明实际完成和未验证部分。
