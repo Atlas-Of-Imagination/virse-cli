@@ -70,10 +70,14 @@ jobs:
           tar: unix
           zip: windows
           checksum: sha256
-          include: README.md,docs
           locked: true
           dry-run: true
           dry-run-intended: true
+      - name: Test installer and binary-only archive
+        shell: bash
+        env:
+          ARCHIVE: ${{ steps.package.outputs.tar || steps.package.outputs.zip }}
+        run: python3 scripts/test_installers.py --archive "$ARCHIVE"
       - name: Smoke test native binary
         shell: bash
         env:
@@ -137,5 +141,5 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          gh release upload "$RELEASE_TAG" dist/* --clobber
+          gh release upload "$RELEASE_TAG" dist/* install.sh install.ps1 --clobber
           gh release edit "$RELEASE_TAG" --draft=false

@@ -26,7 +26,19 @@ Virse Backend
 
 ## 安装与配置
 
-从 [GitHub Releases](https://github.com/Atlas-Of-Imagination/virse-cli/releases) 下载对应平台的压缩包及 `.sha256` 校验文件，校验并解压后，将 `virse`（Windows 为 `virse.exe`）放入 PATH 中的目录。发布平台和维护者发版步骤见 [二进制发布](docs/RELEASING.md)。
+当前仓库为私有仓库，需要 GitHub CLI 登录有读取权限的账号（`gh auth login`，自动化可设置 `GH_TOKEN`）。以下命令在安装器合入 main、首次二进制 Release 发布后可用：
+
+```bash
+# macOS / Linux
+gh api -H 'Accept: application/vnd.github.raw+json' repos/Atlas-Of-Imagination/virse-cli/contents/install.sh | sh
+```
+
+```powershell
+# Windows PowerShell
+gh api -H 'Accept: application/vnd.github.raw+json' repos/Atlas-Of-Imagination/virse-cli/contents/install.ps1 | Out-String | Invoke-Expression
+```
+
+安装器只安装 `virse` / `virse.exe`，不复制 README、docs、skills 或其他文件。Unix 优先使用 PATH 中可写的常用 bin 目录，否则使用 `~/.local/bin` 并提示配置 PATH；Windows 默认使用 `%LOCALAPPDATA%\Programs\virse\bin`，自动加入用户 PATH。重复运行可更新二进制，也可通过 `VIRSE_VERSION`、`VIRSE_INSTALL_DIR` 指定版本和目录。更多参数、手动下载与发版步骤见 [二进制发布](docs/RELEASING.md)。
 
 也可以从源码安装：
 
