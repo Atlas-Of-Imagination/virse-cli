@@ -1,3 +1,4 @@
+mod aesthetics;
 mod args;
 mod batch;
 mod canvas_add;
@@ -234,6 +235,16 @@ async fn run(cli: &Cli) -> Result<u8> {
                 &store,
                 &backend,
                 org()?,
+                cli.canvas.or(defaults.canvas),
+                cli.json,
+            )
+            .await;
+        }
+        Command::Aesthetic { command } => {
+            return aesthetics::run(
+                command,
+                &client,
+                cli.org.or(defaults.org),
                 cli.canvas.or(defaults.canvas),
                 cli.json,
             )
