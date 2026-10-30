@@ -93,6 +93,63 @@ fn package_part(bytes: Vec<u8>) -> Result<Part> {
 }
 
 impl Client {
+    /// Authoritative, side-effect-free backend validation of a complete package.
+    pub async fn tool_validate_package(&self, org: Uuid, package: Vec<u8>) -> Result<Value> {
+        let form = Form::new()
+            .part("package_file", package_part(package)?)
+            .text("organization_id", org.to_string());
+        self.multipart_request("v2/skills/package-validation", form, None)
+            .await
+    }
+    pub async fn tool_create_identity(&self, body: Value, key: &str) -> Result<Value> {
+        self.request(Method::POST, "v2/skills", &[], Some(body), Some(key))
+            .await
+    }
+    pub async fn tool_artifact(&self, org: Uuid, skill: Uuid, artifact: Uuid) -> Result<Value> {
+        self.request(
+            Method::GET,
+            &format!("v2/skills/{skill}/artifacts/{artifact}"),
+            &[("organization_id", org.to_string())],
+            None,
+            None,
+        )
+        .await
+    }
+    pub async fn tool_submit_artifact(
+        &self,
+        org: Uuid,
+        skill: Uuid,
+        package: Vec<u8>,
+        metadata: &Value,
+        expected_metadata_hash: Option<&str>,
+        key: &str,
+    ) -> Result<Value> {
+        let mut form = Form::new()
+            .part("package_file", package_part(package)?)
+            .text("organization_id", org.to_string())
+            .text("metadata", metadata.to_string());
+        if let Some(hash) = expected_metadata_hash {
+            form = form.text("expected_metadata_hash", hash.to_owned());
+        }
+        self.multipart_request(&format!("v2/skills/{skill}/artifacts"), form, Some(key))
+            .await
+    }
+    pub async fn tool_release_artifact(
+        &self,
+        skill: Uuid,
+        body: Value,
+        key: &str,
+    ) -> Result<Value> {
+        self.request(
+            Method::POST,
+            &format!("v2/skills/{skill}/releases"),
+            &[],
+            Some(body),
+            Some(key),
+        )
+        .await
+    }
+
     /// Single attempt; retry only with exactly the same bytes, fields and key.
     pub async fn tool_create_package(
         &self,
@@ -247,5 +304,24 @@ impl Client {
         }
         source.package = package;
         Ok(source)
+    }
+}
+
+impl Client {
+    /// Download a private immutable package using the normal protected-stream transport.
+    /// The caller can stream it to a file; this library does not touch the filesystem.
+    pub async fn tool_artifact_source(
+        &self,
+        org: Uuid,
+        skill: Uuid,
+        artifact: Uuid,
+    ) -> Result<reqwest::Response> {
+        self.download(&crate::DownloadInfo {
+            url: format!("/v2/skills/{skill}/artifacts/{artifact}/source?organization_id={org}"),
+            filename: "skill.zip".into(),
+            delivery: "authenticated_stream".into(),
+            extra: Default::default(),
+        })
+        .await
     }
 }

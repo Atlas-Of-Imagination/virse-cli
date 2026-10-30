@@ -418,7 +418,7 @@ fn frontmatter(bytes: &[u8]) -> Result<Value> {
     }
     let fm: Value = yaml_serde::from_str(header)
         .map_err(|_| invalid("SKILL.md has invalid YAML scalar frontmatter"))?;
-    for key in ["name", "description", "when_to_use"] {
+    for key in ["name", "description"] {
         if fm
             .get(key)
             .and_then(Value::as_str)
@@ -428,11 +428,6 @@ fn frontmatter(bytes: &[u8]) -> Result<Value> {
                 "SKILL.md requires non-empty string frontmatter '{key}'"
             )));
         }
-    }
-    if fm["when_to_use"].as_str().unwrap().trim().chars().count() < 20 {
-        return Err(invalid(
-            "SKILL.md when_to_use requires at least 20 characters describing when to use the tool",
-        ));
     }
     Ok(fm)
 }
@@ -716,7 +711,7 @@ fn metadata(files: &BTreeMap<String, Vec<u8>>) -> Result<(Value, Value, Vec<Stri
         return Err(invalid("meta.json must be an object"));
     }
     let mut explicit_fields = Vec::new();
-    let mut data = json!({"name":fm["name"],"description":fm["description"],"detail":fm["description"],"scenario":fm["when_to_use"],"version":"1.0.0"});
+    let mut data = json!({"name":fm["name"],"description":fm["description"],"detail":fm["description"],"scenario":fm.get("when_to_use").and_then(Value::as_str).unwrap_or(""),"version":"1.0.0"});
     for (local, wire) in [
         ("name", "name"),
         ("description", "description"),
