@@ -435,6 +435,24 @@ virse asset download <asset-uuid> --org <org-uuid> --canvas <canvas-uuid> --outp
 
 ## 本地创作和运行智能工具
 
+新创作使用公共 `/v2/skills` 接口，Web Creator 与 CLI 复用后端包校验和正式版本服务。
+需要部署配套后端（包含 #615 的迁移）。旧发布日志可继续用 `--resume` 恢复；不会将未确认的旧请求转换成新创建。
+
+```bash
+virse tool validate ./my-tool --remote --org <org-uuid> --json
+virse tool build ./my-tool --org <org-uuid> --json
+virse tool run <tool-id> --artifact-id <artifact-id> --canvas <canvas-uuid> --org <org-uuid> --wait
+virse tool publish --tool-id <tool-id> --artifact-id <artifact-id> --org <org-uuid>
+```
+
+`build` 保存不可变产物但不发布，不占正式版本号。未发布产物只允许作者在所属组织的可访问画布上显式运行。
+`publish <directory>` 保留为构建加发布的快捷命令，不要求测试成功。`--artifact-id` 是运行时 `--version-id` 的别名。
+发布响应中的 `validation.warnings` 是建议，不阻止发布；缺少或过短的 `when_to_use`、不确定的动态文件引用不再是硬错误。
+离线校验提供快速反馈，`validate --remote` 获取后端权威报告。上传代码不会在校验阶段执行。
+
+Codex／Claude Code 的本地创作指南位于 [skills/smart-tool-creator/SKILL.md](skills/smart-tool-creator/SKILL.md)，不自动安装到用户环境。
+
+
 工具使用现有技能包格式：`SKILL.md` 定义执行行为，可选 `interface.json` 定义输入表单与输出，`meta.json` 保存作者元数据，参考资料和脚本随包交付。CLI 不在本机执行包内脚本。新增的普通作者包发布能力对应工作区 Issue #116，须先部署配套后端迁移与接口；旧环境仍可使用原有的工具查询和 V2 运行能力。
 
 ```bash
@@ -615,3 +633,24 @@ virse generation outpaint --model <outpaint-model> --mask-asset <uploaded-mask-a
 dev5 已验证本机批次的准备/暂停/恢复及成功项不重传，资源标记与排序，节点/组合/连线修改与原子排版，复制及同 key 重放，讨论评论生命周期，媒体删除恢复，画布另存及重放，文件下载与ZIP，任务列表、封面上传、待运行工具实例及重放。测试工具已恢复禁用。SDK 已修正空 POST/DELETE 的 Content-Length，兼容网关的411检查。
 
 永久删除曾因后端历史运行快照的 JSON null 返回 503，已由后端 #612 的 d17ba07 修复。2026-10-29 dev5 部署后，两个原失败目录以原 key 删除及幂等重放成功，回收站查询确认目录消失。本轮没有清空账号已有回收站、没有跨账号共享移除验收，也没有重试收费模型任务；这些分支用协议测试验证。
+
+## 审美创作（现有能力）
+
+`aesthetic` 使用 `/v2/aesthetics` 公共门面，保留现有训练、草稿和保存语义，不引入本地审美包或正式版本。
+
+```bash
+virse aesthetic call create --data '{"name":"柔和光线","image_ids":["<image-id>"],"organization_id":"<org-id>","defer_dentry":true}'
+virse aesthetic train --canvas <canvas-id> --org <org-id> --idempotency-key <key> --data '{"name":"柔和光线","image_ids":["<image-id>"],"defer_dentry":true}'
+virse aesthetic watch <run-id> --canvas <canvas-id> --org <org-id>
+virse aesthetic call test-canvas --data '{"style_id":"<style-id>","org_id":"<org-id>"}'
+virse aesthetic call start-draft --data '{"style_id":"<style-id>","canvas_id":"<test-canvas-id>","org_id":"<org-id>"}'
+virse aesthetic call context --id <session-id>
+virse aesthetic call revise --id <session-id> --data '{"expected_revision":0,"summary":"修改后的完整审美正文"}'
+virse aesthetic call snapshot --id <session-id> --data '{"expected_revision":1}'
+virse aesthetic call save-draft --id <session-id> --data '{"expected_revision":1}'
+virse aesthetic call save-resource --data '{"style_id":"<style-id>","org_id":"<org-id>","drive":"personal"}'
+```
+
+`call` 的 JSON 沿用现有接口字段；编辑正式资源需要时传入已有资源访问上下文 `dentry_id`。`context` 仅供拥有编辑权限的调用者读取；普通详情仍隐藏内部正文。写入不自动重试；修订冲突应重新读取并审阅，不能静默覆盖。训练 watch 不轮询，Ctrl+C 不取消任务。训练取消只对 queued 生效。
+
+本地 Agent 指南见 [skills/aesthetic-creator/SKILL.md](skills/aesthetic-creator/SKILL.md)，不会自动安装。
