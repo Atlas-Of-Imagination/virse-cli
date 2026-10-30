@@ -12,7 +12,7 @@ use uuid::Uuid;
 pub struct Client {
     pub(crate) base: Url,
     pub(crate) authorization: HeaderValue,
-    http: reqwest::Client,
+    pub(crate) http: reqwest::Client,
     token: String,
     expected_user: Option<Uuid>,
 }

@@ -572,7 +572,13 @@ dev5 已通过标准 labeldeploy 部署该后端，新增迁移在目标表结�
 
 真实联调使用同一个作者账号；跨作者源码隔离、团队普通成员权限、Creator 兼容与故障注入以隔离 PostgreSQL/协议测试验证，尚未完成双账号浏览器验收。后端 PR 尚待正式合入，其他环境须先迁移和部署配套接口。
 
+## Composer
+
+已支持 Composer 节点管理、发送和继续对话、分页历史、WebSocket 观察及协作式停止。用法与消息恢复限制见 [Composer CLI](docs/COMPOSER.md)。
+
 ## 常用生成快捷命令
+
+图片内容编辑已提供 `generation edit`：支持源元素/资产、文字指令、本地或资产 PNG 蒙版；默认新建结果，沿用异步任务和 WebSocket 等待。用法及恢复边界见 [图片内容编辑](docs/IMAGE-EDIT.md)。
 
 ```bash
 virse generation text --model <text-model> --prompt '写一段说明' --reference <element-id> --wait
@@ -604,7 +610,7 @@ virse generation outpaint --model <outpaint-model> --mask-asset <uploaded-mask-a
 
 dev5 已验证本机批次的准备/暂停/恢复及成功项不重传，资源标记与排序，节点/组合/连线修改与原子排版，复制及同 key 重放，讨论评论生命周期，媒体删除恢复，画布另存及重放，文件下载与ZIP，任务列表、封面上传、待运行工具实例及重放。测试工具已恢复禁用。SDK 已修正空 POST/DELETE 的 Content-Length，兼容网关的411检查。
 
-空目录永久删除通过；包含画布和资产的测试目录在移入回收站后，永久删除连续返回后端 `503 mutation_unavailable`。目录仍列在回收站，原 key 和恢复记录保留；该环境问题需要单独排查后端，不声称复杂子树永久删除或完整清空已通过真实验收。本轮没有清空账号已有回收站、没有跨账号共享移除验收，也没有重试收费模型任务；这些分支用协议测试验证。
+永久删除曾因后端历史运行快照的 JSON null 返回 503，已由后端 #612 的 d17ba07 修复。2026-10-29 dev5 部署后，两个原失败目录以原 key 删除及幂等重放成功，回收站查询确认目录消失。本轮没有清空账号已有回收站、没有跨账号共享移除验收，也没有重试收费模型任务；这些分支用协议测试验证。
 
 ## 审美创作（现有能力）
 

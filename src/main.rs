@@ -3,12 +3,14 @@ mod args;
 mod batch;
 mod canvas_add;
 mod canvas_edit;
+mod composer;
 mod delivery;
 mod discovery;
 mod discussions;
 mod download;
 mod download_resume;
 mod generation;
+mod image_edit;
 mod media_args;
 mod resource;
 mod resource_args;
@@ -89,6 +91,7 @@ fn error_exit(error: &Error) -> u8 {
         | "CANVAS_CREATION_UNCERTAIN"
         | "MODEL_PREFERENCE_UNCERTAIN"
         | "WORKFLOW_UNCERTAIN"
+        | "MASK_UPLOAD_UNCERTAIN"
         | "TOOL_PUBLISH_UNCERTAIN" => 7,
         "WAIT_TIMEOUT" => 8,
         "INTERRUPTED" => 130,
@@ -201,6 +204,20 @@ async fn run(cli: &Cli) -> Result<u8> {
     let canvas = || required(cli.canvas.or(defaults.canvas), "canvas");
     let org = || required(cli.org.or(defaults.org), "org");
     match &cli.command {
+        Command::Composer { command } => {
+            return composer::run(
+                command,
+                &canvas_edit::Context {
+                    client: &client,
+                    store: &store,
+                    backend: &backend,
+                    org: org()?,
+                    canvas: canvas()?,
+                    compact: cli.json,
+                },
+            )
+            .await;
+        }
         Command::Batch { command } => {
             return batch::run(command, &client, &store, &backend, cli.org, cli.json).await;
         }
@@ -307,6 +324,9 @@ async fn run(cli: &Cli) -> Result<u8> {
                 json: cli.json,
             };
             match command {
+                Generation::Edit(args) => {
+                    return image_edit::run(args, &context, org()?).await;
+                }
                 Generation::Tasks(command) => return task_commands::run(command, &context).await,
                 Generation::Outpaint(args) => {
                     return context

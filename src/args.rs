@@ -24,6 +24,10 @@ pub enum Command {
         #[command(subcommand)]
         command: crate::aesthetics::Aesthetic,
     },
+    Composer {
+        #[command(subcommand)]
+        command: crate::composer::Composer,
+    },
     /// Manage private local upload/import batches.
     Batch {
         #[command(subcommand)]
@@ -131,6 +135,8 @@ pub struct Submission {
 }
 #[derive(Subcommand)]
 pub enum Generation {
+    /// Edit an image by instruction, optionally using a black/white PNG mask.
+    Edit(crate::image_edit::Edit),
     #[command(flatten)]
     Tasks(crate::task_commands::TaskCommands),
     /// Extend a prepared mask image using a server-authorized asset reference.
