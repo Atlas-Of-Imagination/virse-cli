@@ -627,3 +627,30 @@ fn absent_checksum_stays_unknown_and_page_sync_cursor_is_optional() {
         assert_eq!(assets.sync_cursor.as_deref(), cursor);
     }
 }
+
+#[tokio::test]
+async fn resolve_assets_keeps_context_and_partial_results() {
+    let app = Router::new().route("/api/v1/assets/resolve", post(|headers: HeaderMap, Json(body): Json<Value>| async move {
+        assert_eq!(headers["authorization"], format!("Bearer {TOKEN}"));
+        assert_eq!(body["context"]["org_id"], ORG);
+        assert_eq!(body["asset_ids"], json!([ASSET, ANCHOR]));
+        assert_eq!(body["purposes"], json!(["presentation", "download"]));
+        envelope(json!({"items":[{"asset_id":ASSET,"asset":asset(8),"original":{"url":"https://storage.test/a.png","delivery":"external_url"}},
+            {"asset_id":ANCHOR,"error":{"code":"not_found","status":404}}]}))
+    }));
+    let (client, server) = serve(app).await;
+    let result = client
+        .resolve_assets(&context(), &[id(ASSET), id(ANCHOR)], true)
+        .await
+        .unwrap();
+    assert_eq!(result["items"][0]["original"]["delivery"], "external_url");
+    assert_eq!(result["items"][1]["error"]["status"], 404);
+    assert!(client.resolve_assets(&context(), &[], true).await.is_err());
+    assert!(
+        client
+            .resolve_assets(&context(), &vec![id(ASSET); 101], true)
+            .await
+            .is_err()
+    );
+    server.abort();
+}

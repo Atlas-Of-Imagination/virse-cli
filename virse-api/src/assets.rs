@@ -191,3 +191,33 @@ impl Client {
         Ok(info)
     }
 }
+
+impl Client {
+    /// 按已知 ID 有界解析，返回逐项结果；原件/展示权限由服务端分别裁决。
+    pub async fn resolve_assets(
+        &self,
+        context: &AccessContext,
+        ids: &[uuid::Uuid],
+        download: bool,
+    ) -> crate::Result<serde_json::Value> {
+        if ids.is_empty() || ids.len() > 100 {
+            return Err(crate::Error::new(
+                "INVALID_INPUT",
+                "Resolve accepts 1..100 asset IDs",
+            ));
+        }
+        let purposes = if download {
+            vec!["presentation", "download"]
+        } else {
+            vec!["presentation"]
+        };
+        self.request(
+            reqwest::Method::POST,
+            "api/v1/assets/resolve",
+            &[],
+            Some(serde_json::json!({"context":context,"asset_ids":ids,"purposes":purposes})),
+            None,
+        )
+        .await
+    }
+}
