@@ -1,0 +1,3 @@
+interface:
+  display_name: "Virse 画布操作"
+  short_description: "理解画布内容与区域、放置素材、组织节点关系并核对布局结果"

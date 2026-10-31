@@ -1,0 +1,80 @@
+[
+  {
+    "atom_id": "SHR-001",
+    "reference": "shared/contracts/access.md",
+    "heading": "查询有效访问",
+    "scenario": "读取本人有效访问资格"
+  },
+  {
+    "atom_id": "SHR-002",
+    "reference": "shared/contracts/access.md",
+    "heading": "查询有效访问",
+    "scenario": "读取访问规则和继承来源"
+  },
+  {
+    "atom_id": "SHR-003",
+    "reference": "shared/contracts/access.md",
+    "heading": "受众与档位",
+    "scenario": "设置具名成员访问档位"
+  },
+  {
+    "atom_id": "SHR-004",
+    "reference": "shared/contracts/access.md",
+    "heading": "受众与档位",
+    "scenario": "设置成员组访问档位"
+  },
+  {
+    "atom_id": "SHR-005",
+    "reference": "shared/contracts/access.md",
+    "heading": "受众与档位",
+    "scenario": "设置外部邮箱待认领授权"
+  },
+  {
+    "atom_id": "SHR-006",
+    "reference": "shared/contracts/access.md",
+    "heading": "受众与档位",
+    "scenario": "设置或关闭团队全体成员访问"
+  },
+  {
+    "atom_id": "SHR-007",
+    "reference": "shared/contracts/access.md",
+    "heading": "受众与档位",
+    "scenario": "设置或关闭持链接访问"
+  },
+  {
+    "atom_id": "SHR-008",
+    "reference": "shared/contracts/access.md",
+    "heading": "预览与应用",
+    "scenario": "预览授权或撤销的访问影响"
+  },
+  {
+    "atom_id": "SHR-009",
+    "reference": "shared/contracts/access.md",
+    "heading": "撤回与清除",
+    "scenario": "撤回一条可移除直接授权"
+  },
+  {
+    "atom_id": "SHR-010",
+    "reference": "shared/contracts/access.md",
+    "heading": "撤回与清除",
+    "scenario": "清除资源本层授权与链接档位"
+  },
+  {
+    "atom_id": "SHR-011",
+    "reference": "skills/virse-sharing/references/links.md",
+    "heading": "取得分享地址",
+    "scenario": "取得资源分享地址"
+  },
+  {
+    "atom_id": "SHR-012",
+    "reference": "skills/virse-sharing/references/links.md",
+    "heading": "解析链接",
+    "scenario": "解析资源或画布分享链接"
+  },
+  {
+    "atom_id": "SHR-013",
+    "reference": "skills/virse-sharing/references/links.md",
+    "heading": "接受邀请",
+    "scenario": "接受分享邀请到指定空间"
+  }
+]

@@ -1,0 +1,20 @@
+{
+  "virse aesthetic call": {
+    "argument": "ACTION",
+    "values": {
+      "create": "AES-001",
+      "details": "AES-002",
+      "save-resource": "AES-003",
+      "references": "AES-004",
+      "test-canvas": "AES-005",
+      "delete-test-canvas": "AES-006",
+      "start-draft": "AES-007",
+      "draft": "AES-008",
+      "context": "AES-009",
+      "revise": "AES-010",
+      "save-draft": "AES-011",
+      "restore": "AES-012",
+      "snapshot": "AES-013"
+    }
+  }
+}

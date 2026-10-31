@@ -1,0 +1,56 @@
+[
+  {
+    "atom_id": "CMP-001",
+    "reference": "skills/virse-composer/references/sessions.md",
+    "heading": "创建独立节点",
+    "scenario": "创建独立创作家节点并保存身份，明确尚未发送任务。"
+  },
+  {
+    "atom_id": "CMP-002",
+    "reference": "skills/virse-composer/references/sessions.md",
+    "heading": "查找与读取创作家",
+    "scenario": "完整读取所需画布创作家分页并选择正确节点。"
+  },
+  {
+    "atom_id": "CMP-003",
+    "reference": "skills/virse-composer/references/sessions.md",
+    "heading": "查找与读取创作家",
+    "scenario": "读取指定 agent 元素及其运行信息，区分节点查询与任务成功。"
+  },
+  {
+    "atom_id": "CMP-004",
+    "reference": "skills/virse-composer/references/sessions.md",
+    "heading": "改名与删除节点",
+    "scenario": "改名原创作家节点，不创建或分叉会话。"
+  },
+  {
+    "atom_id": "CMP-005",
+    "reference": "skills/virse-composer/references/sessions.md",
+    "heading": "改名与删除节点",
+    "scenario": "删除明确创作家节点，不把删除当作停止或回滚。"
+  },
+  {
+    "atom_id": "CMP-006",
+    "reference": "skills/virse-composer/references/messages-and-continuation.md",
+    "heading": "交办带明确材料的任务",
+    "scenario": "向原会话交办带明确节点引用的任务，避免外部 Agent 重复执行同一目标。"
+  },
+  {
+    "atom_id": "CMP-007",
+    "reference": "skills/virse-composer/references/observe-and-stop.md",
+    "heading": "读取历史与对应回合",
+    "scenario": "按 history_meta 游标读取原创作家历史，定位对应回合。"
+  },
+  {
+    "atom_id": "CMP-008",
+    "reference": "skills/virse-composer/references/observe-and-stop.md",
+    "heading": "观察当前或指定回合",
+    "scenario": "使用真实 Agent turn ID 观察对应回合，超时不发送新消息。"
+  },
+  {
+    "atom_id": "CMP-009",
+    "reference": "skills/virse-composer/references/observe-and-stop.md",
+    "heading": "请求停止并确认结果",
+    "scenario": "对节点当前运行请求停止并确认真实终态，不承诺精准停止旧回合。"
+  }
+]

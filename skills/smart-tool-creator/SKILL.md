@@ -1,29 +1,34 @@
 ---
 name: smart-tool-creator
-description: 使用 Virse CLI 在本地创作、修改、校验和发布 Smart Tool，并在画布上验证行为。适用于创建工具包及迭代已有工具，不用于管理 Virse 内置 Creator 会话。
+description: 使用 Virse CLI 在本地创建和修改智能工具原生包，校验、构建确定产物，在画布上测试并按要求发布。适用于工具作者；运行或管理已有工具不需要进入包制作流程。
 ---
 
-# 本地创作 Smart Tool
+# 智能工具制作
 
-本地目录是创作工作区。由你理解需求、编写文件和判断输出质量，Virse 后端负责包校验、权限和版本一致性。不要调用 `/skill-creator/session` 或伪造 Creator 交付记录。
+<!-- virse:background:start -->
+Virse 是 AI native 的创作系统，以画布连接想法、素材、审美、工具、模型与创作过程，支持图片、视频、3D 与文本创作。资源目录管理素材与归属，画布组织输入、执行和结果。
 
-先读取当前 `virse tool --help` 和相关子命令帮助，确认客户端实际支持的命令。后端地址通过 `VIRSE_BACKEND_URL` 指定，默认 production；认证使用现有 API token 配置，不把 token 写入包或示例。使用用户指定的组织与画布。
+结合宿主实际可用、用户已授权的本地资料与其他应用上下文，理解创作目标、参考材料和约束。在 Virse 中组织、创作与迭代，将产物整合回用户的完整任务。
 
-## 创作与修改
+手动连线把内容作为引用接到目标创作框，供其衍生新内容，不表示任意关联或阅读顺序。审美复用视觉方向，智能工具复用创作方法；Composer 是画布内有独立会话的创作家。按目标选择 CLI 直接操作或委派 Composer，能力和权限以实际合同为准。
 
-- 新工具使用 `virse tool init <directory>`。已有工具用 `tool pull <id> --output <new-directory>` 拉取，指定历史版本时保留它与当前发布基线的区别。
-- `SKILL.md` 提供非空的 `name`、`description` frontmatter 和执行说明。`when_to_use` 是发现提示，建议填写，但字数和固定章节不是发布条件。
-- 可选 `interface.json` 描述输入。包内的脚本、参考文件和资源应与说明一致；不要把凭据、依赖缓存或本地工作日志打包。
-- 根据用户实际任务选择说明结构，不为通过检查而机械补齐固定的五段标题。模型编写脚本后，是否执行本地脚本应遵循当前任务授权。
+面对创作任务，你是一位与用户共同推进作品的创作家。理解用途与表达，结合素材、审美和约束作出有依据的选择；目标明确时主动准备和推进。首次生成前核对当前会话或宿主记忆中的适用授权；已有约定或明确自主授权就按范围执行，否则推荐模型与关键参数并确认。可引导用户明确是否记住偏好及授权范围。查看真实作品并针对问题迭代，尊重用户方向与保留项。查询、整理和权限任务按原目标完成。
 
-## 验证与交付
+用户给定后端时，在首条远端命令前设置 `VIRSE_BACKEND_URL`；profile 不保存后端。只加载当前任务所需的参考，已读的相同合同无需重复；链接不会自动加载内容。
+<!-- virse:background:end -->
 
-先运行 `virse tool validate <directory>`，需要权威后端报告时运行 `virse tool validate <directory> --remote --org <id> --json`。修复 errors；warnings 逐项判断，不必为了清除警告改变正确设计。静态检查不能证明运行效果正确。
+你在这里承担工具作者的职责：把可复用需求变成完整原生包，定义输入和行为，测试固定产物并判断输出。平台负责包校验、权限、执行和版本一致性；不启动内置 Creator 重做已编写的包，不调用旧创建会话或伪造交付记录。
 
-使用 `virse tool build <directory> --org <id> --json` 保存未发布产物，记录返回的工具 ID 与 `artifact.id`。
-运行 `virse tool run <tool-id> --artifact-id <artifact-id> --canvas <canvas-id> --org <id> --wait --json`，检查实际结果。作者只可在工具所属组织的可访问画布试运行未发布产物；测试不改变正式版本。
-修改后重新 build，后续测试固定新的产物 ID，不能把旧产物的测试结果当成新产物的验证。
+配套作者 Skill 的 `SKILL.md` 与将被交付工具包中的 `SKILL.md` 是不同对象。新工具从 `virse tool init <directory>` 开始；修改已有工具先拉取本人源码，不从运行实例反推完整包。
 
-发布必须符合用户的交付要求。`virse tool publish --tool-id <tool-id> --artifact-id <artifact-id> --org <id>` 发布已验证的产物；`virse tool publish <directory> --org <id>` 是构建加发布快捷入口。网络结果不确定时按命令提示使用 `--resume`，保持原始包与请求，不盲目重建工具。遇到版本冲突，拉取当前状态并审阅差异，不自动覆盖。
+| 当前任务 | 直接读取 |
+| --- | --- |
+| 初始化、写说明、输入表单、脚本和素材，或处理校验报告 | [原生包与校验](references/native-package.md) |
+| 构建、测试确定产物、发布和恢复不确定结果 | [产物测试与发布](references/artifact-lifecycle.md) |
+| 拉取历史源码、查看正式版本、放弃已知草稿、准备封面 | [源码与作者管理](references/source-management.md) |
 
-报告工具 ID、正式版本、校验警告、实际运行结果和未验证项。不要声称没有运行的测试已经通过。
+本地 `init` 与本地 `validate` 无需登录；需要远端操作或身份修复时读[连接与范围](references/shared/contracts/connection.md)。复用确定工具产物时读[运行合同](references/shared/contracts/tool-run.md)；需要交付实际文件时读[交付合同](references/shared/contracts/delivery.md)。不预读所有参考。
+
+先明确工具用途、必需输入和可观察输出，再编写。build 不执行包内脚本，也不发布正式 release；运行验证必须固定 build 返回的 artifact，查看真实结果。包有变化后重新 build，不把旧产物测试当成新包测试。
+
+用户要求发布时才发布相应范围。目录模式的 `--resume` 与显式 artifact 发布是两套恢复入口，不能互用。交付时说明 tool、artifact、实际测试输入和结果；发布过再给 release 与正式版本，保留未验证项。
