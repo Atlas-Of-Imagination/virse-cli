@@ -126,9 +126,10 @@ jobs:
           $dest = Join-Path $root 'bin'
           New-Item -ItemType Directory -Path $source -Force | Out-Null
           function gh { $global:LASTEXITCODE = 1 }
-          $script:skillsCalls = @()
+          # 模拟函数由 install.ps1 调用，不能依赖调用脚本的 $script: 作用域。
+          $global:VirseInstallerTestCalls = [System.Collections.Generic.List[string[]]]::new()
           function npx.cmd {
-              $script:skillsCalls += ,@($args)
+              $global:VirseInstallerTestCalls.Add([string[]]$args)
               $global:LASTEXITCODE = 0
           }
           function Invoke-WebRequest {
@@ -144,7 +145,8 @@ jobs:
                   $hash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
                   [IO.File]::WriteAllText((Join-Path $root "$stem.sha256"), "$hash  $stem.zip`n")
                   & ./install.ps1 -Version $version -Target x86_64-pc-windows-msvc -InstallDir $dest -NoPathUpdate
-                  $actual = $script:skillsCalls[-1] -join '|'
+                  if ($global:VirseInstallerTestCalls.Count -eq 0) { throw 'Installer did not invoke npx' }
+                  $actual = $global:VirseInstallerTestCalls[-1] -join '|'
                   $expected = "-y|skills|add|https://github.com/Atlas-Of-Imagination/virse-cli/tree/v$version/skills|--skill|*|-y|-g"
                   if ($actual -ne $expected) { throw "Unexpected skills arguments: $actual" }
                   if ([IO.File]::ReadAllText((Join-Path $dest 'virse.exe')) -ne "binary-$version") {
@@ -152,15 +154,16 @@ jobs:
                   }
                   if (@(Get-ChildItem -LiteralPath $dest).Count -ne 1) { throw 'Unexpected installed files' }
               }
-              $calls = $script:skillsCalls.Count
+              $calls = $global:VirseInstallerTestCalls.Count
               & ./install.ps1 -Version 1.2.4 -Target x86_64-pc-windows-msvc -InstallDir $dest -NoPathUpdate -SkipSkills
-              if ($script:skillsCalls.Count -ne $calls) { throw 'SkipSkills invoked npx' }
+              if ($global:VirseInstallerTestCalls.Count -ne $calls) { throw 'SkipSkills invoked npx' }
               function npx.cmd { $global:LASTEXITCODE = 2 }
               & ./install.ps1 -Version 1.2.4 -Target x86_64-pc-windows-msvc -InstallDir $dest -NoPathUpdate
               if ($LASTEXITCODE -ne 0) { throw 'Optional skills failure failed binary install' }
               if ([IO.File]::ReadAllText((Join-Path $dest 'virse.exe')) -ne 'binary-1.2.4') { throw 'Skills failure changed binary' }
           } finally {
               Remove-Item -LiteralPath $root -Recurse -Force
+              Remove-Variable -Name VirseInstallerTestCalls -Scope Global -ErrorAction SilentlyContinue
           }
           # gh 登录探测的预期非零状态不能作为整个步骤的退出码。
           exit 0
