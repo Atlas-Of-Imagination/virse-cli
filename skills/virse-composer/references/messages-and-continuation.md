@@ -2,7 +2,7 @@
 
 ## 交办带明确材料的任务
 
-已有节点上直接发送：
+已有节点并已满足本次执行授权时发送：
 
 ```bash
 virse --org "$ORG" --canvas "$CANVAS" --json composer send "$COMPOSER" --input "$BRIEF" --reference "$ELEMENT" --mode auto --wait
@@ -11,6 +11,8 @@ virse --org "$ORG" --canvas "$CANVAS" --json composer send "$COMPOSER" --input "
 引用多少个节点由任务决定，逐个 `--reference` 只引用指定元素，不自动展开相连节点或整个画布。说明目标、保留项和交付标准；不把外部 Agent 未确认的猜测包装成用户要求。运行中外部 Agent 不重复执行同一目标，但仍负责检查交付。
 
 Composer 不自动继承宿主对话、本地文件或其他应用内容。把完成子任务必需且获准传入的事实、约束与材料写入 brief，需要画布素材时附真实节点引用；`--input-file` 读取消息正文，不代表正文提到的本地文件已经上传或可被 Composer 读取。
+
+生成任务的 brief 还应包含用户已确认的模型、关键配置与数量范围，或允许 Composer 自主选型的明确授权。需要它自行选模时先取得该范围授权；已有约定内继续会话不重复确认，超出范围先问用户。未取得确认或自主授权前，只在宿主准备选型建议，不用委派绕过生成确认。
 
 普通输入默认 auto，显式 mode 只支持 auto/plan；具体执行由平台处理，不能依据模式名推断额外权限或固定成本。
 
