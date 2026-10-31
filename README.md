@@ -29,7 +29,9 @@ Invoke-WebRequest https://raw.githubusercontent.com/Atlas-Of-Imagination/virse-c
 .\install.ps1
 ```
 
-Installers require a published binary release. If a release is not available, install from source below. They verify archive checksums and install only the executable; skills are distributed separately in this repository.
+Installers require a published binary release. If a release is not available, install from source below. Archives contain only the executable. After verifying and installing it, installers use `npx -y skills add <release-skills-url> --skill '*' -y -g` to install/update all Virse skills globally for detected agents. Skills come from the same release tag as the binary, not from main. This step requires Node.js/npm (the skills tool currently requires Node.js 22.20+); missing npx or a failed skills install prints a retry command without failing the binary installation.
+
+Use `sh install.sh --skip-skills`, `.\install.ps1 -SkipSkills`, or `VIRSE_SKIP_SKILLS=1` for binary-only installation. Existing skills are not removed by this option. Rerunning the installer also reinstalls the selected release's skills; it does not run a global update of unrelated skills.
 
 | Platform | Architectures |
 | --- | --- |

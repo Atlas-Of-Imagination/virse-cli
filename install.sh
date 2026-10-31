@@ -1,19 +1,22 @@
 #!/bin/sh
-# 参考 kitkit-cli 的安装入口；只安装 virse，不复制包内其他文件。
+# 参考 kitkit-cli；归档只安装 bin，skills 通过独立工具安装。
 set -eu
 
 REPO=${VIRSE_REPO:-Atlas-Of-Imagination/virse-cli}
 VERSION=${VIRSE_VERSION:-latest}
 INSTALL_DIR=${VIRSE_INSTALL_DIR:-}
 TARGET=${VIRSE_TARGET:-}
+SKIP_SKILLS=${VIRSE_SKIP_SKILLS:-0}
 
 die() { printf 'virse install: %s\n' "$*" >&2; exit 1; }
 usage() {
   cat <<EOF
 Install virse from GitHub Releases.
 Usage: install.sh [--version VERSION] [--dir PATH] [--target TARGET] [--repo OWNER/REPO]
+                  [--skip-skills]
 Defaults: latest stable release; a writable bin directory in PATH, then ~/.local/bin.
 Environment: VIRSE_VERSION, VIRSE_INSTALL_DIR, VIRSE_TARGET, VIRSE_REPO.
+Skills: install all release-matched skills globally with npx; VIRSE_SKIP_SKILLS=1 skips this step.
 Private releases: install GitHub CLI and run gh auth login (or set GH_TOKEN).
 Linux defaults to musl; use --target x86_64-unknown-linux-gnu for the GNU build.
 EOF
@@ -21,6 +24,7 @@ EOF
 while [ "$#" -gt 0 ]; do
   case "$1" in
     -h|--help) usage; exit 0 ;;
+    --skip-skills) SKIP_SKILLS=1; shift ;;
     --version|--dir|--install-dir|--target|--repo)
       [ "$#" -ge 2 ] && [ -n "$2" ] || die "$1 requires a value"
       case "$1" in
@@ -38,6 +42,7 @@ USE_GH=false
 if command -v gh >/dev/null 2>&1 && gh auth status --hostname github.com >/dev/null 2>&1; then
   USE_GH=true
 fi
+
 
 download() {
   if command -v curl >/dev/null 2>&1; then
@@ -138,4 +143,18 @@ printf 'Installed virse to %s\n' "$DEST"
 if ! path_contains "$INSTALL_DIR"; then
   quoted=$(printf '%s' "$INSTALL_DIR" | sed "s/'/'\\\\''/g")
   printf "Add this to your shell profile, then open a new terminal:\n  export PATH='%s':\"\$PATH\"\n" "$quoted"
+fi
+
+# 固定到二进制同一发布 tag，避免旧 CLI 搭配 main 上较新的技能说明。
+if [ "$SKIP_SKILLS" != 1 ]; then
+  SKILLS_SOURCE="https://github.com/$REPO/tree/$VERSION/skills"
+  if command -v npx >/dev/null 2>&1; then
+    if npx -y skills add "$SKILLS_SOURCE" --skill '*' -y -g </dev/null; then
+      printf 'Installed/updated Virse skills for %s.\n' "$VERSION"
+    else
+      printf 'Virse binary installed, but skills installation failed. Retry:\n  npx -y skills add "%s" --skill '\''*'\'' -y -g\n' "$SKILLS_SOURCE" >&2
+    fi
+  else
+    printf 'Virse binary installed. Install Node.js/npm to add skills, then run:\n  npx -y skills add "%s" --skill '\''*'\'' -y -g\n' "$SKILLS_SOURCE" >&2
+  fi
 fi
