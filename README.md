@@ -330,3 +330,11 @@ Tests use local HTTP/WebSocket fixtures rather than a live Virse account. For in
 The [release workflow](.github/workflows/release.yml) builds seven platform targets, packages only the executable, and generates SHA-256 checksums. Pull requests and manual workflow runs produce build artifacts. Publishing requires a version tag matching the root `Cargo.toml` package version, for example `v0.1.0` for version `0.1.0`. Update the version and lockfile first; all build jobs must succeed before the draft release is published. Installers are separate release assets.
 
 For bug reports, include the CLI version, platform, command with secrets removed, and the error code or request ID. Use [GitHub Issues](https://github.com/Atlas-Of-Imagination/virse-cli/issues) for reports and feature requests.
+
+## Client compatibility and updates
+
+Network business commands check `/client-compatibility` before sending requests. An older API contract exits with code **9** (`CLIENT_UPGRADE_REQUIRED`); a failed, invalid or timed-out check exits with code **5** without sending business requests. Local commands and authentication recovery remain available. Upgrade rejections stop observation/reconnect attempts and keep recovery records; already accepted server tasks are not cancelled.
+
+Compatible newer CLI releases only produce a stderr notice. The public GitHub latest-release check has a two-second timeout and a 24-hour cache in the CLI config directory; unavailable release information never blocks commands. Upgrade messages contain an OS-specific command using `https://virse.ai/install.sh` or `https://virse.ai/install.ps1`. They do not install automatically. These website endpoints must be published before releasing this CLI.
+
+Deploy the matching backend CLI compatibility support first, keeping the minimum contract at 1. Publish a compatible downloadable CLI before raising the backend minimum. CLI releases and SDK/API contract versions are separate; unmarked historical API clients are not retroactively blocked.

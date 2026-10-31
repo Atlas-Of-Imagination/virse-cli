@@ -3,6 +3,7 @@ mod asset_types;
 mod assets;
 mod changes;
 mod client;
+pub mod compatibility;
 pub use asset_types::*;
 pub use changes::*;
 mod error;

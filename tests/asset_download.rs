@@ -12,7 +12,7 @@ async fn download_checks_checksum_and_size_before_publishing_file() {
         (5, format!("{:x}", Sha256::digest(b"wrong")), false),
         (7, format!("{:x}", Sha256::digest(b"bytes")), false),
     ] {
-        let app = Router::new()
+        let app = Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) }))
             .route(&format!("/api/v1/assets/{id}/download"),get(move || {
                 let checksum = checksum.clone();
                 async move { Json(json!({"request_id":"download","data":{

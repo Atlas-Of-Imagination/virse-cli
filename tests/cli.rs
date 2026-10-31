@@ -118,7 +118,7 @@ async fn configuration_has_only_environment_backend_override() {
 
 #[tokio::test]
 async fn login_persists_private_credentials_isolated_by_backend_and_profile() {
-    let app = Router::new().route(
+    let app = Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) })).route(
         "/auth/me",
         get(|headers: HeaderMap| async move {
             if headers.get("authorization").unwrap().to_str().unwrap() == format!("Bearer {TOKEN}")
@@ -245,7 +245,7 @@ async fn submit(
     }
 }
 fn app(calls: Calls, status: &'static str) -> Router {
-    Router::new()
+    Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) }))
         .route(
             "/auth/me",
             get(|| async { Json(json!({"status":1,"id":"user"})) }),
@@ -375,7 +375,7 @@ async fn wait_exit_codes_and_timeout_do_not_cancel_tasks() {
 
 #[tokio::test]
 async fn asset_download_is_atomic_and_never_overwrites() {
-    let app=Router::new().route(&format!("/api/v1/assets/{TASK}/download"),get(||async {Json(json!({"request_id":"r","data":{"url":"/bytes","filename":"image.png","delivery":"authenticated_stream"}}))}))
+    let app=Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) })).route(&format!("/api/v1/assets/{TASK}/download"),get(||async {Json(json!({"request_id":"r","data":{"url":"/bytes","filename":"image.png","delivery":"authenticated_stream"}}))}))
         .route("/bytes",get(|request:Request<Body>|async move {assert_eq!(request.headers()["authorization"],format!("Bearer {TOKEN}"));"actual image bytes"}));
     let (base, server) = serve(app).await;
     let dir = tempfile::tempdir().unwrap();
@@ -440,7 +440,7 @@ async fn ctrl_c_only_stops_observation() {
 async fn uncertain_submission_returns_key_after_bounded_retries() {
     let calls = Arc::new(AtomicUsize::new(0));
     let count = calls.clone();
-    let app = Router::new()
+    let app = Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) }))
         .route(
             "/auth/me",
             get(|| async { Json(json!({"status":1,"id":"user"})) }),
@@ -490,7 +490,7 @@ async fn uncertain_submission_returns_key_after_bounded_retries() {
 async fn generic_stdin_submission_binds_existing_element() {
     let calls = Arc::new(AtomicUsize::new(0));
     let count = calls.clone();
-    let app = Router::new()
+    let app = Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) }))
         .route(
             "/auth/me",
             get(|| async { Json(json!({"status":1,"id":"user"})) }),

@@ -34,9 +34,12 @@ impl Client {
                 url.set_scheme(scheme).map_err(|_| Error::protocol())?;
                 let mut request = url.as_str().into_client_request().map_err(|_| Error::protocol())?;
                 request.headers_mut().insert("authorization", self.authorization.clone());
+                self.contract_socket(request.headers_mut());
+                self.ensure_compatibility().await?;
                 let connected = tokio::time::timeout(Duration::from_secs(15), tokio_tungstenite::connect_async(request)).await;
                 let (mut socket, _) = match connected {
                     Ok(Ok(value)) => value,
+                    Ok(Err(tokio_tungstenite::tungstenite::Error::Http(response))) if crate::compatibility::is_upgrade_response(&response) => { Err(crate::compatibility::upgrade_error(None))?; unreachable!() }
                     Ok(Err(tokio_tungstenite::tungstenite::Error::Http(response))) if matches!(response.status().as_u16(), 401 | 403) => {
                         Err(Error { status: Some(response.status().as_u16()), ..Error::new("WS_ACCESS_DENIED", "WebSocket authentication or permission denied") })?;
                         unreachable!()
@@ -64,6 +67,7 @@ impl Client {
                     last_received = tokio::time::Instant::now();
                             match message {
                                 Message::Text(text) => {
+                                    crate::compatibility::check_text(&text)?;
                                     let value: Value = serde_json::from_str(&text).map_err(|_| Error::protocol())?;
                                     match value["type"].as_str() {
                                         Some("generation_snapshot" | "generation_updated") => {
@@ -86,6 +90,7 @@ impl Client {
                                 }
                                 Message::Ping(data) => { if socket.send(Message::Pong(data)).await.is_err() { break; } }
                                 Message::Close(frame) => {
+                                    crate::compatibility::check_close(frame.as_ref())?;
                                     if let Some(frame) = frame {
                                         let code = u16::from(frame.code);
                                         if matches!(code, 4000 | 4005 | 4006 | 4401 | 4403 | 4409 | 1008) {
