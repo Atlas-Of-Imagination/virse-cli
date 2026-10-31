@@ -1,0 +1,18 @@
+{
+  "repository": "https://github.com/Atlas-Of-Imagination/virse-cli",
+  "main": "8b6c0724cc67e74b2904a708b0b1b2c80b28d359",
+  "pending_cli_pull_requests": [
+    {
+      "number": 6,
+      "head": "cce94d9e60d55ca631f7600d5be96bca28c80a8f",
+      "scope": "二进制发行与安装入口"
+    },
+    {
+      "number": 9,
+      "head": "93375f420e30cdf7732cc42b58675bf8bcd982dc",
+      "scope": "浏览器和设备授权、退出与恢复"
+    }
+  ],
+  "scope": "Skill命令合同以main为基础；首次安装与浏览器授权按上述待合入PR核对。兼容性检查不代表Release已经发布或配套服务已经部署。",
+  "aesthetic_contracts": "aesthetic-contract-source.json"
+}

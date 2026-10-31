@@ -1,0 +1,286 @@
+{
+  "backend": {
+    "repository": "https://github.com/Atlas-Of-Imagination/virse-systems-monorepo",
+    "pull_request": 626,
+    "ref": "5bc266dc25bb8741646229987f45d233ee913f0f",
+    "facade": "backend/aesthetic_service/authoring_app.py",
+    "docs": "docs/aesthetic/authoring-api.md",
+    "tests": [
+      "backend/aesthetic_service/tests/test_authoring_api.py",
+      "backend/aesthetic_service/tests/test_tuning.py"
+    ]
+  },
+  "cli": {
+    "basis": "main 8b6c072 (includes tool artifact #1 and aesthetic #3)",
+    "request_source": "virse-api/src/aesthetics.rs",
+    "command_source": "src/aesthetics.rs",
+    "tests": "virse-api/tests/aesthetics.rs"
+  },
+  "verification": {
+    "static_contract_reviewed": true,
+    "loopback_cli_binding_verified": true,
+    "authenticated_backend_verified": false,
+    "real_training_or_generation_verified": false,
+    "note": "请求来自公开门面真实handler/DTO；示例UUID为合成身份，不代表真实资源或测试已完成。后端门面须存在且启用适用V2能力；404/合同不匹配先核对环境。",
+    "loopback_cases": 14
+  },
+  "contracts": [
+    {
+      "action": "create",
+      "method": "POST",
+      "path": "/v2/aesthetics",
+      "body": {
+        "name": "柔和侧光",
+        "image_ids": [
+          "11111111-1111-4111-8111-111111111111"
+        ],
+        "organization_id": "22222222-2222-4222-8222-222222222222",
+        "defer_dentry": true
+      },
+      "result_fields": [
+        "status",
+        "message",
+        "style"
+      ],
+      "source": "backend/create_service/create_app.py:CreateStyleRequest/create_style_endpoint"
+    },
+    {
+      "action": "details",
+      "method": "POST",
+      "path": "/v2/aesthetics/details",
+      "body": {
+        "style_ids": [
+          "33333333-3333-4333-8333-333333333333"
+        ]
+      },
+      "result_fields": [
+        "status",
+        "styles",
+        "denied_ids"
+      ],
+      "source": "backend/getinfo_service/getinfo_app.py:GetStyleDetailsRequest/get_style_details"
+    },
+    {
+      "action": "save-resource",
+      "method": "POST",
+      "path": "/v2/aesthetics/save",
+      "body": {
+        "style_id": "33333333-3333-4333-8333-333333333333",
+        "org_id": "22222222-2222-4222-8222-222222222222",
+        "drive": "personal"
+      },
+      "result_fields": [
+        "status",
+        "dentry",
+        "already_saved"
+      ],
+      "source": "backend/versa_service/versa_aesthetic.py:AestheticSaveRequest/handle_save"
+    },
+    {
+      "action": "references",
+      "method": "POST",
+      "path": "/v2/aesthetics/references",
+      "body": {
+        "style_id": "33333333-3333-4333-8333-333333333333",
+        "image_ids": [
+          "11111111-1111-4111-8111-111111111111"
+        ],
+        "org_id": "22222222-2222-4222-8222-222222222222",
+        "dentry_id": "44444444-4444-4444-8444-444444444444"
+      },
+      "result_fields": [
+        "status",
+        "update_status"
+      ],
+      "source": "backend/aesthetic_service/authoring_app.py:References/references"
+    },
+    {
+      "action": "test-canvas",
+      "method": "POST",
+      "path": "/v2/aesthetics/tuning/test-canvases",
+      "body": {
+        "style_id": "33333333-3333-4333-8333-333333333333",
+        "org_id": "22222222-2222-4222-8222-222222222222",
+        "dentry_id": "44444444-4444-4444-8444-444444444444"
+      },
+      "result_fields": [
+        "canvasId"
+      ],
+      "source": "backend/aesthetic_service/test_canvas_v2.py:create_canvas"
+    },
+    {
+      "action": "delete-test-canvas",
+      "method": "POST",
+      "path": "/v2/aesthetics/tuning/test-canvases/55555555-5555-4555-8555-555555555555/delete",
+      "id": "55555555-5555-4555-8555-555555555555",
+      "body": {},
+      "result_fields": [
+        "deleted"
+      ],
+      "source": "backend/aesthetic_service/test_canvas_v2.py:delete_canvas"
+    },
+    {
+      "action": "start-draft",
+      "method": "POST",
+      "path": "/v2/aesthetics/tuning/sessions",
+      "body": {
+        "style_id": "33333333-3333-4333-8333-333333333333",
+        "canvas_id": "55555555-5555-4555-8555-555555555555",
+        "org_id": "22222222-2222-4222-8222-222222222222",
+        "dentry_id": "44444444-4444-4444-8444-444444444444"
+      },
+      "result_fields": [
+        "sessionId",
+        "styleId",
+        "revision",
+        "savedRevision",
+        "versions",
+        "running"
+      ],
+      "source": "backend/aesthetic_service/tuning_app.py:Start/start"
+    },
+    {
+      "action": "draft",
+      "method": "GET",
+      "path": "/v2/aesthetics/tuning/sessions/66666666-6666-4666-8666-666666666666",
+      "id": "66666666-6666-4666-8666-666666666666",
+      "body": null,
+      "result_fields": [
+        "sessionId",
+        "styleId",
+        "revision",
+        "savedRevision",
+        "versions",
+        "running"
+      ],
+      "source": "backend/aesthetic_service/tuning_app.py:get_session"
+    },
+    {
+      "action": "context",
+      "method": "GET",
+      "path": "/v2/aesthetics/tuning/sessions/66666666-6666-4666-8666-666666666666/context",
+      "id": "66666666-6666-4666-8666-666666666666",
+      "body": null,
+      "result_fields": [
+        "session_id",
+        "canvas_id",
+        "style_id",
+        "revision",
+        "aesthetic_summary",
+        "reference_asset_ids"
+      ],
+      "source": "backend/aesthetic_service/authoring_app.py:context;backend/aesthetic_service/tuning_engine.py:session_action"
+    },
+    {
+      "action": "revise",
+      "method": "POST",
+      "path": "/v2/aesthetics/tuning/sessions/66666666-6666-4666-8666-666666666666/revise",
+      "id": "66666666-6666-4666-8666-666666666666",
+      "body": {
+        "expected_revision": 0,
+        "summary": "柔和侧光，保留主体真实颜色与材质。"
+      },
+      "result_fields": [
+        "sessionId",
+        "styleId",
+        "revision",
+        "savedRevision",
+        "versions",
+        "running"
+      ],
+      "source": "backend/aesthetic_service/authoring_app.py:DraftRevision/revise;backend/aesthetic_service/tuning_engine.py:session_action"
+    },
+    {
+      "action": "save-draft",
+      "method": "POST",
+      "path": "/v2/aesthetics/tuning/sessions/66666666-6666-4666-8666-666666666666/save",
+      "id": "66666666-6666-4666-8666-666666666666",
+      "body": {
+        "expected_revision": 1
+      },
+      "result_fields": [
+        "sessionId",
+        "styleId",
+        "revision",
+        "savedRevision",
+        "versions",
+        "running"
+      ],
+      "source": "backend/aesthetic_service/tuning_app.py:Revision/save"
+    },
+    {
+      "action": "restore",
+      "method": "POST",
+      "path": "/v2/aesthetics/tuning/sessions/66666666-6666-4666-8666-666666666666/restore",
+      "id": "66666666-6666-4666-8666-666666666666",
+      "body": {
+        "expected_revision": 2,
+        "version": 0
+      },
+      "result_fields": [
+        "sessionId",
+        "styleId",
+        "revision",
+        "savedRevision",
+        "versions",
+        "running"
+      ],
+      "source": "backend/aesthetic_service/tuning_app.py:Revision/restore"
+    },
+    {
+      "action": "snapshot",
+      "method": "POST",
+      "path": "/v2/aesthetics/tuning/sessions/66666666-6666-4666-8666-666666666666/snapshot",
+      "id": "66666666-6666-4666-8666-666666666666",
+      "body": {
+        "expected_revision": 1
+      },
+      "result_fields": [
+        "styleId",
+        "revision"
+      ],
+      "source": "backend/aesthetic_service/tuning_app.py:Revision/snapshot"
+    },
+    {
+      "action": "train",
+      "method": "POST",
+      "path": "/v2/aesthetics/canvases/55555555-5555-4555-8555-555555555555/training-runs",
+      "org": "22222222-2222-4222-8222-222222222222",
+      "canvas": "55555555-5555-4555-8555-555555555555",
+      "key": "aesthetic-training-fixture",
+      "body": {
+        "name": "柔和侧光",
+        "image_ids": [
+          "11111111-1111-4111-8111-111111111111"
+        ],
+        "defer_dentry": true
+      },
+      "wire_body": {
+        "org_id": "22222222-2222-4222-8222-222222222222",
+        "request": {
+          "name": "柔和侧光",
+          "image_ids": [
+            "11111111-1111-4111-8111-111111111111"
+          ],
+          "defer_dentry": true
+        }
+      },
+      "result_fields": [
+        "run_id",
+        "kind",
+        "status",
+        "revision",
+        "result",
+        "actions"
+      ],
+      "source": "backend/aesthetic_service/training_v2.py:TrainingInput/Training/submit"
+    }
+  ],
+  "remaining_runtime_checks": [
+    "在可用测试后端验证API token与Web用户相同权限边界。",
+    "用真实有权图片完成新建训练与旧源重训，核对pending、训练轮次、原key重放和保存。",
+    "外部Agent空闲修订、冲突、快照实际生成、选定修订保存与源变更拒绝。",
+    "确认普通details不返回私有正文，且只读身份不能访问作者context。",
+    "验证活动调优现场删除返回retained_for_run，空闲现场实际清理。"
+  ]
+}

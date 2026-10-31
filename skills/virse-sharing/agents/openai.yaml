@@ -1,0 +1,3 @@
+interface:
+  display_name: "Virse 权限与分享"
+  short_description: "核对资源有效权限与继承、设置或撤回授权，并处理链接与邀请"

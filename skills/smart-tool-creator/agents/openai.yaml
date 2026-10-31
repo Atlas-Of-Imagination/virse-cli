@@ -1,0 +1,3 @@
+interface:
+  display_name: "Virse 智能工具制作"
+  short_description: "由外部 Agent 编写原生工具包，校验构建、测试确定产物并发布"
