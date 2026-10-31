@@ -19,6 +19,12 @@ version = "0.1.0"
 edition.workspace = true
 authors.workspace = true
 
+[profile.release]
+opt-level = "z"
+strip = true
+lto = true
+codegen-units = 1
+
 [dependencies]
 virse-api = { version = "0.1.0", path = "virse-api" }
 

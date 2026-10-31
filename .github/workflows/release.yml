@@ -147,6 +147,8 @@ jobs:
           } finally {
               Remove-Item -LiteralPath $root -Recurse -Force
           }
+          # gh 登录探测的预期非零状态不能作为整个步骤的退出码。
+          exit 0
 
   publish:
     needs: [build, windows-installer]
