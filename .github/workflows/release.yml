@@ -1,0 +1,195 @@
+name: release
+
+on:
+  push:
+    tags:
+      - v[0-9]+.*
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check release version
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import tomllib
+          from pathlib import Path
+
+          version = tomllib.loads(Path('Cargo.toml').read_text())['package']['version']
+          tag = os.environ['RELEASE_TAG']
+          if tag != f'v{version}':
+              raise SystemExit(f'Tag {tag} does not match Cargo.toml version {version}')
+          PY
+
+  build:
+    needs: validate
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: x86_64-unknown-linux-musl, os: ubuntu-24.04 }
+          - { target: aarch64-unknown-linux-musl, os: ubuntu-24.04 }
+          - { target: x86_64-unknown-linux-gnu, os: ubuntu-22.04 }
+          - { target: aarch64-apple-darwin, os: macos-latest }
+          - { target: x86_64-apple-darwin, os: macos-latest }
+          - { target: x86_64-pc-windows-msvc, os: windows-latest }
+          - { target: aarch64-pc-windows-msvc, os: windows-latest }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: taiki-e/setup-cross-toolchain-action@v1
+        if: runner.os == 'Linux'
+        with:
+          target: ${{ matrix.target }}
+          runner: none
+      # 先构建并保存所有平台产物，全部成功后才创建 Release。
+      - uses: taiki-e/upload-rust-binary-action@v1
+        id: package
+        with:
+          bin: virse
+          target: ${{ matrix.target }}
+          archive: $bin-${{ github.ref_type == 'tag' && github.ref_name || github.sha }}-$target
+          tar: unix
+          zip: windows
+          checksum: sha256
+          locked: true
+          dry-run: true
+          dry-run-intended: true
+      - name: Check binary-only archive
+        shell: bash
+        env:
+          ARCHIVE: ${{ steps.package.outputs.tar || steps.package.outputs.zip }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import tarfile
+          import zipfile
+
+          path = os.environ['ARCHIVE']
+          if path.endswith('.zip'):
+              with zipfile.ZipFile(path) as archive:
+                  assert archive.namelist() == ['virse.exe'], archive.namelist()
+          else:
+              with tarfile.open(path) as archive:
+                  assert archive.getnames() == ['virse'], archive.getnames()
+          PY
+      - name: Smoke test native binary
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          host=$(rustc -vV | sed -n 's/^host: //p')
+          if [ "$TARGET" = "$host" ]; then
+            binary="target/$TARGET/release/virse"
+            if [ "$RUNNER_OS" = Windows ]; then binary="$binary.exe"; fi
+            "$binary" --version
+            "$binary" --help
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: virse-${{ matrix.target }}
+          path: |
+            ${{ steps.package.outputs.tar }}
+            ${{ steps.package.outputs.zip }}
+            ${{ steps.package.outputs.sha256 }}
+          if-no-files-found: error
+          retention-days: 7
+
+  windows-installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Windows install and upgrade
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = Join-Path $env:RUNNER_TEMP 'virse installer check'
+          $source = Join-Path $root 'source'
+          $dest = Join-Path $root 'bin'
+          New-Item -ItemType Directory -Path $source -Force | Out-Null
+          function gh { $global:LASTEXITCODE = 1 }
+          function Invoke-WebRequest {
+              param($Uri, $OutFile, [switch]$UseBasicParsing)
+              Copy-Item -LiteralPath (Join-Path $root ([Uri]$Uri).Segments[-1]) -Destination $OutFile
+          }
+          try {
+              foreach ($version in @('1.2.3', '1.2.4')) {
+                  $stem = "virse-v$version-x86_64-pc-windows-msvc"
+                  [IO.File]::WriteAllText((Join-Path $source 'virse.exe'), "binary-$version")
+                  $archive = Join-Path $root "$stem.zip"
+                  Compress-Archive -Path (Join-Path $source 'virse.exe') -DestinationPath $archive
+                  $hash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
+                  [IO.File]::WriteAllText((Join-Path $root "$stem.sha256"), "$hash  $stem.zip`n")
+                  & ./install.ps1 -Version $version -Target x86_64-pc-windows-msvc -InstallDir $dest -NoPathUpdate
+                  if ([IO.File]::ReadAllText((Join-Path $dest 'virse.exe')) -ne "binary-$version") {
+                      throw "Installation of $version did not replace the binary"
+                  }
+                  if (@(Get-ChildItem -LiteralPath $dest).Count -ne 1) { throw 'Unexpected installed files' }
+              }
+          } finally {
+              Remove-Item -LiteralPath $root -Recurse -Force
+          }
+          # gh 登录探测的预期非零状态不能作为整个步骤的退出码。
+          exit 0
+
+  publish:
+    needs: [build, windows-installer]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: virse-*
+          path: dist
+          merge-multiple: true
+      - name: Verify archive checksums
+        working-directory: dist
+        run: sha256sum --check ./*.sha256
+      - name: Refuse to replace a published release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh api --paginate "repos/$GITHUB_REPOSITORY/releases" --jq '.[] | {tag_name, draft}' > "$RUNNER_TEMP/releases.jsonl"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          for line in (Path(os.environ['RUNNER_TEMP']) / 'releases.jsonl').read_text().splitlines():
+              release = json.loads(line)
+              if release['tag_name'] == os.environ['RELEASE_TAG'] and not release['draft']:
+                  raise SystemExit('Release is already published; use a new version tag')
+          PY
+      - uses: taiki-e/create-gh-release-action@v1
+        with:
+          draft: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload assets and publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release upload "$RELEASE_TAG" dist/* install.sh install.ps1 --clobber
+          gh release edit "$RELEASE_TAG" --draft=false
