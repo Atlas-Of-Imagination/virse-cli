@@ -73,11 +73,24 @@ jobs:
           locked: true
           dry-run: true
           dry-run-intended: true
-      - name: Test installer and binary-only archive
+      - name: Check binary-only archive
         shell: bash
         env:
           ARCHIVE: ${{ steps.package.outputs.tar || steps.package.outputs.zip }}
-        run: python3 scripts/test_installers.py --archive "$ARCHIVE"
+        run: |
+          python3 - <<'PY'
+          import os
+          import tarfile
+          import zipfile
+
+          path = os.environ['ARCHIVE']
+          if path.endswith('.zip'):
+              with zipfile.ZipFile(path) as archive:
+                  assert archive.namelist() == ['virse.exe'], archive.namelist()
+          else:
+              with tarfile.open(path) as archive:
+                  assert archive.getnames() == ['virse'], archive.getnames()
+          PY
       - name: Smoke test native binary
         shell: bash
         env:
@@ -100,8 +113,43 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  windows-installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Windows install and upgrade
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = Join-Path $env:RUNNER_TEMP 'virse installer check'
+          $source = Join-Path $root 'source'
+          $dest = Join-Path $root 'bin'
+          New-Item -ItemType Directory -Path $source -Force | Out-Null
+          function gh { $global:LASTEXITCODE = 1 }
+          function Invoke-WebRequest {
+              param($Uri, $OutFile, [switch]$UseBasicParsing)
+              Copy-Item -LiteralPath (Join-Path $root ([Uri]$Uri).Segments[-1]) -Destination $OutFile
+          }
+          try {
+              foreach ($version in @('1.2.3', '1.2.4')) {
+                  $stem = "virse-v$version-x86_64-pc-windows-msvc"
+                  [IO.File]::WriteAllText((Join-Path $source 'virse.exe'), "binary-$version")
+                  $archive = Join-Path $root "$stem.zip"
+                  Compress-Archive -Path (Join-Path $source 'virse.exe') -DestinationPath $archive
+                  $hash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
+                  [IO.File]::WriteAllText((Join-Path $root "$stem.sha256"), "$hash  $stem.zip`n")
+                  & ./install.ps1 -Version $version -Target x86_64-pc-windows-msvc -InstallDir $dest -NoPathUpdate
+                  if ([IO.File]::ReadAllText((Join-Path $dest 'virse.exe')) -ne "binary-$version") {
+                      throw "Installation of $version did not replace the binary"
+                  }
+                  if (@(Get-ChildItem -LiteralPath $dest).Count -ne 1) { throw 'Unexpected installed files' }
+              }
+          } finally {
+              Remove-Item -LiteralPath $root -Recurse -Force
+          }
+
   publish:
-    needs: build
+    needs: [build, windows-installer]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-24.04
     permissions:

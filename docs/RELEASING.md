@@ -49,7 +49,7 @@ irm https://github.com/Atlas-Of-Imagination/virse-cli/releases/latest/download/i
 
 ## 验证与发布
 
-- 向 main 提交 PR 时，7 个目标均执行 `--locked` release 构建、打包和 SHA-256 生成，检查归档只含 bin，并离线测试当前宿主平台的安装脚本（模拟下载，不访问线上或修改真实用户 PATH），产物保存在 Actions artifacts 中 7 天；原生目标额外运行 `--version` 和 `--help`。交叉编译目标只验证构建与打包，不宣称已在对应设备运行。
+- 向 main 提交 PR 时，7 个目标均执行 `--locked` release 构建、打包和 SHA-256 生成，在 workflow 内检查归档只含 bin，产物保存在 Actions artifacts 中 7 天；原生目标额外运行 `--version` 和 `--help`。Windows 安装/升级检查直接写在 workflow 中，使用临时文件模拟下载，不依赖 `scripts/` 下的安装测试文件，也不修改真实用户 PATH。交叉编译目标只验证构建与打包，不宣称已在对应设备运行。
 - 手动执行 workflow 也只构建及保存 artifacts，不发布 Release。非 tag 构建使用 commit SHA 命名产物。
 - 推送版本 tag 时，先检查 tag 与根 `Cargo.toml` 的 package version 完全一致。所有平台构建成功、汇总校验通过后才创建草稿 Release，上传全部产物，再公开发布。构建失败不会公开缺少平台产物的新版本；上传失败保留草稿供排查和重跑。
 

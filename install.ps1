@@ -113,9 +113,14 @@ try {
         $pending = Join-Path $InstallDir ('.virse-install-' + [Guid]::NewGuid().ToString('N'))
         [IO.Compression.ZipFileExtensions]::ExtractToFile($entries[0], $pending)
     } finally { $zip.Dispose() }
-    if ([IO.File]::Exists($destination)) { [IO.File]::Replace($pending, $destination, $null) }
+    $binaryHash = (Get-FileHash -LiteralPath $pending -Algorithm SHA256).Hash
+    # PowerShell 会把 $null 转成空字符串；这里需要真正的 null 字符串。
+    if ([IO.File]::Exists($destination)) { [IO.File]::Replace($pending, $destination, [NullString]::Value) }
     else { [IO.File]::Move($pending, $destination) }
     $pending = $null
+    if ((Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash -ne $binaryHash) {
+        throw 'Installed binary does not match the downloaded binary.'
+    }
 
     if (-not $NoPathUpdate) {
         $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
