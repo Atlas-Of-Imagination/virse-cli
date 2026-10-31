@@ -1,11 +1,12 @@
-# 参考 kitkit-cli 的 PowerShell 安装入口；仅安装 virse.exe。
+# 归档只安装 virse.exe；skills 通过独立工具安装。
 [CmdletBinding()]
 param(
     [string]$Version = $env:VIRSE_VERSION,
     [string]$InstallDir = $env:VIRSE_INSTALL_DIR,
     [string]$Target = $env:VIRSE_TARGET,
     [string]$Repository = $env:VIRSE_REPO,
-    [switch]$NoPathUpdate
+    [switch]$NoPathUpdate,
+    [switch]$SkipSkills = ($env:VIRSE_SKIP_SKILLS -eq '1')
 )
 
 Set-StrictMode -Version 2.0
@@ -133,6 +134,26 @@ try {
     Write-Host "Installed virse to $destination"
     if ($NoPathUpdate) { Write-Host "Add $InstallDir to PATH if needed." }
     else { Write-Host 'Open a new terminal if virse is not available in your current shell.' }
+    if (-not $SkipSkills) {
+        $skillsSource = "https://github.com/$Repository/tree/$Version/skills"
+        $retry = "npx -y skills add `"$skillsSource`" --skill '*' -y -g"
+        $npxCommand = Get-Command npx.cmd -ErrorAction SilentlyContinue
+        if (-not $npxCommand) { $npxCommand = Get-Command npx -ErrorAction SilentlyContinue }
+        if ($npxCommand) {
+            try {
+                & $npxCommand -y skills add $skillsSource --skill '*' -y -g
+                if ($LASTEXITCODE -ne 0) { throw "skills exited with code $LASTEXITCODE" }
+                Write-Host "Installed/updated Virse skills for $Version."
+            } catch {
+                Write-Warning "Virse binary installed, but skills installation failed. Retry: $retry"
+            } finally {
+                # 可选 skills 步骤失败不改变二进制安装的成功状态。
+                $global:LASTEXITCODE = 0
+            }
+        } else {
+            Write-Warning "Virse binary installed. Install Node.js/npm to add skills, then run: $retry"
+        }
+    }
 } finally {
     if ($pending -and (Test-Path -LiteralPath $pending)) { Remove-Item -LiteralPath $pending -Force }
     Remove-Item -LiteralPath $tempDir -Recurse -Force -ErrorAction SilentlyContinue
