@@ -54,7 +54,7 @@ fn change(kind: &str) -> Value {
 }
 async fn serve(mock: Mock) -> (String, Shared, tokio::task::JoinHandle<()>) {
     let shared = Arc::new(Mutex::new(mock));
-    let app = Router::new()
+    let app = Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) }))
         .route(
             "/api/v1/changes",
             get(

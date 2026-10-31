@@ -118,7 +118,7 @@ async fn batch(
     Json(json!({"request_id":"write","data":{"items":items}})).into_response()
 }
 async fn serve(state: Shared) -> (String, tokio::task::JoinHandle<()>) {
-    let app=Router::new()
+    let app=Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) }))
         .route("/auth/me",get(||async{Json(json!({"status":1,"id":USER}))}))
         .route("/api/v1/resources/query",post(query))
         .route("/api/v1/resources/{id}",get(resource))
@@ -442,7 +442,7 @@ async fn uncertain_folder_creation_is_not_blindly_retried() {
 
 #[tokio::test]
 async fn virtual_root_still_checks_organization_permission() {
-    let app=Router::new().route("/api/v1/resources/query",post(||async {
+    let app=Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) })).route("/api/v1/resources/query",post(||async {
         (StatusCode::FORBIDDEN,Json(json!({"request_id":"denied","error":{"code":"forbidden","message":"Not a member","retryable":false}})))
     }));
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();

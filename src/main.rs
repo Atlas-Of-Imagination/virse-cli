@@ -3,6 +3,7 @@ mod args;
 mod batch;
 mod canvas_add;
 mod canvas_edit;
+mod compatibility;
 mod composer;
 mod delivery;
 mod discovery;
@@ -56,6 +57,7 @@ async fn main() {
     let code = match run(&cli).await {
         Ok(code) => code,
         Err(error) => {
+            let error = compatibility::decorate(error);
             if cli.json {
                 eprintln!("{}", json!({"error":error}));
             } else {
@@ -75,6 +77,8 @@ async fn main() {
 
 fn error_exit(error: &Error) -> u8 {
     match error.code.as_str() {
+        "CLIENT_UPGRADE_REQUIRED" => 9,
+        "COMPATIBILITY_CHECK_FAILED" => 5,
         "INVALID_INPUT" => 2,
         "AUTH_REQUIRED" => 3,
         "no_share_permission"
@@ -199,7 +203,11 @@ async fn run(cli: &Cli) -> Result<u8> {
         }
     }
     let token = store.token(&cli.profile, &backend)?;
-    let client = Client::new(&backend, &token)?;
+    let client = Client::new(&backend, &token)?
+        .with_cli_contract(virse_api::compatibility::CONTRACT_VERSION);
+    if !matches!(cli.command, Command::Auth { .. }) {
+        compatibility::notify_update(&store).await;
+    }
     let defaults = store.defaults(&cli.profile, &backend)?;
     let canvas = || required(cli.canvas.or(defaults.canvas), "canvas");
     let org = || required(cli.org.or(defaults.org), "org");

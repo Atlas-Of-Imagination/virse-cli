@@ -22,7 +22,7 @@ struct Data {
 }
 type Shared = Arc<Mutex<Data>>;
 async fn app(state: Shared) -> (String, tokio::task::JoinHandle<()>) {
-    let app=Router::new()
+    let app=Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) }))
         .route("/api/v1/resources/{id}",get(|State(s):State<Shared>|async move{s.lock().unwrap().calls.push(("resource-read".into(),json!({})));envelope(json!({"resource":item(ONE,"file","folder",None),"kind":"folder","asset":null,"detail":{}}))}))
         .route("/api/v1/resources/query",post(||async{envelope(json!({"items":[],"snapshot":"s","next_cursor":null,"truncated":false}))}))
         .route("/versa/mark",post(record)).route("/versa/reorder",post(record)).route("/versa/shared_with_me/remove",post(record)).route("/versa/quick_access/list",post(record))

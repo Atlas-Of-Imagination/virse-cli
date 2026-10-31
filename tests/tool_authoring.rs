@@ -467,7 +467,7 @@ async fn server() -> (
     tokio::task::JoinHandle<()>,
 ) {
     let state = Arc::new(Mutex::new(Server::default()));
-    let app = Router::new()
+    let app = Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) }))
         .fallback(post(endpoint))
         .with_state(state.clone());
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();

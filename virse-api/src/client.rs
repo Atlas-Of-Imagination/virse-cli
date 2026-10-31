@@ -14,6 +14,8 @@ pub struct Client {
     pub(crate) authorization: HeaderValue,
     pub(crate) http: reqwest::Client,
     token: String,
+    pub(crate) cli_contract: Option<u32>,
+    pub(crate) compatibility_checked: std::sync::Arc<tokio::sync::OnceCell<()>>,
     expected_user: Option<Uuid>,
 }
 
@@ -62,10 +64,37 @@ impl Client {
             authorization,
             http,
             token: token.into(),
+            cli_contract: None,
+            compatibility_checked: Default::default(),
             expected_user: None,
         })
     }
 
+    pub fn with_cli_contract(mut self, version: u32) -> Self {
+        self.cli_contract = Some(version);
+        self.compatibility_checked = Default::default();
+        self
+    }
+    pub(crate) fn contract_request(
+        &self,
+        request: reqwest::RequestBuilder,
+    ) -> reqwest::RequestBuilder {
+        match self.cli_contract {
+            Some(version) => request
+                .header("X-Virse-Client", "cli")
+                .header("X-Virse-Contract-Version", version),
+            None => request,
+        }
+    }
+    pub(crate) fn contract_socket(&self, headers: &mut reqwest::header::HeaderMap) {
+        if let Some(version) = self.cli_contract {
+            headers.insert("x-virse-client", HeaderValue::from_static("cli"));
+            headers.insert(
+                "x-virse-contract-version",
+                HeaderValue::from_str(&version.to_string()).expect("integer header"),
+            );
+        }
+    }
     pub(crate) fn expecting_user(&self, user: Uuid) -> Self {
         let mut client = self.clone();
         client.expected_user = Some(user);
@@ -121,6 +150,10 @@ impl Client {
             }
             request = request.header("Idempotency-Key", key);
         }
+        if path != "auth/me" {
+            self.ensure_compatibility().await?;
+        }
+        let request = self.contract_request(request);
         let response = request.send().await.map_err(|_| Error::transport())?;
         self.read_json_response(response).await
     }
@@ -155,6 +188,10 @@ impl Client {
             }
             request = request.header("Idempotency-Key", key);
         }
+        if path != "auth/me" {
+            self.ensure_compatibility().await?;
+        }
+        let request = self.contract_request(request);
         let response = request.send().await.map_err(|_| Error::transport())?;
         self.read_json_response(response).await
     }
@@ -313,8 +350,14 @@ impl Client {
                 request = request.header("If-Range", header);
             }
             if authenticated {
+                self.ensure_compatibility().await?;
                 request = request.header(AUTHORIZATION, self.authorization.clone());
             }
+            let request = if authenticated {
+                self.contract_request(request)
+            } else {
+                request
+            };
             let response = request.send().await.map_err(|_| Error::transport())?;
             if response.status().is_redirection() {
                 let location = response
@@ -375,15 +418,17 @@ fn decode(status: u16, request_id: Option<String>, mut body: Value) -> Result<Va
                     .and_then(Value::as_str)
                     .map(str::to_owned)
             }),
-            retryable: detail
-                .get("retryable")
-                .and_then(Value::as_bool)
-                .unwrap_or(status == 429 || status >= 500),
+            retryable: code != "CLIENT_UPGRADE_REQUIRED"
+                && detail
+                    .get("retryable")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(status == 429 || status >= 500),
             details: detail
                 .get("details")
                 .filter(|v| !v.is_null())
                 .cloned()
-                .map(Box::new),
+                .map(Box::new)
+                .or_else(|| (code == "CLIENT_UPGRADE_REQUIRED").then(|| Box::new(detail.clone()))),
             task_id: None,
             idempotency_key: None,
         });

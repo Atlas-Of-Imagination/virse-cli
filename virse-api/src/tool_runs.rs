@@ -195,9 +195,12 @@ impl Client {
                 url.set_scheme(scheme).map_err(|_| Error::protocol())?;
                 let mut request = url.as_str().into_client_request().map_err(|_| Error::protocol())?;
                 request.headers_mut().insert("authorization", self.authorization.clone());
+                self.contract_socket(request.headers_mut());
+                self.ensure_compatibility().await?;
                 let connected = tokio::time::timeout(Duration::from_secs(15), tokio_tungstenite::connect_async(request)).await;
                 let (mut socket, _) = match connected {
                     Ok(Ok(value)) => value,
+                    Ok(Err(tokio_tungstenite::tungstenite::Error::Http(response))) if crate::compatibility::is_upgrade_response(&response) => { Err(crate::compatibility::upgrade_error(None))?; unreachable!() }
                     Ok(Err(tokio_tungstenite::tungstenite::Error::Http(response))) if matches!(response.status().as_u16(), 401 | 403) => {
                         Err(Error { status: Some(response.status().as_u16()), ..Error::new("WS_ACCESS_DENIED", "Canvas socket authentication or permission denied") })?;
                         unreachable!()
@@ -208,12 +211,14 @@ impl Client {
                     loop {
                         match socket.next().await {
                             Some(Ok(Message::Text(text))) => {
+                                crate::compatibility::check_text(&text)?;
                                 let value: Value = serde_json::from_str(&text).map_err(|_| Error::protocol())?;
                                 if value["type"] == "active_users" { return Ok(true); }
                                 if value["type"] == "error" { return Err(Error::new("OBSERVATION_UNAVAILABLE", "Canvas rejected observation")); }
                             }
                             Some(Ok(Message::Ping(bytes))) => { if socket.send(Message::Pong(bytes)).await.is_err() { return Ok(false); } }
                             Some(Ok(Message::Close(frame))) => {
+                                crate::compatibility::check_close(frame.as_ref())?;
                                 if let Some(error) = frame.and_then(|f| socket_denied(u16::from(f.code))) { return Err(error); }
                                 return Ok(false);
                             }
@@ -255,6 +260,7 @@ impl Client {
                     if connected_at.elapsed() > Duration::from_secs(60) { failures = 0; }
                     match message {
                         Message::Text(text) => {
+                                    crate::compatibility::check_text(&text)?;
                             let value: Value = serde_json::from_str(&text).map_err(|_| Error::protocol())?;
                             match value["type"].as_str() {
                                 Some("canvas_run_updated") => {
@@ -274,6 +280,7 @@ impl Client {
                         }
                         Message::Ping(bytes) => { if socket.send(Message::Pong(bytes)).await.is_err() { continue 'reconnect; } }
                         Message::Close(frame) => {
+                                    crate::compatibility::check_close(frame.as_ref())?;
                             if let Some(error) = frame.and_then(|f| socket_denied(u16::from(f.code))) { Err(error)?; }
                             continue 'reconnect;
                         }
