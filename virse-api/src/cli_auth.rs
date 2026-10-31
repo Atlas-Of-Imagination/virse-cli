@@ -51,20 +51,61 @@ impl CliAuthClient {
             .await
             .map_err(|_| Error::transport())?;
         let status = response.status().as_u16();
-        let value: Value = response.json().await.map_err(|_| Error::protocol())?;
+        let request_id = response
+            .headers()
+            .get("x-request-id")
+            .and_then(|v| v.to_str().ok())
+            .map(str::to_owned);
+        let decoded = response.json::<Value>().await;
         if !(200..300).contains(&status) {
+            // 网关可能返回纯文本/HTML；先保留 HTTP 故障，不让 JSON 解析掩盖上游不可用。
+            let fallback = match status {
+                401 => "AUTH_REQUIRED",
+                403 => "AUTHORIZATION_DENIED",
+                429 => "AUTH_RATE_LIMITED",
+                500..=599 => "AUTH_SERVICE_UNAVAILABLE",
+                300..=399 => "AUTHORIZATION_REDIRECT_REJECTED",
+                _ => "AUTHORIZATION_FAILED",
+            };
+            let code = decoded
+                .as_ref()
+                .ok()
+                .and_then(|value| value["detail"]["code"].as_str())
+                .filter(|code| {
+                    !code.is_empty()
+                        && code.len() <= 128
+                        && code
+                            .bytes()
+                            .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == b'_')
+                })
+                .unwrap_or(fallback);
             return Err(Error {
                 status: Some(status),
+                request_id,
+                retryable: status == 429 || status >= 500,
                 ..Error::new(
-                    value["detail"]["code"]
-                        .as_str()
-                        .unwrap_or("AUTHORIZATION_FAILED"),
-                    "CLI authorization request failed",
+                    code,
+                    format!(
+                        "CLI authorization request failed (HTTP {status}){}",
+                        if status >= 500 {
+                            "; backend or upstream service unavailable"
+                        } else {
+                            ""
+                        }
+                    ),
                 )
             });
         }
-        Ok(value)
+        decoded.map_err(|_| Error {
+            status: Some(status),
+            request_id,
+            ..Error::new(
+                "INVALID_RESPONSE",
+                format!("Authorization endpoint returned a non-JSON response (HTTP {status})"),
+            )
+        })
     }
+
     pub async fn start(
         &self,
         mode: &str,
