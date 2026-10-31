@@ -43,7 +43,7 @@ fn snapshot(status: &str) -> Value {
     json!({"run_id":RUN,"canvas_id":CANVAS,"kind":"tool","element_id":TOOL,"owner_id":USER,"status":status,"revision":1,"result":{"outputs":[]},"error":null,"actions":{"cancel":status=="queued","resume":false,"interrupt":status=="running"},"tool":{"skill_id":TOOL,"version_id":"artifact-1"}})
 }
 async fn serve(s: Shared) -> (String, tokio::task::JoinHandle<()>) {
-    let app=Router::new()
+    let app=Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) }))
         .route("/auth/me",get(||async{Json(json!({"id":USER}))}))
         .route(&format!("/v2/skills/{TOOL}/input-schema"),get(|State(s):State<Shared>,Query(q):Query<HashMap<String,String>>,headers:HeaderMap|async move{
             assert_eq!(headers["authorization"],format!("Bearer {TOKEN}")); assert_eq!(q["canvas_id"],CANVAS); assert_eq!(q["org_id"],ORG);
@@ -455,7 +455,7 @@ async fn draft_abandon_is_explicit_single_attempt_and_preserves_current_release(
             current_release: "published-release".into(),
             ..Default::default()
         }));
-        let app = Router::new()
+        let app = Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) }))
             .route(
                 "/skills/{*path}",
                 post(

@@ -122,7 +122,7 @@ async fn endpoint(
     Json(value).into_response()
 }
 async fn serve(s: Shared) -> (String, tokio::task::JoinHandle<()>) {
-    let app = Router::new().fallback(post(endpoint)).with_state(s);
+    let app = Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) })).fallback(post(endpoint)).with_state(s);
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let base = format!("http://{}", listener.local_addr().unwrap());
     let server = tokio::spawn(async move {

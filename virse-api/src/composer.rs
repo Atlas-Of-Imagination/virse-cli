@@ -97,6 +97,7 @@ impl ComposerSocket {
                     return Ok(json!({"type":"observer_heartbeat"}));
                 }
                 Ok(Some(Ok(Message::Text(t)))) => {
+                    crate::compatibility::check_text(&t)?;
                     return serde_json::from_str(&t).map_err(|_| Error::protocol());
                 }
                 Ok(Some(Ok(Message::Ping(p)))) => self
@@ -104,6 +105,9 @@ impl ComposerSocket {
                     .send(Message::Pong(p))
                     .await
                     .map_err(|_| Error::transport())?,
+                Ok(Some(Ok(Message::Close(Some(f))))) if u16::from(f.code) == 4409 => {
+                    return Err(crate::compatibility::upgrade_error(None));
+                }
                 Ok(Some(Ok(Message::Close(Some(f)))))
                     if matches!(
                         u16::from(f.code),
@@ -137,13 +141,16 @@ impl Client {
         {
             return Err(Error::new("INVALID_INPUT", "Composer input is required"));
         }
-        let response = self
+        let request = self
             .http
             .post(self.url(&format!("agent/blocks/{block}/messages"))?)
             .query(&[("delivery", "ws")])
             .header("authorization", self.authorization.clone())
             .header("request-id", request_id)
-            .json(&body)
+            .json(&body);
+        self.ensure_compatibility().await?;
+        let response = self
+            .contract_request(request)
             .send()
             .await
             .map_err(|_| Error::transport())?;
@@ -165,11 +172,14 @@ impl Client {
         if let Some(v) = before {
             query.push(("before", v.into()));
         }
-        let response = self
+        let request = self
             .http
             .get(self.url(&format!("agent/blocks/{block}/history"))?)
             .query(&query)
-            .header("authorization", self.authorization.clone())
+            .header("authorization", self.authorization.clone());
+        self.ensure_compatibility().await?;
+        let response = self
+            .contract_request(request)
             .send()
             .await
             .map_err(|_| Error::transport())?;
@@ -226,13 +236,22 @@ impl Client {
         request
             .headers_mut()
             .insert("authorization", self.authorization.clone());
+        self.contract_socket(request.headers_mut());
+        self.ensure_compatibility().await?;
         let (socket, _) = tokio::time::timeout(
             std::time::Duration::from_secs(15),
             tokio_tungstenite::connect_async(request),
         )
         .await
         .map_err(|_| Error::transport())?
-        .map_err(|_| Error::new("OBSERVATION_UNAVAILABLE", "Cannot connect canvas observer"))?;
+        .map_err(|error| match error {
+            tokio_tungstenite::tungstenite::Error::Http(response)
+                if crate::compatibility::is_upgrade_response(&response) =>
+            {
+                crate::compatibility::upgrade_error(None)
+            }
+            _ => Error::new("OBSERVATION_UNAVAILABLE", "Cannot connect canvas observer"),
+        })?;
         Ok(ComposerSocket { socket })
     }
 }

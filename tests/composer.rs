@@ -18,7 +18,7 @@ struct Data {
 }
 type Shared = Arc<Mutex<Data>>;
 async fn server(s: Shared) -> (String, tokio::task::JoinHandle<()>) {
-    serve(Router::new()
+    serve(Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) }))
 .route(&format!("/v2/canvas/projects/{CANVAS}/elements/{ONE}"),get(||async{Json(json!({"element":{"id":ONE,"type":"agent","attributes":{"style":{"status":"idle"}},"revisions":{"layout":1,"content":1}}}))}))
 .route(&format!("/agent/blocks/{ONE}/messages"),post(|State(s):State<Shared>,h:HeaderMap,Json(b):Json<Value>|async move{assert!(h.contains_key("request-id"));let mut s=s.lock().unwrap();s.sent.push(b);if s.broken{return(StatusCode::BAD_GATEWAY,"broken").into_response();}
 if s.busy{return(StatusCode::CONFLICT,Json(json!({"detail":"agent_run_in_progress"}))).into_response();}Json(json!({"accepted":true,"run_id":"r1","agent_turn_id":"t1","agent_block_id":ONE,"session_id":"s1"})).into_response()}))
@@ -97,7 +97,7 @@ async fn wait_connects_before_submit_and_filters_other_turns() {
     let ws_notify = notified.clone();
     let send_flag = connected.clone();
     let send_notify = notified.clone();
-    let app=Router::new().route(&format!("/canvas/ws/{CANVAS}"),get(move|ws:WebSocketUpgrade|{let flag=ws_flag.clone();let n=ws_notify.clone();async move{ws.on_upgrade(move|mut sock|async move{flag.store(true,std::sync::atomic::Ordering::SeqCst);n.notified().await;for turn in ["other-turn","t1"] {sock.send(Message::Text(json!({"type":"agent_stream_frame","agent_block_id":ONE,"agent_turn_id":turn,"frame":{"event":"progress","data":{"type":"turn_completed","turnId":turn}}}).to_string().into())).await.unwrap();}})}}))
+    let app=Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) })).route(&format!("/canvas/ws/{CANVAS}"),get(move|ws:WebSocketUpgrade|{let flag=ws_flag.clone();let n=ws_notify.clone();async move{ws.on_upgrade(move|mut sock|async move{flag.store(true,std::sync::atomic::Ordering::SeqCst);n.notified().await;for turn in ["other-turn","t1"] {sock.send(Message::Text(json!({"type":"agent_stream_frame","agent_block_id":ONE,"agent_turn_id":turn,"frame":{"event":"progress","data":{"type":"turn_completed","turnId":turn}}}).to_string().into())).await.unwrap();}})}}))
  .route(&format!("/v2/canvas/projects/{CANVAS}/elements/{ONE}"),get(||async{Json(json!({"element":{"id":ONE,"type":"agent","attributes":{"style":{"run_id":"r1","agent_turn_id":"t1","status":"running"}}}}))}))
  .route(&format!("/agent/blocks/{ONE}/messages"),post(move||{let flag=send_flag.clone();let n=send_notify.clone();async move{assert!(flag.load(std::sync::atomic::Ordering::SeqCst));n.notify_one();Json(json!({"accepted":true,"run_id":"r1","agent_turn_id":"t1","agent_block_id":ONE,"session_id":"s1"}))}}));
     let (b, h) = serve(app).await;
@@ -126,7 +126,7 @@ async fn wait_connects_before_submit_and_filters_other_turns() {
 #[tokio::test]
 async fn disconnected_observer_reconciles_history_without_resending() {
     use axum::extract::ws::WebSocketUpgrade;
-    let app=Router::new().route(&format!("/canvas/ws/{CANVAS}"),get(|ws:WebSocketUpgrade|async{ws.on_upgrade(|_sock|async{})}))
+    let app=Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) })).route(&format!("/canvas/ws/{CANVAS}"),get(|ws:WebSocketUpgrade|async{ws.on_upgrade(|_sock|async{})}))
  .route(&format!("/v2/canvas/projects/{CANVAS}/elements/{ONE}"),get(||async{Json(json!({"element":{"id":ONE,"type":"agent","attributes":{"style":{"run_id":"r1","agent_turn_id":"t1","status":"running"}}}}))}))
  .route(&format!("/agent/blocks/{ONE}/history"),get(||async{([("content-type","text/event-stream")],"event: progress\ndata: {\"type\":\"turn_completed\",\"turnId\":\"t1\"}\n\n")}));
     let (b, h) = serve(app).await;
@@ -139,7 +139,7 @@ async fn disconnected_observer_reconciles_history_without_resending() {
 async fn archived_turn_replays_paginated_history_with_unlabelled_text_frames() {
     use axum::extract::{Query, ws::WebSocketUpgrade};
     use std::collections::HashMap;
-    let app=Router::new().route(&format!("/canvas/ws/{CANVAS}"),get(|ws:WebSocketUpgrade|async{ws.on_upgrade(|_sock|async{tokio::time::sleep(std::time::Duration::from_secs(10)).await;})}))
+    let app=Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) })).route(&format!("/canvas/ws/{CANVAS}"),get(|ws:WebSocketUpgrade|async{ws.on_upgrade(|_sock|async{tokio::time::sleep(std::time::Duration::from_secs(10)).await;})}))
  .route(&format!("/v2/canvas/projects/{CANVAS}/elements/{ONE}"),get(||async{Json(json!({"element":{"id":ONE,"type":"agent","attributes":{"style":{"run_id":"new","agent_turn_id":"new","status":"completed"}}}}))}))
  .route(&format!("/agent/blocks/{ONE}/history"),get(|Query(q):Query<HashMap<String,String>>|async move{let body=if q.contains_key("before"){"event: progress\ndata: {\"type\":\"turn_started\",\"turnId\":\"old\"}\n\nevent: progress\ndata: {\"type\":\"model_text_delta\",\"delta\":\"restored\"}\n\nevent: progress\ndata: {\"type\":\"turn_completed\",\"turnId\":\"old\"}\n\n"}else{"event: progress\ndata: {\"type\":\"history_meta\",\"hasMore\":true,\"nextCursor\":\"older\"}\n\n"};([("content-type","text/event-stream")],body)}));
     let (b, h) = serve(app).await;

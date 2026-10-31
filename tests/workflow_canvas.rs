@@ -22,7 +22,7 @@ fn entity(id: &str) -> Value {
     json!({"id":id,"canvas_id":CANVAS,"type":"text","name":"source","layout":{"position":{"x":10,"y":20},"size":{"width":if id==ONE{10}else{30},"height":if id==ONE{20}else{40}},"rotation":0,"z_index":0},"attributes":{"text":"hello","text_rich":"<p>hello</p>","style":{}},"generation":{"config":null},"revisions":{"name":1,"layout":2,"content":3}})
 }
 async fn app(state: Shared) -> (String, tokio::task::JoinHandle<()>) {
-    serve(Router::new().route(&format!("/v2/canvas/projects/{CANVAS}/elements/{{id}}"),get(|State(s):State<Shared>,ApiPath(id):ApiPath<String>|async move{s.lock().unwrap().reads+=1;Json(json!({"element":entity(&id)}))}))
+    serve(Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) })).route(&format!("/v2/canvas/projects/{CANVAS}/elements/{{id}}"),get(|State(s):State<Shared>,ApiPath(id):ApiPath<String>|async move{s.lock().unwrap().reads+=1;Json(json!({"element":entity(&id)}))}))
         .route(&format!("/v2/canvas/projects/{CANVAS}/groups/{GROUP}"),get(||async{Json(json!({"group":{"id":GROUP,"elements":[ONE,TWO],"position_x":5,"position_y":8,"size_width":50,"size_height":60,"title":"G","revisions":{"entity":7}}}))}))
         .route(&format!("/v2/canvas/projects/{CANVAS}/edges"),get(||async{Json(json!({"items":[{"id":DEST,"source_element_id":ONE,"target_element_id":TWO,"input_slot":"reference"}],"total":1}))}))
         .route(&format!("/v2/canvas/projects/{CANVAS}/transactions"),post(|State(s):State<Shared>,headers:HeaderMap,Json(body):Json<Value>|async move{

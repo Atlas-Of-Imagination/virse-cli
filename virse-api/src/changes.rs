@@ -198,6 +198,8 @@ impl Client {
                 url.query_pairs_mut().append_pair("org_id", &org.to_string());
                 let mut request = url.as_str().into_client_request().map_err(|_| Error::protocol())?;
                 request.headers_mut().insert("authorization", self.authorization.clone());
+                self.contract_socket(request.headers_mut());
+                self.ensure_compatibility().await?;
                 let connected = timeout(READY_TIMEOUT, tokio_tungstenite::connect_async(request)).await;
                 match connected {
                     Ok(Ok((mut socket, _))) => {
@@ -211,6 +213,7 @@ impl Client {
                             };
                             match message {
                                 Message::Text(text) => {
+                                    crate::compatibility::check_text(&text)?;
                                     let value: Value = serde_json::from_str(&text).map_err(|_| Error::protocol())?;
                                     match value["type"].as_str() {
                                         Some("asset_changes_ready" | "asset_changes_available") => {
@@ -241,6 +244,7 @@ impl Client {
                                     if !matches!(timeout(READY_TIMEOUT, socket.send(Message::Pong(data))).await, Ok(Ok(()))) { break; }
                                 }
                                 Message::Close(frame) => {
+                                    crate::compatibility::check_close(frame.as_ref())?;
                                     if let Some(frame) = frame {
                                         match u16::from(frame.code) {
                                             4403 => Err(rejected(403))?,
@@ -259,6 +263,7 @@ impl Client {
                     }
                     Ok(Err(tokio_tungstenite::tungstenite::Error::Http(response))) => {
                         let status = response.status().as_u16();
+                        if crate::compatibility::is_upgrade_response(&response) { Err(crate::compatibility::upgrade_error(None))?; }
                         if !matches!(status, 429 | 500 | 502 | 504) {
                             let mut error = rejected(status);
                             // Preserve structured rejection codes, but never echo raw headers/URLs.

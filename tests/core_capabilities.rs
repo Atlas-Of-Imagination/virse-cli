@@ -99,7 +99,7 @@ async fn record(
     }
 }
 async fn serve(state: Shared) -> (String, tokio::task::JoinHandle<()>) {
-    let app=Router::new().route("/auth/me",get(||async{Json(json!({"status":1,"id":USER}))}))
+    let app=Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) })).route("/auth/me",get(||async{Json(json!({"status":1,"id":USER}))}))
         .route("/get_organization_by_user",post(record)).route("/generation/models/catalog",post(record)).route("/billing/balance",post(record))
         .route("/versa/canvas/create",post(record)).route("/versa/canvas/contents",post(record)).route("/api/v1/resources/query",post(record))
         .route("/generation/models/{key}/favorite",patch(|State(s):State<Shared>,ApiPath(key):ApiPath<String>,Json(body):Json<Value>|async move{

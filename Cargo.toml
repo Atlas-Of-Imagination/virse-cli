@@ -26,6 +26,7 @@ lto = true
 codegen-units = 1
 
 [dependencies]
+semver = "1"
 virse-api = { version = "0.1.0", path = "virse-api" }
 
 tokio.workspace = true

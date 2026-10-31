@@ -2023,6 +2023,7 @@ dependencies = [
  "futures-util",
  "rpassword",
  "rustix",
+ "semver",
  "serde",
  "serde_json",
  "sha2",

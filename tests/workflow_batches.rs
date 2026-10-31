@@ -52,7 +52,7 @@ fn field(headers: &HeaderMap, body: &[u8], name: &str) -> Vec<u8> {
     data[..end].to_vec()
 }
 async fn app(state: StateData) -> (String, tokio::task::JoinHandle<()>) {
-    serve(Router::new().route("/api/v1/resources/query",post(|State(s):State<StateData>,Json(body):Json<Value>|async move{
+    serve(Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) })).route("/api/v1/resources/query",post(|State(s):State<StateData>,Json(body):Json<Value>|async move{
         let data=s.data.lock().unwrap();let items:Vec<_>=data.folders.values().filter(|v|v["parent_id"]==body["parent_id"]).cloned().collect();envelope(json!({"items":items,"snapshot":"s","next_cursor":null,"truncated":false}))
     })).route("/api/v1/resources/{id}",get(|State(s):State<StateData>,ApiPath(id):ApiPath<String>|async move{let data=s.data.lock().unwrap();
         if let Some(folder)=data.folders.get(&id){return envelope(json!({"resource":folder,"kind":"folder","asset":null,"detail":{}}));}
