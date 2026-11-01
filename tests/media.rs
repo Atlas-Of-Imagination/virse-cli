@@ -95,7 +95,7 @@ async fn create(
     (StatusCode::CREATED,Json(json!({"mutation_id":OTHER,"element":{"id":ELEMENT,"canvas_id":CANVAS,"type":body["type"],"content_ref":{"kind":"asset","id":OTHER},"layout":{"position":{"x":800,"y":0},"size":{"width":512,"height":512}},"revisions":{"content":1}}}))).into_response()
 }
 async fn serve(s: Shared) -> (String, tokio::task::JoinHandle<()>) {
-    let app=Router::new().route("/auth/me",get(||async{Json(json!({"status":1,"id":USER}))}))
+    let app=Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) })).route("/auth/me",get(||async{Json(json!({"status":1,"id":USER}))}))
         .route(&format!("/api/v1/assets/{SOURCE}"),get(assets))
         .route(&format!("/api/v1/resources/{SOURCE}"),get(resource))
         .route("/api/v1/resources/query",post(|State(s):State<Shared>|async move{

@@ -43,7 +43,7 @@ pub struct ToolVersion {
     #[arg(long, conflicts_with = "version_id")]
     /// Published version label (resolved to an immutable artifact by the backend).
     pub version: Option<String>,
-    #[arg(long)]
+    #[arg(long, visible_alias = "artifact-id")]
     /// Immutable artifact ID; this is not a release ID.
     pub version_id: Option<String>,
     #[arg(long, default_value = "zh", value_parser = ["zh", "en"])]
@@ -123,9 +123,24 @@ pub enum Tool {
     /// Validate a native authoring project locally.
     Validate {
         directory: PathBuf,
+        #[arg(long)]
+        remote: bool,
+    },
+    Build {
+        directory: PathBuf,
+        #[arg(long)]
+        resume: bool,
     },
     Publish {
-        directory: PathBuf,
+        #[arg(
+            required_unless_present = "artifact_id",
+            conflicts_with = "artifact_id"
+        )]
+        directory: Option<PathBuf>,
+        #[arg(long, requires = "tool_id", conflicts_with = "resume")]
+        artifact_id: Option<Uuid>,
+        #[arg(long, requires = "artifact_id")]
+        tool_id: Option<Uuid>,
         #[arg(long, value_enum)]
         scope: Option<ToolScope>,
         #[arg(long)]

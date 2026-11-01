@@ -24,7 +24,7 @@ fn info(asset: &str, revision: u64, hostile_name: bool) -> Value {
     json!({"url":format!("/bytes/{asset}?source_version=v{revision}&object_version={revision}"),"filename":if hostile_name{"../../escape.png"}else{"file.png"},"delivery":"authenticated_stream","source_version":format!("v{revision}"),"object_version":revision.to_string(),"content":{"revision":revision,"size_bytes":8,"checksum":{"algorithm":"sha256","value":format!("{:x}",Sha256::digest(b"abcdefgh"))},"metadata_state":"complete"}})
 }
 async fn app(state: Shared) -> (String, tokio::task::JoinHandle<()>) {
-    serve(Router::new().route("/api/v1/assets/{id}/download",get(|State(s):State<Shared>,ApiPath(id):ApiPath<String>|async move{
+    serve(Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) })).route("/api/v1/assets/resolve", axum::routing::post(|Json(body):Json<Value>| async move { envelope(json!({"items": body["asset_ids"].as_array().unwrap().iter().map(|id| json!({"asset_id":id,"original":{"delivery":"authenticated_stream"}})).collect::<Vec<_>>()})) })).route("/api/v1/assets/{id}/download",get(|State(s):State<Shared>,ApiPath(id):ApiPath<String>|async move{
         if id==DEST{return (StatusCode::FORBIDDEN,Json(json!({"request_id":"no","error":{"code":"forbidden","message":"no download"}}))).into_response();}
         let data=s.lock().unwrap();let mut value=info(&id,if data.changed{2}else{1},true);
         if data.unversioned {value["delivery"]=json!("external_url");value["url"]=json!(format!("/bytes/{id}"));value["object_version"]=Value::Null;value["content"]["checksum"]=Value::Null;value["content"]["metadata_state"]=json!("partial");}

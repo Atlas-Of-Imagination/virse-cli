@@ -28,7 +28,7 @@ struct Data {
 }
 type Shared = Arc<Mutex<Data>>;
 async fn server(s: Shared) -> (String, tokio::task::JoinHandle<()>) {
-    let router = Router::new()
+    let router = Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) }))
         .route("/generation/models/catalog", post(|State(s):State<Shared>| async move {
             let scenarios = if s.lock().unwrap().no_inpaint {json!(["image-to-image"])} else {json!(["image-to-image","inpaint"])};
             Json(json!({"schema_version":2,"catalog_version":"test","models":[{"model_key":"edit-model","mode":"image","display_name":"Edit","supported_scenarios":scenarios}]}))

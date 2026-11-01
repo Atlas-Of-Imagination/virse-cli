@@ -263,7 +263,14 @@ async fn observe(
                             break false;
                         }
                     }
-                    Err(e) if e.code == "WS_ACCESS_DENIED" => return Err(e),
+                    Err(e)
+                        if matches!(
+                            e.code.as_str(),
+                            "WS_ACCESS_DENIED" | "CLIENT_UPGRADE_REQUIRED"
+                        ) =>
+                    {
+                        return Err(e);
+                    }
                     Err(_) => break true,
                 }
             };
@@ -533,7 +540,9 @@ pub async fn run(c: &Composer, ctx: &Context<'_>) -> Result<u8> {
                     ) {
                         eprintln!("Could not update request record: {save_error}");
                     }
-                    if e.retryable || e.status.is_none() || e.code == "INVALID_RESPONSE" {
+                    if e.code != "COMPATIBILITY_CHECK_FAILED"
+                        && (e.retryable || e.status.is_none() || e.code == "INVALID_RESPONSE")
+                    {
                         return Err(Error {
                             request_id: Some(rid),
                             ..Error::new(

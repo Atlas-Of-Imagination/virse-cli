@@ -2024,6 +2024,7 @@ dependencies = [
  "getrandom 0.3.4",
  "rpassword",
  "rustix",
+ "semver",
  "serde",
  "serde_json",
  "sha2",

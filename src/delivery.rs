@@ -169,6 +169,34 @@ async fn pack(
         .unix_permissions(0o600);
     let mut results = vec![];
     let mut files = 0;
+    let mut resolved = std::collections::HashMap::new();
+    if canvas.is_some() {
+        let ids: Vec<Uuid> = entries
+            .iter()
+            .filter_map(|entry| entry.asset)
+            .collect::<std::collections::HashSet<_>>()
+            .into_iter()
+            .collect();
+        let context = AccessContext {
+            org_id: org,
+            dentry_id: None,
+            canvas_space_id: canvas,
+        };
+        for page in ids.chunks(100) {
+            let response = client.resolve_assets(&context, page, true).await?;
+            let items = response["items"]
+                .as_array()
+                .ok_or_else(|| Error::new("INVALID_RESPONSE", "Missing resolved assets"))?;
+            for item in items {
+                if let Some(id) = item["asset_id"]
+                    .as_str()
+                    .and_then(|s| Uuid::parse_str(s).ok())
+                {
+                    resolved.insert(id, item.clone());
+                }
+            }
+        }
+    }
     for (index, entry) in entries.into_iter().enumerate() {
         let mut item = json!({"source":entry.label,"resource_id":entry.resource,"asset_id":entry.asset,"element_id":entry.element});
         if let Some(error) = entry.error {
@@ -185,7 +213,25 @@ async fn pack(
         }
         eprintln!("Downloading archive item {}", index + 1);
         let result = async {
-            let info = descriptor(client, org, canvas, &entry).await?;
+            let info = if let Some(value) = entry.asset.and_then(|id| resolved.get(&id)) {
+                if value.get("error").is_some_and(|error| !error.is_null())
+                    || value["original"].is_null()
+                {
+                    return Err(Error::new(
+                        "NOT_DOWNLOADABLE",
+                        "Asset is unavailable or download is not allowed",
+                    ));
+                }
+                if value["original"]["delivery"] == "external_url" {
+                    serde_json::from_value::<DownloadInfo>(value["original"].clone()).map_err(
+                        |_| Error::new("INVALID_RESPONSE", "Invalid delivery descriptor"),
+                    )?
+                } else {
+                    descriptor(client, org, canvas, &entry).await?
+                }
+            } else {
+                descriptor(client, org, canvas, &entry).await?
+            };
             let local = folder.path().join(index.to_string());
             let bytes = crate::download::save_info(client, &info, &local).await?;
             Ok::<_, Error>((info, local, bytes))

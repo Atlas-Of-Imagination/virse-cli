@@ -262,7 +262,7 @@ async fn replace(
     write(state, headers, body, true)
 }
 async fn serve(state: Shared) -> (String, tokio::task::JoinHandle<()>) {
-    let app = Router::new()
+    let app = Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) }))
         .route(
             "/auth/me",
             get(|| async { Json(json!({"status":1,"id":USER})) }),

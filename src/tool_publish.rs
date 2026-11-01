@@ -48,6 +48,9 @@ struct Binding {
 #[serde(rename_all = "snake_case")]
 enum Phase {
     Prepared,
+    IdentityCreated,
+    Built,
+    Releasing,
     Uploaded,
     DraftSaved,
     Validated,
@@ -55,6 +58,8 @@ enum Phase {
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Receipt {
+    #[serde(default)]
+    protocol: u32,
     id: Uuid,
     checksum: String,
     input_checksum: String,
@@ -80,6 +85,8 @@ struct State {
     receipt: Option<Receipt>,
     #[serde(default)]
     installation_pending: bool,
+    #[serde(default)]
+    pending_identity: Option<Value>,
 }
 struct Journal {
     root: PathBuf,
@@ -290,6 +297,7 @@ impl Journal {
                 binding: None,
                 receipt: None,
                 installation_pending: false,
+                pending_identity: None,
             },
             Err(e) => return Err(io_error(e)),
         };
@@ -446,6 +454,7 @@ fn check_metadata(package: &mut Package, base: &Binding) -> Result<()> {
 }
 fn receipt(package: Package, base: Option<Binding>, scope: Option<&str>) -> Receipt {
     Receipt {
+        protocol: 2,
         id: Uuid::new_v4(),
         input_checksum: package.fingerprint(),
         checksum: package.checksum,
@@ -481,14 +490,16 @@ fn bound_response(
     Ok(b)
 }
 
-pub async fn publish(
+async fn author_with_protocol(
     client: &Client,
     directory: &Path,
     state_root: &Path,
     identity: &AuthoringIdentity,
     scope: Option<&str>,
     resume: bool,
+    mode: (bool, u32),
 ) -> Result<Value> {
+    let (build_only, protocol) = mode;
     if scope.is_some_and(|s| !matches!(s, "personal" | "team")) {
         return Err(Error::new(
             "INVALID_INPUT",
@@ -496,11 +507,9 @@ pub async fn publish(
         ));
     }
     let mut journal = Journal::open(state_root, directory, identity, true)?;
-    let pending = journal
-        .state
-        .receipt
-        .as_ref()
-        .is_some_and(|r| r.phase != Phase::Published && (r.rejected.is_none() || resume));
+    let pending = journal.state.receipt.as_ref().is_some_and(|r| {
+        r.phase != Phase::Published && r.phase != Phase::Built && (r.rejected.is_none() || resume)
+    });
     let mut r = if pending {
         let mut r = journal.state.receipt.clone().unwrap();
         if scope.is_some() && scope != r.scope.as_deref() {
@@ -539,6 +548,25 @@ pub async fn publish(
             check_metadata(&mut package, base)?;
         }
         let previous = journal.state.receipt.clone();
+        if let Some(prior) = previous.as_ref().filter(|p| {
+            p.protocol == 2
+                && p.phase == Phase::Built
+                && p.input_checksum == package.fingerprint()
+                && p.scope.as_deref() == scope
+        }) {
+            let mut prior = prior.clone();
+            let bytes = journal.package(&prior)?;
+            return run_v2(
+                client,
+                &mut journal,
+                &mut prior,
+                identity,
+                bytes,
+                build_only,
+            )
+            .await;
+        }
+
         if let Some(mut prior) = previous.clone().filter(|p| {
             p.rejected.is_some()
                 && p.input_checksum == package.fingerprint()
@@ -554,6 +582,7 @@ pub async fn publish(
         } else {
             let bytes = package.bytes.clone();
             let mut r = receipt(package, journal.state.binding.clone(), scope);
+            r.protocol = protocol;
             if let Some(prior) = previous.filter(|p| p.rejected.is_some()) {
                 // Retain ownership of a known local revision when correcting it.
                 r.draft = prior.draft;
@@ -566,6 +595,15 @@ pub async fn publish(
     // Checking the staged checksum on every invocation detects receipt corruption
     // even when the remaining phase does not upload a package.
     let package = journal.package(&r)?;
+    if r.protocol == 2 {
+        return run_v2(client, &mut journal, &mut r, identity, package, build_only).await;
+    }
+    if build_only {
+        return Err(Error::new(
+            "TOOL_LEGACY_PUBLICATION_PENDING",
+            "Resume the old publication before building with V2",
+        ));
+    }
     let published_base = r.base.as_ref().is_some_and(|b| b.published);
     if r.phase == Phase::Prepared {
         if published_base {
@@ -824,4 +862,203 @@ pub async fn pull(
     Ok(
         json!({"directory":directory,"skillId":skill,"sourceVersionId":source.version_id,"sourceReleaseId":source.release_id,"version":source.version,"baseVersionId":journal.state.binding.as_ref().unwrap().base_version_id,"packageChecksum":source.package_checksum,"files":files.keys().collect::<Vec<_>>()}),
     )
+}
+
+async fn run_v2(
+    client: &Client,
+    journal: &mut Journal,
+    r: &mut Receipt,
+    identity: &AuthoringIdentity,
+    package: Vec<u8>,
+    build_only: bool,
+) -> Result<Value> {
+    if r.phase == Phase::Prepared {
+        if let Some(base) = &r.base {
+            r.uploaded = Some(json!({"skill":base.author_metadata}));
+        } else if let Some(created) = &journal.state.pending_identity {
+            r.uploaded = Some(created.clone());
+        } else {
+            let body = json!({"organization_id":identity.org,"name":r.metadata["name"],
+                "description":r.metadata["description"],"detail":r.metadata["detail"]});
+            let key = format!("identity-{}", r.upload_key);
+            let response = client
+                .tool_create_identity(body, &key)
+                .await
+                .map_err(|e| failed(e, journal, r, &key))?;
+            let skill = response.get("skill").ok_or_else(|| {
+                uncertain(
+                    Error::new("INVALID_RESPONSE", "Identity response is missing skill"),
+                    journal,
+                    r,
+                    &key,
+                )
+            })?;
+            check_owner(skill, identity).map_err(|e| failed(e, journal, r, &key))?;
+            field_uuid(skill, "id").map_err(|e| failed(e, journal, r, &key))?;
+            journal.state.pending_identity = Some(response.clone());
+            r.uploaded = Some(response);
+        }
+        r.phase = Phase::IdentityCreated;
+        journal.checkpoint(r)?;
+    }
+    if r.phase == Phase::IdentityCreated {
+        let skill = &r
+            .uploaded
+            .as_ref()
+            .ok_or_else(|| local_error("Missing created tool"))?["skill"];
+        let id = field_uuid(skill, "id")?;
+        let hash = field_string(skill, "metadataHash")?;
+        let response = client
+            .tool_submit_artifact(
+                identity.org,
+                id,
+                package,
+                &r.metadata,
+                Some(&hash),
+                &r.upload_key,
+            )
+            .await
+            .map_err(|e| failed(e, journal, r, &r.upload_key))?;
+        check_owner(&response["skill"], identity)
+            .map_err(|e| failed(e, journal, r, &r.upload_key))?;
+        if field_uuid(&response["skill"], "id")? != id
+            || field_string(&response["artifact"], "checksum")? != r.checksum
+        {
+            return Err(uncertain(
+                Error::new("INVALID_RESPONSE", "Artifact identity/checksum mismatch"),
+                journal,
+                r,
+                &r.upload_key,
+            ));
+        }
+        let artifact_id = field_uuid(&response["artifact"], "id")?;
+        let mut skill = response["skill"].clone();
+        if skill["versionId"].is_null() {
+            skill["versionId"] = json!(artifact_id);
+        }
+        journal.state.binding = Some(binding(&skill, Some(artifact_id), None)?);
+        r.uploaded = Some(response);
+        r.phase = Phase::Built;
+        journal.checkpoint(r)?;
+    }
+    if build_only {
+        return r
+            .uploaded
+            .clone()
+            .ok_or_else(|| local_error("Missing artifact"));
+    }
+    if matches!(r.phase, Phase::Built | Phase::Releasing) {
+        r.phase = Phase::Releasing;
+        journal.checkpoint(r)?;
+        let built = r
+            .uploaded
+            .as_ref()
+            .ok_or_else(|| local_error("Missing artifact"))?;
+        let id = field_uuid(&built["skill"], "id")?;
+        let artifact_id = field_uuid(&built["artifact"], "id")?;
+        let base = &built["artifact"]["publicationBase"];
+        let mut body = json!({"organization_id":identity.org,"artifact_id":artifact_id,
+            "expected_release_id":base["releaseId"],"expected_metadata_hash":base["metadataHash"]});
+        if let Some(scope) = &r.scope {
+            body["access_scope"] = json!(scope);
+        }
+        let mut result = client
+            .tool_release_artifact(id, body, &r.publish_key)
+            .await
+            .map_err(|e| failed(e, journal, r, &r.publish_key))?;
+        let bound = bound_response(&result, identity, Some(id))
+            .map_err(|e| failed(e, journal, r, &r.publish_key))?;
+        if !bound.published {
+            return Err(uncertain(
+                Error::new("INVALID_RESPONSE", "Missing release"),
+                journal,
+                r,
+                &r.publish_key,
+            ));
+        }
+        result["validation"] = built["artifact"]["validation"].clone();
+        journal.state.binding = Some(bound);
+        r.result = Some(result);
+        r.phase = Phase::Published;
+        journal.checkpoint(r)?;
+    }
+    r.result
+        .clone()
+        .ok_or_else(|| local_error("Missing publication result"))
+}
+
+pub async fn publish_artifact(
+    client: &Client,
+    identity: &AuthoringIdentity,
+    skill: Uuid,
+    artifact: Uuid,
+    scope: Option<&str>,
+) -> Result<Value> {
+    let detail = client.tool_artifact(identity.org, skill, artifact).await?;
+    check_owner(&detail["skill"], identity)?;
+    if field_uuid(&detail["artifact"], "id")? != artifact
+        || field_uuid(&detail["skill"], "id")? != skill
+    {
+        return Err(Error::new("INVALID_RESPONSE", "Artifact identity mismatch"));
+    }
+    let base = &detail["artifact"]["publicationBase"];
+    let mut body = json!({"organization_id":identity.org,"artifact_id":artifact,
+        "expected_release_id":base["releaseId"],"expected_metadata_hash":base["metadataHash"]});
+    if let Some(scope) = scope {
+        body["access_scope"] = json!(scope);
+    }
+    // Immutable artifact carries its original baseline; repeated invocation keeps the same request.
+    let key = format!(
+        "artifact-{}",
+        digest(
+            &serde_json::to_vec(&json!([identity, skill, body]))
+                .map_err(|e| local_error(e.to_string()))?
+        )
+    );
+    client.tool_release_artifact(skill, body, &key).await
+}
+
+pub async fn author(
+    client: &Client,
+    directory: &Path,
+    state_root: &Path,
+    identity: &AuthoringIdentity,
+    scope: Option<&str>,
+    resume: bool,
+    build_only: bool,
+) -> Result<Value> {
+    author_with_protocol(
+        client,
+        directory,
+        state_root,
+        identity,
+        scope,
+        resume,
+        (build_only, 2),
+    )
+    .await
+}
+
+// Compatibility harness seeds pre-V2 receipts, then exercises the same recovery path.
+// Production only creates protocol 2 receipts; deserialized old receipts keep protocol 0.
+#[cfg(test)]
+#[allow(dead_code)]
+pub async fn publish(
+    client: &Client,
+    directory: &Path,
+    state_root: &Path,
+    identity: &AuthoringIdentity,
+    scope: Option<&str>,
+    resume: bool,
+) -> Result<Value> {
+    author_with_protocol(
+        client,
+        directory,
+        state_root,
+        identity,
+        scope,
+        resume,
+        (false, 0),
+    )
+    .await
 }

@@ -19,10 +19,17 @@ version = "0.1.0"
 edition.workspace = true
 authors.workspace = true
 
+[profile.release]
+opt-level = "z"
+strip = true
+lto = true
+codegen-units = 1
+
 [dependencies]
 base64 = "0.22"
 getrandom = "0.3"
 url = "2"
+semver = "1"
 virse-api = { version = "0.1.0", path = "virse-api" }
 
 tokio.workspace = true

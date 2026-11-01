@@ -1,0 +1,3 @@
+interface:
+  display_name: "Virse 创作家委派"
+  short_description: "按任务选择画布内创作家，继续原会话并核对实际执行结果"
