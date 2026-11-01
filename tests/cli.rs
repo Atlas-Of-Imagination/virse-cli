@@ -118,20 +118,31 @@ async fn configuration_has_only_environment_backend_override() {
 
 #[tokio::test]
 async fn login_persists_private_credentials_isolated_by_backend_and_profile() {
-    let app = Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) })).route(
-        "/auth/me",
-        get(|headers: HeaderMap| async move {
-            if headers.get("authorization").unwrap().to_str().unwrap() == format!("Bearer {TOKEN}")
-            {
-                (StatusCode::OK, Json(json!({"status":1,"id":"user"})))
-            } else {
+    let app = Router::new().route("/client-compatibility", get(||async{Json(json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"}))}))
+        .route(
+            "/auth/cli/start",
+            post(|| async {
                 (
-                    StatusCode::UNAUTHORIZED,
-                    Json(json!({"detail":"Invalid token"})),
+                    StatusCode::SERVICE_UNAVAILABLE,
+                    Json(json!({"detail":{"code":"CLI_AUTH_NOT_CONFIGURED"}})),
                 )
-            }
-        }),
-    );
+            }),
+        )
+        .route(
+            "/auth/me",
+            get(|headers: HeaderMap| async move {
+                if headers.get("authorization").unwrap().to_str().unwrap()
+                    == format!("Bearer {TOKEN}")
+                {
+                    (StatusCode::OK, Json(json!({"status":1,"id":"user"})))
+                } else {
+                    (
+                        StatusCode::UNAUTHORIZED,
+                        Json(json!({"detail":"Invalid token"})),
+                    )
+                }
+            }),
+        );
     let (base, server) = serve(app).await;
     let dir = tempfile::tempdir().unwrap();
     let mut command = cmd(
@@ -217,11 +228,15 @@ async fn login_persists_private_credentials_isolated_by_backend_and_profile() {
         Some(3)
     );
     assert_eq!(
-        run(cmd(dir.path(), Some(&base), &["auth", "login"]))
-            .await
-            .status
-            .code(),
-        Some(2)
+        run(cmd(
+            dir.path(),
+            Some(&base),
+            &["auth", "login", "--no-browser"]
+        ))
+        .await
+        .status
+        .code(),
+        Some(5)
     );
     server.abort();
 }

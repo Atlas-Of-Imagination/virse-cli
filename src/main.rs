@@ -1,6 +1,7 @@
 mod aesthetics;
 mod args;
 mod batch;
+mod browser_auth;
 mod canvas_add;
 mod canvas_edit;
 mod compatibility;
@@ -41,7 +42,7 @@ use virse_api::{Client, Error, Result};
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 2)]
 async fn main() {
-    let cli = match Cli::try_parse() {
+    let mut cli = match Cli::try_parse() {
         Ok(cli) => cli,
         Err(error) => {
             if error.exit_code() != 0 && std::env::args_os().any(|arg| arg == "--json") {
@@ -54,6 +55,15 @@ async fn main() {
             error.exit();
         }
     };
+    if let Command::Auth { command: None } = &cli.command {
+        cli.command = Command::Auth {
+            command: Some(Auth::Login {
+                token_stdin: false,
+                device: false,
+                no_browser: false,
+            }),
+        };
+    }
     let code = match run(&cli).await {
         Ok(code) => code,
         Err(error) => {
@@ -158,9 +168,28 @@ async fn run(cli: &Cli) -> Result<u8> {
         }
         return Ok(0);
     }
-    if let Command::Auth { command } = &cli.command {
+    if let Command::Auth {
+        command: Some(command),
+    } = &cli.command
+    {
         match command {
-            Auth::Login { token_stdin } => {
+            Auth::Login {
+                token_stdin,
+                device,
+                no_browser,
+            } => {
+                if !token_stdin {
+                    return browser_auth::login(
+                        &store,
+                        &cli.profile,
+                        &backend,
+                        *device,
+                        *no_browser,
+                        cli.json,
+                    )
+                    .await;
+                }
+                let _auth_guard = browser_auth::guard(&store, &cli.profile, &backend)?;
                 let token = if *token_stdin {
                     let mut value = String::new();
                     std::io::stdin()
@@ -183,6 +212,7 @@ async fn run(cli: &Cli) -> Result<u8> {
                 let client = Client::new(&backend, &token)?;
                 let identity = client.me().await?;
                 store.save_token(&cli.profile, &backend, Some(&token))?;
+                browser_auth::clear_origin(&store, &cli.profile, &backend)?;
                 if std::env::var_os("VIRSE_API_TOKEN").is_some() {
                     eprintln!("VIRSE_API_TOKEN overrides the saved token until unset");
                 }
@@ -190,7 +220,7 @@ async fn run(cli: &Cli) -> Result<u8> {
                 return Ok(0);
             }
             Auth::Logout => {
-                store.save_token(&cli.profile, &backend, None)?;
+                browser_auth::logout(&store, &cli.profile, &backend).await?;
                 if std::env::var_os("VIRSE_API_TOKEN").is_some() {
                     eprintln!(
                         "VIRSE_API_TOKEN is still set; logout only removes the saved credential"
@@ -258,7 +288,18 @@ async fn run(cli: &Cli) -> Result<u8> {
             )
             .await;
         }
-        Command::Auth { .. } => print(&client.me().await?, cli.json)?,
+        Command::Auth { .. } => {
+            let mut identity = client.me().await?;
+            identity["credential_source"] =
+                json!(if std::env::var_os("VIRSE_API_TOKEN").is_some() {
+                    "environment"
+                } else if browser_auth::origin(&store, &cli.profile, &backend)?.is_some() {
+                    "browser"
+                } else {
+                    "manual"
+                });
+            print(&identity, cli.json)?;
+        }
         Command::Tool {
             command: tool_args::Tool::Cover { command },
         } => return tool_extra::cover(command, &client, cli.json).await,
