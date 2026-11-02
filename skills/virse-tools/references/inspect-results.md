@@ -20,6 +20,8 @@ virse --org "$ORG" --canvas "$CANVAS" --json canvas element get "$ELEMENT"
 
 ## 按任务要求验收
 
+图片输出的视觉判断和修改方向按需读取 `virse-image-craft`；视频的动作、节奏、连续性与声音按需读取 `virse-video-craft`。由宿主检查真实结果，输入调整仍限于固定 artifact 的 Schema；工具内部 Agent 不自动继承宿主读过的技巧。
+
 布局有明确要求时检查实际显示与文字可读性，不虚构 CLI 截图或测字接口。对照用户目标与本次 Schema 输入，检查真实产物的内容、保留项及所需格式。视觉产物必须实际查看，静态预览不证明整段视频或完整三维结构；无法查看时明确尚未验证的质量。
 
 run、实例与媒体输出的状态分别判断：媒体已完成时 run 仍可能 running，run cancelled 也不表示已有输出被撤销。运行失败或 needs_attention 时保留可用产物，按[运行合同](shared/contracts/tool-run.md)判断可用动作。若运行成功但效果不合适，依据具体差异调整输入并建立新的明确运行，不把效果调整伪装为未知受理恢复。用户要求修改工具本身的可复用逻辑时才切作者职责。

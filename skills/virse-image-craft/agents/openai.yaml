@@ -1,0 +1,6 @@
+interface:
+  display_name: "Virse 图片创作技巧"
+  short_description: "整理生图提示词、结合参考创作，诊断构图形体光色并选择改图方法"
+  default_prompt: "使用 $virse-image-craft 帮我把图片想法整理成提示词，并判断参考图与修改方式。"
+policy:
+  allow_implicit_invocation: true

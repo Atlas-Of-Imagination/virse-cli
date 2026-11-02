@@ -1,0 +1,52 @@
+---
+name: virse-image-craft
+description: >-
+  把图片想法写成提示词，使用参考图、选择改图方法与参数，诊断构图、形体、光色和风格。可只交付 prompt；在 Virse 实际生成或编辑时配合 virse-creation，画布布局与资产整理走业务入口。
+---
+# 图片创作技巧
+
+<!-- virse:background:start -->
+Virse 是 AI native 的创作系统，用画布连接想法、素材、审美、工具与模型，支持图片、视频、3D 和文本。资源目录管理素材与归属，画布组织创作输入、过程与结果。
+
+只读当前任务所需参考，已读且适用的内容沿用，链接不自动加载内容。
+<!-- virse:background:end -->
+
+作为与用户共同推进图片的创作家，结合已有且获准使用的素材与上下文，从用途、表达和保留项判断画面，不预设写实、极简、电影感或其他统一审美。要求足够时直接推进；只问会改变结果、又无法从已有材料判断的关键问题。用户只要 prompt，就交付可直接使用的 prompt，无需登录或执行 CLI。
+
+## 先选创作方式
+
+| 目标 | 选择依据 |
+| --- | --- |
+| 新画面 | 从文字生成；有参考时先分清其负责身份、构图还是风格 |
+| 改已有图片 | 指令编辑；把改变项与保留项分开，局部精确变化再考虑 inpaint |
+| 补画面边界 | 扩图；先定新画幅、原图位置与新增区域 |
+| 去背景、裁切、放大、校色等 | 优先适合的图片处理方法，判断是否允许重画细节 |
+| 判断哪里不对 | 先看真实图片，按用途找最影响结果的问题，再选修正方式 |
+
+本 Skill 负责创作判断与表达。需要在 Virse 查询模型、提交、等待、取得文件时，按名称读取 `virse-creation` 的相关合同；执行参数和可用能力以当前工具为准。“优先质量”这类偏好不等于授权自主选型、增加费用或无限重试。实际生成后查看真实产物再交付；没有可查看能力时明确哪些视觉要求尚未验证。
+
+图片需要动态化或成为视频镜头输入时，再按名称读取 `virse-video-craft`，判断运动与时间变化；普通图片任务无需读取。
+
+需要其他 Skill 时先确认宿主能够读取；未安装就说明缺少哪个包并帮助定位安装方式，不假设名称已带入其内容。提示词与图片诊断仍可在本 Skill 内完成。
+
+## 按当前问题读取
+
+只读相关参考，不预读整套资料，也不把每一项视觉知识都塞进 prompt。专题外链用于溯源，无需逐个打开；需要核实模型特有方法时再查对应官方说明。
+
+| 当前需要 | 参考 |
+| --- | --- |
+| 共建品牌系统、探索应用并交付规范和资产文件夹 | `virse-brand-center-creator`；具体图片方法仍按当前问题取用 |
+| 验收画布作品是否符合品牌标准，并在画布交付结果 | `virse-creation` → `references/brand-review.md` |
+| 把想法写成 prompt、删去冲突要求，或适配已选模型的写法 | [提示词取舍与表达](references/prompt-craft.md) |
+| 使用单图、多图、原图，保持身份或系列一致 | [参考与一致性](references/references-and-consistency.md) |
+| 选择指令改图、inpaint、扩图、合成或图片处理 | [编辑与处理](references/editing-and-processing.md) |
+| 理解尺寸、quality、seed、强度等参数及取舍 | [参数](references/parameters.md) |
+| 检查产物、定位原因、决定下一次改什么 | [检查与迭代](references/review-and-iterate.md) |
+| 想看参考分工、保留主体与最小改图如何串起来 | [图片参考与改图模拟案例](references/reference-edit-case.md) |
+| 画幅、主体占比、视线顺序、留白、文字和信息排版 | [构图与排版](references/visual/composition-and-layout.md) |
+| 外轮廓、关键部件、体块连接、比例与透视不对 | [形体与透视](references/visual/form-and-perspective.md) |
+| 人物、动物或角色的动作、重心、接触和神态 | [姿态与表情](references/visual/pose-and-expression.md) |
+| 明暗关系、光向、软硬、反射、透光与材质 | [光线与材质](references/visual/light-and-material.md) |
+| 配色、冷暖、明度、饱和度及主体背景分离 | [色彩关系](references/visual/color.md) |
+| 焦点、清晰范围、前后层次与空间深度 | [焦点与空间](references/visual/focus-and-depth.md) |
+| 选择媒介、线条、边缘、笔触和风格语言 | [媒介与风格](references/visual/medium-and-style.md) |
