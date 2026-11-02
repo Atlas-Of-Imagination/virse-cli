@@ -147,19 +147,24 @@ jobs:
                   & ./install.ps1 -Version $version -Target x86_64-pc-windows-msvc -InstallDir $dest -NoPathUpdate
                   if ($global:VirseInstallerTestCalls.Count -eq 0) { throw 'Installer did not invoke npx' }
                   $actual = $global:VirseInstallerTestCalls[-1] -join '|'
-                  $expected = "-y|skills|add|https://github.com/Atlas-Of-Imagination/virse-cli/tree/v$version/skills|--skill|*|-y|-g"
+                  $expected = "-y|skills|add|https://github.com/Atlas-Of-Imagination/virse-cli/tree/v$version/skills|--skill|*|-y|-g|--agent|universal"
                   if ($actual -ne $expected) { throw "Unexpected skills arguments: $actual" }
                   if ([IO.File]::ReadAllText((Join-Path $dest 'virse.exe')) -ne "binary-$version") {
                       throw "Installation of $version did not replace the binary"
                   }
                   if (@(Get-ChildItem -LiteralPath $dest).Count -ne 1) { throw 'Unexpected installed files' }
               }
+              & ./install.ps1 -Version 1.2.4 -Target x86_64-pc-windows-msvc -InstallDir $dest -NoPathUpdate -SkillsAgent claude-code
+              if (($global:VirseInstallerTestCalls[-1] -join '|') -notlike '*|--agent|claude-code') {
+                  throw 'Explicit skills agent was not passed to npx'
+              }
               $calls = $global:VirseInstallerTestCalls.Count
               & ./install.ps1 -Version 1.2.4 -Target x86_64-pc-windows-msvc -InstallDir $dest -NoPathUpdate -SkipSkills
               if ($global:VirseInstallerTestCalls.Count -ne $calls) { throw 'SkipSkills invoked npx' }
               function npx.cmd { $global:LASTEXITCODE = 2 }
-              & ./install.ps1 -Version 1.2.4 -Target x86_64-pc-windows-msvc -InstallDir $dest -NoPathUpdate
+              & ./install.ps1 -Version 1.2.4 -Target x86_64-pc-windows-msvc -InstallDir $dest -NoPathUpdate -SkillsAgent claude-code -WarningVariable skillsWarnings
               if ($LASTEXITCODE -ne 0) { throw 'Optional skills failure failed binary install' }
+              if (($skillsWarnings -join ' ') -notlike '*--agent claude-code*') { throw 'Retry lost the selected skills agent' }
               if ([IO.File]::ReadAllText((Join-Path $dest 'virse.exe')) -ne 'binary-1.2.4') { throw 'Skills failure changed binary' }
           } finally {
               Remove-Item -LiteralPath $root -Recurse -Force

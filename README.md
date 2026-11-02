@@ -29,7 +29,9 @@ Invoke-WebRequest https://raw.githubusercontent.com/Atlas-Of-Imagination/virse-c
 .\install.ps1
 ```
 
-Installers require a published binary release. If a release is not available, install from source below. Archives contain only the executable. After verifying and installing it, installers use `npx -y skills add <release-skills-url> --skill '*' -y -g` to install/update all Virse skills globally for detected agents. Skills come from the same release tag as the binary, not from main. This step requires Node.js/npm (the skills tool currently requires Node.js 22.20+); missing npx or a failed skills install prints a retry command without failing the binary installation.
+Installers require a published binary release. If a release is not available, install from source below. Archives contain only the executable. After verifying and installing it, installers use `npx -y skills add <release-skills-url> --skill '*' -y -g --agent universal` to install/update all Virse skills in the shared `~/.agents/skills` directory, which Codex and other compatible agents read. Selecting an explicit target avoids the skills tool's automatic inclusion of project-only agents such as PromptScript in global installs. Skills come from the same release tag as the binary, not from main. This step requires Node.js/npm (the skills tool currently requires Node.js 22.20+); missing npx or a failed skills install prints a retry command without failing the binary installation.
+
+For an agent-specific directory, use `sh install.sh --skills-agent claude-code`, `.\install.ps1 -SkillsAgent claude-code`, or set `VIRSE_SKILLS_AGENT=claude-code`. This selects that agent instead of the shared target; the default no longer creates links for every detected agent. The agent name must be one supported by the skills tool and must support global installation.
 
 Use `sh install.sh --skip-skills`, `.\install.ps1 -SkipSkills`, or `VIRSE_SKIP_SKILLS=1` for binary-only installation. Existing skills are not removed by this option. Rerunning the installer also reinstalls the selected release's skills; it does not run a global update of unrelated skills.
 
