@@ -2,11 +2,11 @@
 
 ## 先选路径，再查可用控制
 
-用创作目标筛选能力，再读取当前模型与 operation 的真实 schema。Virse 产品模式、模型能力、输入角色和参数共同决定请求，不能只按模型名称或厂商宣传判断支持。
+只解释参数概念或给未绑定模型的提示方案时，直接说明取舍，无需登录或远端查询。需要核实特定模型的可用取值、组合限制或实际提交时，再读取当前模型与 operation 的真实 schema。
 
 运行时模型目录的 `generation_capabilities` 用于判断当前支持的产品任务。模型详情与 `generation operations` 用于确认输入媒体、顺序、角色、数量、参数及组合限制。源码里有某入口不证明当前后端或账号能用，厂商有某功能也不证明 Virse 已接入。
 
-Virse 的 video 快捷入口通过 `--model`、`--prompt`、有序 `--reference` 与 `--parameters`／`--parameters-file` 传递输入，没有通用 `--task-mode` 或 `--first-frame` flag。已声明的服务端模式可以由参数 JSON 表达；具体字段和角色绑定必须来自运行时合同，不能因没有快捷 flag 就断言 CLI 无法选模式。需要特殊角色或快捷入口不能表达的组合时，按 `virse-creation` 读取通用操作合同，不自行造字段。
+快捷入口没有通用 `--task-mode` 或 `--first-frame` flag；模式可由合同声明的参数 JSON 表达，媒体顺序与角色也须从运行时合同确认。特殊角色或快捷入口不能表达的组合，按 `virse-creation` 读取通用操作合同，不自行造字段。
 
 ## 让参数服务于创作判断
 

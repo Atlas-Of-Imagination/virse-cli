@@ -15,4 +15,4 @@
 
 焦点不突出先查是否有更亮、更饱和或更密集的次要区域；整体扁平先查遮挡、尺度和明暗关系；只某个部位意外模糊，则检查焦点选择和清晰范围。别把主体比例、材质纹理或低分辨率问题都当作景深问题。选择一个与用途相关的改变，再看真实结果。
 
-方法参考：[Nikon 光圈与景深](https://www.nikonusa.com/learn-and-explore/c/tips-and-techniques/understanding-maximum-aperture)、[Ctrl+Paint 边缘处理](https://www.ctrlpaint.com/videos/lost-edges)。用于摄影与绘画概念参考，不要求每次联网或全文加载。
+方法参考：[Nikon 光圈与景深](https://www.nikonusa.com/learn-and-explore/c/tips-and-techniques/understanding-maximum-aperture)、[Ctrl+Paint 边缘处理](https://www.ctrlpaint.com/videos/lost-edges)。

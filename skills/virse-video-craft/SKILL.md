@@ -42,11 +42,13 @@ Virse 是 AI native 的创作系统，以画布连接想法、素材、审美、
 
 ## 按问题取用方法
 
+只读相关参考。专题外链用于溯源，无需逐个打开；需要核实模型特有方法时再查对应官方说明。
+
 | 当前要解决的问题 | 读取 |
 | --- | --- |
-| 写 prompt、静态描述过多、内容堆叠或表达含糊 | [提示词](references/prompt-craft.md) |
+| 写 prompt、消除堆叠与歧义，或适配已选模型的写法 | [提示词](references/prompt-craft.md) |
 | 多参考分工、首尾之间的路径、人物或产品保持一致 | [参考与连续性](references/references-and-continuity.md) |
-| 动作没有因果、主体和相机混淆、速度或运镜不对 | [动作与镜头](references/motion-and-camera.md) |
+| 动作、速度或运镜不对，主体和相机混淆，首帧运动线索冲突 | [动作与镜头](references/motion-and-camera.md) |
 | 修改原片、接着原片生成、选择原生续写或尾帧拼接 | [编辑与续写](references/editing-and-extension.md) |
 | 时间分配、停顿、对白、口型、音乐与音效 | [节奏与声音](references/timing-and-audio.md) |
 | 选择时长、比例、分辨率、帧率或参考控制 | [参数](references/parameters.md) |

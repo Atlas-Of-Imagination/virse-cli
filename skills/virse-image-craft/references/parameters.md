@@ -1,6 +1,6 @@
 # 参数
 
-参数控制如何执行，prompt 描述要出现什么。先由用途判断需要的画幅、尺寸、保真程度和透明性，再查当前模型或工具的真实选项；同名参数跨模型可能含义、范围和效果不同。用户只要提示词时，可给必要的参数建议，不需要为此执行远端查询或生成。
+参数控制如何执行，prompt 描述要出现什么。先由用途判断画幅、尺寸、保真程度和透明性。只解释概念或给未绑定模型的提示方案时，直接说明取舍，无需登录或远端查询；核实特定模型的可用配置或实际执行时，再查当前模型或工具的真实选项。同名参数跨模型可能含义、范围和效果不同。
 
 | 参数概念 | 作用与选择 | 边界、检查方法 |
 | --- | --- | --- |
@@ -20,4 +20,4 @@
 
 质量偏好不构成执行授权。涉及 Virse 选型、参数确认和提交时，按名称读取 `virse-creation`，核对当前会话已有授权范围。不得把“想要最好效果”理解成可任意提高费用、输出数量或重试次数；已有明确配置则按范围继续。
 
-方法参考：[OpenAI 图片提示中的参数与内容区分](https://developers.openai.com/api/docs/guides/image-prompting)、[Gemini 图像配置](https://ai.google.dev/gemini-api/docs/image-generation)。用于概念参考，不要求每次联网或全文加载；执行必须以当前工具 schema 和模型合同为准。
+方法参考：[OpenAI 图片提示中的参数与内容区分](https://developers.openai.com/api/docs/guides/image-prompting)、[Gemini 图像配置](https://ai.google.dev/gemini-api/docs/image-generation)。

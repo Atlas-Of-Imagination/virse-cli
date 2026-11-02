@@ -20,4 +20,4 @@
 
 若结构长期失败，考虑更清晰的角度、结构参考、局部重绘或分层合成。不能仅添加“完美解剖”“精确透视”期待解决复杂关系，也不能从成图假称已恢复真实 3D 结构。
 
-方法参考：[Proko 比例判断](https://www.proko.com/course-lesson/how-to-draw-accurate-proportions)、[Proko 体块与空间结构](https://www.proko.com/course-lesson/structure-basics-making-things-look-3d)。用于观察与诊断方法参考，不要求每次联网或全文加载。
+方法参考：[Proko 比例判断](https://www.proko.com/course-lesson/how-to-draw-accurate-proportions)、[Proko 体块与空间结构](https://www.proko.com/course-lesson/structure-basics-making-things-look-3d)。

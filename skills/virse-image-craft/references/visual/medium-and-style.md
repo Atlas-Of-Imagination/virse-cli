@@ -18,4 +18,4 @@
 
 风格漂移先找丢失的规律：线粗变了、边缘全软、笔触尺度不一致，还是新加了不需要的体积光。选最有辨识度的特征修正，不用堆叠“高级、艺术、精美”。若参考提供风格而非内容，明确哪些特征借用、哪些主体与构图不借用；不要凭艺术家或媒介名替用户补未确认的整套画面方案。
 
-方法参考：[Ctrl+Paint 绘画媒介与笔触资料](https://www.ctrlpaint.com/library)、[Ctrl+Paint 消失边](https://www.ctrlpaint.com/videos/lost-edges)。用于视觉语言参考，不要求每次联网或全文加载。
+方法参考：[Ctrl+Paint 绘画媒介与笔触资料](https://www.ctrlpaint.com/library)、[Ctrl+Paint 消失边](https://www.ctrlpaint.com/videos/lost-edges)。

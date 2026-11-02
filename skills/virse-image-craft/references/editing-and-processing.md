@@ -24,4 +24,4 @@
 
 需要区域像素不变时，优先使用保留原像素的裁切、蒙版、图层合成等方法；生成式编辑提供的是受约束重绘。反复局改仍牵连主体、复杂变视角持续失真时，停止累加限制，改用结构参考、分步合成、适合的处理工具或经用户接受的新画面方案。
 
-方法参考：[Replicate 图片编辑技巧](https://github.com/replicate/skills/blob/main/skills/prompt-images/SKILL.md)、[OpenAI 图片编辑与保留项](https://developers.openai.com/api/docs/guides/image-prompting)。用于方法依据，不要求每次联网或全文加载；具体处理能力看当前工具。
+方法参考：[Replicate 图片编辑技巧](https://github.com/replicate/skills/blob/main/skills/prompt-images/SKILL.md)、[OpenAI 图片编辑与保留项](https://developers.openai.com/api/docs/guides/image-prompting)。

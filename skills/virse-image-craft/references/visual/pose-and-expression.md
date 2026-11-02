@@ -18,4 +18,4 @@
 
 检查时区分动作不清、受力不对、局部连接错与神态不符。动作正确只一只手异常，评估局部修复；人物整体重心与姿势错误，补整体姿态比只修手更有效。表情在近看成立但用途是小头像，应简化背景或调整取景，而非无限夸大五官。
 
-方法参考：[Proko 动势与动作关系](https://www.proko.com/course-lesson/how-to-draw-gesture)。用于动作观察方法参考，不要求每次联网或全文加载。
+方法参考：[Proko 动势与动作关系](https://www.proko.com/course-lesson/how-to-draw-gesture)。

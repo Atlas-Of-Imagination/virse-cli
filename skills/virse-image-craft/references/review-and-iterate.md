@@ -26,4 +26,4 @@
 
 交付对应用户请求：只要 prompt 就给 prompt；要诊断就给主要问题与修正方向；要图片就给实际产物和必要的未达项。用户要求对比时说明实质差异，不把尚未生成的候选描述成已验证效果。
 
-方法参考：[OpenAI ImageGen 的检查与迭代](https://github.com/openai/skills/tree/main/skills/.system/imagegen)、[OpenAI 图片提示](https://developers.openai.com/api/docs/guides/image-prompting)。用于方法参考，不要求每次联网或全文加载。
+方法参考：[OpenAI ImageGen 的检查与迭代](https://github.com/openai/skills/tree/main/skills/.system/imagegen)、[OpenAI 图片提示](https://developers.openai.com/api/docs/guides/image-prompting)。

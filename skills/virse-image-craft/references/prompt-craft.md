@@ -19,10 +19,16 @@
 
 ## 根据交付组织内容
 
-只要 prompt 时，直接交最终文本。用户需要选择方向时，提供在表达、构图或媒介上有实际区别的候选，而非换同义词。用户指定模型时，可在必要处说明该模型可能不支持的输入或参数；无实际查询依据，不承诺文字、人数或保真程度。
+只要 prompt 时，直接交最终文本。用户需要选择方向时，提供在表达、构图或媒介上有实际区别的候选，而非换同义词。
 
 精确文案逐字引用，并说明层级、位置和允许换行的位置；不要让模型自行编造联系方式、产品卖点或统计数据。若文字很多且必须准确、可改，建议生成底图后用排版工具放字；只有用户同意调整交付方式才实施。
 
 检查 prompt 时问：主目标是否被次要装饰淹没？同一个对象是否被要求同时正面与侧面、全景与极近特写？“浅景深”是否与全部标签可读冲突？先解决冲突，不靠增加“高质量”“大师作品”掩盖。参考图的风格与主体须分开说明，编辑须另写改变项与保留项。
 
-方法参考：[OpenAI ImageGen Skill](https://github.com/openai/skills/tree/main/skills/.system/imagegen)、[Replicate 图片提示技巧](https://github.com/replicate/skills/blob/main/skills/prompt-images/SKILL.md)。这些链接用于方法依据，不要求每次联网或全文加载；具体模型行为仍看当前合同。
+## 适配已选模型
+
+schema 说明可提交的输入与参数，提示指南说明怎样表达更有效。需要模型专用的引用、编辑写法，或通用方法反复失效时，按需查该版本、该模式的官方指南与示例，只提取能改变本次判断的方法；已有适用资料足够时直接使用。
+
+某个模型的语言、字数、引用格式或负向写法不能推广为通则。厂商示例中的输入和控制项仍须与实际接入核对；无可靠依据时说明不确定，不承诺文字、人数或保真程度，也不把文档建议称为已验证效果。
+
+方法参考：[OpenAI ImageGen Skill](https://github.com/openai/skills/tree/main/skills/.system/imagegen)、[Replicate 图片提示技巧](https://github.com/replicate/skills/blob/main/skills/prompt-images/SKILL.md)。

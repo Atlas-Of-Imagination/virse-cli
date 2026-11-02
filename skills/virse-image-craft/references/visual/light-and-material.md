@@ -17,4 +17,4 @@
 
 图像发灰先查主体与背景明度关系；体积扁先查受光面是否区分；材质像塑料先查高光形状、反射和表面尺度；换背景后不自然先查光向、色温和旧环境反射。诊断后只修相关条件，不把“电影光”“真实质感”当通用解法。
 
-方法参考：[Ctrl+Paint 绘画基础资料中的明暗与光](https://www.ctrlpaint.com/library)、[Adobe 材质属性](https://helpx.adobe.com/dimension/desktop/using/standard-materials.html)。用于视觉判断与材质概念参考，不要求每次联网或全文加载；材质术语不代表工具开放对应数值参数。
+方法参考：[Ctrl+Paint 绘画基础资料中的明暗与光](https://www.ctrlpaint.com/library)、[Adobe 材质属性](https://helpx.adobe.com/dimension/desktop/using/standard-materials.html)。材质术语不代表工具开放对应数值参数。

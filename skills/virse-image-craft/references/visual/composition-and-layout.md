@@ -23,4 +23,4 @@
 
 读不清先分辨字形错误、字号过小、背景对比不足、间距拥挤还是阅读顺序错；分别选择改字、重排、简化背景或使用排版工具。仅增大清晰度不一定解决层级问题。实际生成逐字核对文案，精确文字与可编辑图形不能由位图外观代替。
 
-方法参考：[Adobe 布局基础](https://www.adobe.com/learn/illustrator/web/layout-basics)。用于布局方法参考，不要求每次联网或全文加载。
+方法参考：[Adobe 布局基础](https://www.adobe.com/learn/illustrator/web/layout-basics)。

@@ -26,4 +26,4 @@
 
 “同一人物出现在新场景”同时包含身份保持与环境变化；“同款产品不同颜色”需要保留几何和标签；“同一绘本”还需要媒介、画面节奏和信息层级连续。按这些目标检查，不能只因为色调相近就称一致性达标。
 
-方法参考：[OpenAI 图片提示与参考分工](https://developers.openai.com/api/docs/guides/image-prompting)、[Gemini 图像生成与多图编辑](https://ai.google.dev/gemini-api/docs/image-generation)。用于方法依据，不要求每次联网或全文加载；参考数量、顺序与保真选项须查当前模型合同。
+方法参考：[OpenAI 图片提示与参考分工](https://developers.openai.com/api/docs/guides/image-prompting)、[Gemini 图像生成与多图编辑](https://ai.google.dev/gemini-api/docs/image-generation)。
