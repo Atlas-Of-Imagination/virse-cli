@@ -21,6 +21,7 @@ Virse 是 AI native 的创作系统，以画布连接想法、素材、审美、
 
 | 用户正在做什么 | 需要的参考 |
 | --- | --- |
+| 从画布发现创作流程并总结成新工具 | `smart-tool-creator` → `references/from-canvas.md` |
 | 搜索、添加移除、启停收藏、修改作者范围或删除定义 | [查找与管理工具](references/find-and-manage.md) |
 | 填输入、固定版本、放置、执行、观察与控制 | [工具运行合同](references/shared/contracts/tool-run.md) |
 | 判断产物是否符合要求并交付 | [检查工具结果](references/inspect-results.md)与[文件交付](references/shared/contracts/delivery.md) |

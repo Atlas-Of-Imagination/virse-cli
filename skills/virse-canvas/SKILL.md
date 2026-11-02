@@ -51,7 +51,9 @@ virse canvas layout --group "$GROUP" --mode row --gap 40 --x 100 --y 200 --org "
 | 当前任务 | 读取 |
 | --- | --- |
 | 整理画布、归类收纳、重新分组排版，先理解现状并商定整理方式 | [画布整理](references/organize-canvas.md) |
-| 对照品牌标准验收画布作品，并把结果对应到作品 | `virse-creation` 的品牌验收参考 |
+| 对照品牌标准验收画布作品，并把结果对应到作品 | `virse-creation` → `references/brand-review.md` |
+| 从画布自动发现可复用流程，推荐并总结为智能工具 | `smart-tool-creator` → `references/from-canvas.md` |
+| 从画布理解视觉偏好、推荐发展方向并总结审美模块 | `aesthetic-creator` → `references/from-canvas.md` |
 | 找画布、理解区域、读取文字、成员、连线或生成配置 | [理解与取材](references/read-select.md) |
 | 创建画布、节点、组合、连线，修改字段或组合事务 | [编辑对象与关系](references/edit-graph.md) |
 | 放入现有素材、执行已明确的排版、复制到当前或另一画布 | [放置、排版与复制](references/layout-copy.md) |
