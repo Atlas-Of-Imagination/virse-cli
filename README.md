@@ -303,11 +303,15 @@ The [skills directory](skills/) contains task-oriented instructions and creative
 
 Creative craft skills can guide prompt-only work independently. For generation in Virse, combine them with the generation skill. Each entry links to references for the current task; names and links do not load those references automatically.
 
+Use Ultra Design to coordinate a complete creative project and the brand-center skill to build a brand system. Specific asset, canvas, generation, tool or authoring actions can start in their own entry; project coordination is optional for those tasks.
+
 Installers include release-matched skills unless skill installation is skipped. Skills can also be installed separately using your agent's supported mechanism, for example:
 
 ```sh
 npx skills add Atlas-Of-Imagination/virse-cli --skill virse-image-craft virse-video-craft
 ```
+
+When updating an existing installation, check for renamed entries using the [Skill migration guide](shared/contracts/skill-migration.md). Verify the installation scope and remaining directories after cleanup; installing a new name does not guarantee removal of the old one.
 
 ## Rust SDK
 

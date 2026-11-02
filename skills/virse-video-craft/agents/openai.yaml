@@ -1,4 +1,4 @@
 interface:
-  display_name: "视频创作技巧"
+  display_name: "Virse 视频创作技巧"
   short_description: "编写视频提示词，选择参考与生成路径，判断运动、声音及连续性问题"
   default_prompt: "使用 $virse-video-craft，结合我的目标和素材，写出合适的视频提示词并判断生成路径。"

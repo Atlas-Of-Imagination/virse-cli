@@ -27,11 +27,11 @@ virse resource replace "$RESOURCE" ./product-new.png --expected-revision "$CONTE
 
 ## 恢复原请求
 
-CLI 在提交前保存原始字节、身份、目标和请求。普通重试检查本地文件未变，并沿用相同 `--idempotency-key`；原文件已移动、变化或删除时，明确使用保存快照：
+CLI 在提交前保存原始字节、身份、目标和请求。普通重试检查本地文件未变，并沿用相同 `--idempotency-key`；原文件已移动、变化或删除时，保留原命令的所有选项与身份，只追加 `--resume`，明确使用保存快照。下面延续原上传的 `rename` 策略；原请求使用 `skip` 或 `error` 时，恢复仍使用原策略：
 
 ```bash
-virse resource upload ./product.png '/项目素材' --idempotency-key "$KEY" --resume --org "$ORG" --json
+virse resource upload ./product.png '/项目素材' --conflict rename --idempotency-key "$KEY" --resume --org "$ORG" --json
 virse resource replace "$RESOURCE" ./product-new.png --expected-revision "$CONTENT_REVISION" --idempotency-key "$KEY" --resume --org "$ORG" --json
 ```
 
-恢复要求已有记录和原键，使用冻结的来源、字节与目标，不重新解析已改名路径。已接受后文件又被修改时，保留 `content_changed/revision_conflict` 和完成版本信息，不返回过期缓存成功。未知结果保留原键对账，不换键盲目上传第二份，也不删除可能已成功的对象。具体错误结构见[执行与恢复](shared/contracts/execution.md)。
+恢复要求已有记录和原键，沿用原后端、账号、组织、文件路径、目标及操作选项，使用冻结的来源、字节与目标，不重新解析已改名路径。GLB 替换原请求若包含 `--reset-model-state --expected-state-revision`，恢复时保留两者及原状态修订值，同时保留 `--expected-revision` 的原内容修订值；不能改用最新修订。已接受后文件又被修改时，保留 `content_changed/revision_conflict` 和完成版本信息，不返回过期缓存成功。未知结果保留原键对账，不换键盲目上传第二份，也不删除可能已成功的对象。具体错误结构见[执行与恢复](shared/contracts/execution.md)。
