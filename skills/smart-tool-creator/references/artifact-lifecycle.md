@@ -25,6 +25,8 @@ virse tool run <tool-id> --artifact-id <artifact-id> --inputs ./test-inputs.json
 
 未发布 artifact 仅由作者在工具所属组织的可访问画布试运行；不能把团队可见或能用某正式版本理解成能测试作者草稿。记录 tool、artifact、run、输入与输出身份，查看真实图片、文本或其他产物，检查用户关心的行为和质量。运行 succeeded 与作品符合要求分别判断。
 
+涉及图片或视频的提示设计与视觉验收时，按需读取 `virse-image-craft` 或 `virse-video-craft`，用具体问题判断工具方法与输出。可控输入仍来自该 artifact 的 Schema；不把技巧中提到的参数直接假定为工具表单字段。
+
 如果运行需要继续观察，沿用原 run：
 
 ```bash

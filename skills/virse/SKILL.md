@@ -39,6 +39,8 @@ virse config get --json
 | 理解画布、创建节点、放置分组排版、设置生成输入连线与讨论 | `virse-canvas` |
 | 查看或调整访问、分享、撤权、接受邀请 | `virse-sharing` |
 | 生成或修改图片、视频、3D、文本，比较与迭代结果 | `virse-creation` |
+| 写好生图提示词、理解参考图、选择视觉表现，或诊断图片效果 | `virse-image-craft` |
+| 写好视频提示词、选择创作模式、设计动作镜头与声音，或诊断视频效果 | `virse-video-craft` |
 | 找到、放置、运行或管理已有智能工具 | `virse-tools` |
 | 编写、修改、构建、测试和发布智能工具原生包 | `smart-tool-creator` |
 | 创建、训练、调优、测试并保存审美 | `aesthetic-creator` |

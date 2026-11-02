@@ -14,6 +14,8 @@ virse tool init ./product-shot-tool --name '商品图制作'
 
 ## 编写原生说明与输入
 
+设计图片或视频创作方法时，宿主作者可按需读取 `virse-image-craft` 或 `virse-video-craft`，把本工具需要的参考分工、创作判断与验收要求写进将交付的原生说明或随包参考。工具运行环境不自动拥有宿主的本地 Skill；不能只写一个技巧名称就当作方法已经随包交付。
+
 原生包 `SKILL.md` 使用 UTF-8、单行标量 frontmatter；`name`、`description` 和正文非空。CLI 的原生包解析器不支持嵌套或多行 YAML；`when_to_use` 是发现提示，初始化时填写并按任务修订。
 
 ```markdown

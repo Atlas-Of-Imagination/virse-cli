@@ -29,6 +29,8 @@ Virse 是 AI native 的创作系统，以画布连接想法、素材、审美、
 
 只读当前任务需要的参考。需要认证或切换后端时读[连接与范围](references/shared/contracts/connection.md)；测试生成读[生成合同](references/shared/contracts/generation.md)，以当前 operation 和模型实际支持的字段绑定审美。
 
+需要分析图片参考、设计测试提示词或诊断视觉效果时，按需读取 `virse-image-craft`；视频测试的模式、运动与连续性使用 `virse-video-craft`。仅训练、查询修订或保存草稿时不预读技巧；实际生成与审美绑定仍遵守本入口合同。
+
 `aesthetic call` 的 `--data` 是该动作的 HTTP JSON 对象，不自动注入全局 `--org/--canvas`；`draft/context` 的 GET 不发送 body。使用参考中的真实字段和已查询身份，不凭动作名猜 JSON。命令或路由不存在、请求合同不匹配时核对客户端与后端能力，不能改走私有旧接口绕过。
 
 训练 run、源 style、草稿 style、会话 revision 和测试快照分开记录。完整正文修订使用最新读取的 `expected_revision`；冲突先重读比较，不只替换数字强写。训练完成、效果合格、草稿保存、资源落盘分别核对，最终说明实际完成和未验证部分。

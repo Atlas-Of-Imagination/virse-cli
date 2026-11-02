@@ -290,15 +290,22 @@ A successful query can return a failed task; use task status as well as the proc
 
 ## Agent skills
 
-The [skills directory](skills/) contains task-oriented instructions and command examples for AI agents. Start with [Virse](skills/virse/SKILL.md), then load the relevant guide:
+The [skills directory](skills/) contains task-oriented instructions and creative methods for AI agents. Choose the relevant guide directly; use [Virse](skills/virse/SKILL.md) for setup or help locating an unclear task:
 
 - [Assets](skills/virse-assets/SKILL.md) and [sharing](skills/virse-sharing/SKILL.md)
 - [Canvas editing](skills/virse-canvas/SKILL.md) and [generation](skills/virse-creation/SKILL.md)
+- [Image craft](skills/virse-image-craft/SKILL.md) and [video craft](skills/virse-video-craft/SKILL.md): prompt writing, reference use, creative choices, parameters, and output review
 - [Composer](skills/virse-composer/SKILL.md)
 - [Tool use](skills/virse-tools/SKILL.md) and [tool creation](skills/smart-tool-creator/SKILL.md)
 - [Aesthetic creation](skills/aesthetic-creator/SKILL.md)
 
-Skills are optional and are not installed by the binary installers. Load or copy them using your agent's supported skill mechanism.
+Creative craft skills can guide prompt-only work independently. For generation in Virse, combine them with the generation skill. Each entry links to references for the current task; names and links do not load those references automatically.
+
+Installers include release-matched skills unless skill installation is skipped. Skills can also be installed separately using your agent's supported mechanism, for example:
+
+```sh
+npx skills add Atlas-Of-Imagination/virse-cli --skill virse-image-craft virse-video-craft
+```
 
 ## Rust SDK
 
