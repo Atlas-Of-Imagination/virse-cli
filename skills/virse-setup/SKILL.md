@@ -19,17 +19,9 @@ Virse 是 AI native 的创作系统，以画布连接想法、素材、审美、
 
 ## 连接并确定范围
 
-首次安装或未登录时，按[连接指引](references/shared/contracts/connection.md)帮助安装、展示实际授权链接并确认登录；已就绪就继续原任务。用户指定后端时先设置 `VIRSE_BACKEND_URL`，再执行下面的查询；不把 profile 当作后端选择，也不要求每项业务操作前重读全套背景。
+CLI 和登录态已就绪时直接继续原任务。需要安装或登录时，按[连接指引](references/shared/contracts/connection.md#安装与首次登录)执行，并实时转达 CLI 的授权提示；登录后核实身份、确定空间，再继续原任务。参数不明确时，只查对应命令的 `--help`。
 
-```sh
-virse auth status --json
-virse space list --json
-virse config get --json
-```
-
-使用用户已授权的身份；从实际结果取得组织与画布 ID。单次操作显式 `--org`/`--canvas`；用户要保存默认值时才用 `config set org "$org"` 或 `config set canvas "$canvas"`。保存配置不证明对象可访问。查额度用 `virse --org "$org" balance --json`，按余额、预算和许可的原始含义说明。
-
-登录、退出授权、后端/profile 与环境 token 优先级，读[连接与操作范围](references/shared/contracts/connection.md)。资源项、asset、画布 Space 与节点身份不明确时，读[对象身份](references/shared/context/objects.md)。
+身份与后端、退出授权、默认配置和余额说明按需读取[连接与操作范围](references/shared/contracts/connection.md)，只取当前相关段落，沿用已明确的身份与上下文。资源项、asset、画布 Space 与节点身份不明确时，读[对象身份](references/shared/context/objects.md)。
 
 ## 按当前目标选择
 
