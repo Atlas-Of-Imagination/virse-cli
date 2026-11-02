@@ -14,7 +14,7 @@ virse tool build ./product-shot-tool --org <org-id> --json
 
 ## 固定产物测试
 
-读取 build 返回的确定 artifact 的输入 Schema，按字段 ID 准备输入，再运行同一产物：
+读取 build 返回的确定 artifact 的输入 Schema，按字段 ID 准备输入，再运行同一产物。测试会生成内容时，沿用适用授权；缺少时先确认工具可见配置与执行范围，不虚构固定内部模型可控：
 
 ```bash
 virse tool schema <tool-id> --artifact-id <artifact-id> --canvas <canvas-id> --org <org-id> --json

@@ -30,7 +30,7 @@
 
 ## 按需调用创作能力
 
-需要灵感探索时，读取 `virse-creation` 的 `references/inspiration-exploration.md`；图像或视频方法按需读取实际可用的 `virse-image-craft`、`virse-video-craft`。生成执行走 `virse-creation`，画布操作走 `virse-canvas`；只在需要时读取，缺包时说明能力缺口，不声称已加载。模型、参数与费用授权沿用公共规则，不固定指定模型。
+需要灵感探索时，读取 `virse-creation` 的 `references/inspiration-exploration.md`；图像或视频方法按需读取实际可用的 `virse-image-craft`、`virse-video-craft`。生成执行走 `virse-creation`，画布操作走 `virse-canvas`；只在需要时读取，缺包时说明能力缺口，不声称已加载。模型、参数与执行范围按 `virse-creation` 的选型授权规则处理，已有适用约定直接沿用，不固定指定模型。
 
 可用 Composer 承担范围明确的画布子任务。独立会话须交代目标、材料、保留项和验收要求；宿主仍须打开真实结果并负责验收。
 
