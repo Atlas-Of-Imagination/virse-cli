@@ -1,6 +1,6 @@
 ---
 name: virse-canvas
-description: 使用 Virse CLI 理解画布内容与区域、整理归类与收纳、协商分组排版，读取节点配置和关系、放入已有资产，并编辑节点、组合、连线、布局、复制、恢复和画布讨论。适用于画布结构与取材；生成或修改像素内容属于 virse-creation，资源目录整理属于 virse-assets。
+description: 使用 Virse CLI 理解画布内容与区域、整理内部节点、协商分组排版，读取节点配置和关系、放入已有资产，并编辑节点、组合、连线、布局、复制、恢复和画布讨论。适用于画布结构与取材；生成或修改像素内容属于 virse-creation，资源目录整理属于 virse-assets。
 ---
 
 # 画布操作
@@ -50,6 +50,7 @@ virse canvas layout --group "$GROUP" --mode row --gap 40 --x 100 --y 200 --org "
 
 | 当前任务 | 读取 |
 | --- | --- |
+| 把资源目录中的多张画布及素材按项目归档或重新分类 | `virse-assets` 的资产库整理参考 |
 | 整理画布、归类收纳、重新分组排版，先理解现状并商定整理方式 | [画布整理](references/organize-canvas.md) |
 | 对照品牌标准验收画布作品，并把结果对应到作品 | `virse-creation` → `references/brand-review.md` |
 | 从画布自动发现可复用流程，推荐并总结为智能工具 | `smart-tool-creator` → `references/from-canvas.md` |
