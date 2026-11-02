@@ -20,6 +20,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - name: Check standalone Skill packages
+        run: python3 scripts/package_skills.py --check
       - name: Check release version
         if: startsWith(github.ref, 'refs/tags/')
         env:

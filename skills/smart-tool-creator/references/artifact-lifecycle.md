@@ -38,7 +38,7 @@ virse tool runs watch <run-id> --canvas <canvas-id> --org <org-id> --json
 
 ## 发布指定产物
 
-用户要求正式交付时，发布已测试的同一 artifact：
+用户明确要求发布时，发布已测试的同一 artifact：
 
 ```bash
 virse tool publish --tool-id <tool-id> --artifact-id <artifact-id> --org <org-id> --json
