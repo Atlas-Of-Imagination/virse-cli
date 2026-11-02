@@ -1,0 +1,4 @@
+interface:
+  display_name: "Virse Ultra Design"
+  short_description: "汇集各处 Context，统筹多种创作能力与 Composer，从想法推进到完整项目交付"
+  default_prompt: "使用 $ultra-design，结合我已有的想法和材料，带我在 Virse 中完成这个创作项目。"

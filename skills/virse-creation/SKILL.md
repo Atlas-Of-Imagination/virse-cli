@@ -40,6 +40,7 @@ virse --org "$ORG" --canvas "$CANVAS" --json generation image --model "$MODEL" -
 
 | 用户正在做什么 | 只读需要的参考 |
 | --- | --- |
+| 开启 Ultra Design／全能创作，或统筹需组合多能力的完整创作项目 | `ultra-design` |
 | 建设、接续品牌中心或核对整库交付 | `brand-center-creator` |
 | 依据已有品牌中心制作作品，尚需定位相关规则与资产 | `brand-center-creator` → `references/deliver-and-reuse.md`；依据已明确时直接创作 |
 | 开启灵感探索、找参考或做情绪板，从描述、图片或画布发展概念、故事与视觉方向 | [灵感探索](references/inspiration-exploration.md) |

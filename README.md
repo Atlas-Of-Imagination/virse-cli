@@ -292,6 +292,7 @@ A successful query can return a failed task; use task status as well as the proc
 
 The [skills directory](skills/) contains task-oriented instructions and creative methods for AI agents. Choose the relevant guide directly; use [Virse](skills/virse/SKILL.md) for setup or help locating an unclear task:
 
+- [Ultra Design](skills/ultra-design/SKILL.md): coordinate complete creative projects across capabilities, from context and exploration to production, review, and delivery
 - [Assets](skills/virse-assets/SKILL.md) and [sharing](skills/virse-sharing/SKILL.md)
 - [Canvas editing](skills/virse-canvas/SKILL.md) and [generation](skills/virse-creation/SKILL.md)
 - [Image craft](skills/virse-image-craft/SKILL.md) and [video craft](skills/virse-video-craft/SKILL.md): prompt writing, reference use, creative choices, parameters, and output review

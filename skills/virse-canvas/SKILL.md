@@ -50,6 +50,7 @@ virse canvas layout --group "$GROUP" --mode row --gap 40 --x 100 --y 200 --org "
 
 | 当前任务 | 读取 |
 | --- | --- |
+| 开启 Ultra Design／全能创作，或统筹需组合多能力的完整创作项目 | `ultra-design` |
 | 在画布共同发展品牌系统，最终交付品牌文件夹 | `brand-center-creator`；本入口承担画布操作 |
 | 把资源目录中的多张画布及素材按项目归档或重新分类 | `virse-assets` → `references/organize-library.md` |
 | 把当前画布、本地或外部平台的素材汇集成个人或团队资产库 | `virse-assets` → `references/build-library.md` |

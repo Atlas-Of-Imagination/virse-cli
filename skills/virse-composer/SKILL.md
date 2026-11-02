@@ -43,6 +43,7 @@ virse --org "$ORG" --canvas "$CANVAS" --json composer send "$COMPOSER" --input "
 
 | 用户正在做什么 | 需要的参考 |
 | --- | --- |
+| 开启 Ultra Design／全能创作，或统筹需组合多能力的完整创作项目 | `ultra-design` |
 | 查找、创建、读取、改名或删除创作家节点 | [独立节点与会话](references/sessions.md) |
 | 交办、引用材料、传入长任务或在原会话继续 | [消息、上下文与继续会话](references/messages-and-continuation.md) |
 | 读历史、观察指定回合、断线续看或请求停止 | [观察、历史与停止](references/observe-and-stop.md) |
