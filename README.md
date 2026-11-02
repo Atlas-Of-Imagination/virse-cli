@@ -290,16 +290,16 @@ A successful query can return a failed task; use task status as well as the proc
 
 ## Agent skills
 
-The [skills directory](skills/) contains task-oriented instructions and creative methods for AI agents. Choose the relevant guide directly; use [Virse](skills/virse/SKILL.md) for setup or help locating an unclear task:
+The [skills directory](skills/) contains task-oriented instructions and creative methods for AI agents. Choose the relevant guide directly; use [Virse](skills/virse-setup/SKILL.md) for setup or help locating an unclear task:
 
-- [Ultra Design](skills/ultra-design/SKILL.md): coordinate complete creative projects across capabilities, from context and exploration to production, review, and delivery
+- [Ultra Design](skills/virse-ultra-design/SKILL.md): coordinate complete creative projects across capabilities, from context and exploration to production, review, and delivery
 - [Assets](skills/virse-assets/SKILL.md) and [sharing](skills/virse-sharing/SKILL.md)
 - [Canvas editing](skills/virse-canvas/SKILL.md) and [generation](skills/virse-creation/SKILL.md)
 - [Image craft](skills/virse-image-craft/SKILL.md) and [video craft](skills/virse-video-craft/SKILL.md): prompt writing, reference use, creative choices, parameters, and output review
 - [Composer](skills/virse-composer/SKILL.md)
-- [Tool use](skills/virse-tools/SKILL.md) and [tool creation](skills/smart-tool-creator/SKILL.md)
-- [Aesthetic creation](skills/aesthetic-creator/SKILL.md)
-- [Brand center creation](skills/brand-center-creator/SKILL.md): co-develop brand narrative, guidelines and assets, test applications on canvases, and deliver a reusable brand folder
+- [Tool use](skills/virse-tools/SKILL.md) and [tool creation](skills/virse-smart-tool-creator/SKILL.md)
+- [Aesthetic creation](skills/virse-aesthetic-creator/SKILL.md)
+- [Brand center creation](skills/virse-brand-center-creator/SKILL.md): co-develop brand narrative, guidelines and assets, test applications on canvases, and deliver a reusable brand folder
 
 Creative craft skills can guide prompt-only work independently. For generation in Virse, combine them with the generation skill. Each entry links to references for the current task; names and links do not load those references automatically.
 

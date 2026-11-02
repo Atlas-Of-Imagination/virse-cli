@@ -1,5 +1,5 @@
 ---
-name: virse
+name: virse-setup
 description: 安装或首次使用 Virse CLI、登录与验证身份、选择个人或团队空间、配置默认组织与画布、查询余额，或为不明确的 Virse 请求定位入口。任务明确时直接使用对应业务 Skill。
 ---
 
@@ -35,8 +35,8 @@ virse config get --json
 
 | 用户要做什么 | 入口 |
 | --- | --- |
-| 开启 Ultra Design／全能创作，或统筹需组合多能力的完整创作项目 | `ultra-design` |
-| 与用户共同建立或完善品牌系统，做画布实验并交付可持续取用的品牌文件夹 | `brand-center-creator` |
+| 开启 Ultra Design／全能创作，或统筹需组合多能力的完整创作项目 | `virse-ultra-design` |
+| 与用户共同建立或完善品牌系统，做画布实验并交付可持续取用的品牌文件夹 | `virse-brand-center-creator` |
 | 跨来源汇集并构建素材库、规划整理已有资产库、上传替换、批量导入、回收或下载打包 | `virse-assets` |
 | 理解画布、创建与整理内部节点、分组排版、设置生成输入连线与讨论 | `virse-canvas` |
 | 查看或调整访问、分享、撤权、接受邀请 | `virse-sharing` |
@@ -44,8 +44,8 @@ virse config get --json
 | 写好生图提示词、理解参考图、选择视觉表现，或诊断图片效果 | `virse-image-craft` |
 | 写好视频提示词、选择创作模式、设计动作镜头与声音，或诊断视频效果 | `virse-video-craft` |
 | 找到、放置、运行或管理已有智能工具 | `virse-tools` |
-| 从画布发现可复用流程并总结成工具，或编写、构建、测试与发布工具包 | `smart-tool-creator` |
-| 从画布理解并发展审美方向、总结审美模块，或创建训练、调优测试与保存审美 | `aesthetic-creator` |
+| 从画布发现可复用流程并总结成工具，或编写、构建、测试与发布工具包 | `virse-smart-tool-creator` |
+| 从画布理解并发展审美方向、总结审美模块，或创建训练、调优测试与保存审美 | `virse-aesthetic-creator` |
 | 围绕画布材料连续创作、组合多步操作与反馈，或继续创作家会话 | `virse-composer` |
 
 根据用户目标选择，不要求先走本入口。需要画布内连续创作时可主动选择 Composer；精确管理或指定模型、工具产物时优先 CLI 直做，复杂程度本身不是委派理由。普通审美查阅与取用读[审美取用](references/shared/context/aesthetics.md)，不启动作者流程。明确任务跨领域时直接补读所需参考；Skill 名称和链接本身不会自动执行路由。所需入口未安装时说明缺少哪个包，不假设其内容已经加载。

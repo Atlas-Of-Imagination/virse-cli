@@ -1,5 +1,5 @@
 ---
-name: smart-tool-creator
+name: virse-smart-tool-creator
 description: 从 Virse 画布自动发现可复用任务、总结工作流并制作智能工具；使用 CLI 创建和修改原生包，校验、构建确定产物，在画布上测试并按要求发布。适用于工具作者；运行或管理已有工具不需要进入包制作流程。
 ---
 

@@ -1,5 +1,5 @@
 ---
-name: ultra-design
+name: virse-ultra-design
 description: >-
   以 Virse 项目交付为主线的 all-in-one 创作：汇集本地、其他平台与画布 Context，组合图片、视频、3D、文本、审美和智能工具等能力，主动引导用户，按需并行探索、制作与验收。用于开启 Ultra Design／全能创作，或需组合多种创作能力的完整项目；明确的单项操作直接使用对应业务 Skill。
 ---
@@ -46,8 +46,8 @@ Virse 是 AI native 的创作系统，以画布连接想法、素材、审美、
 | 创意参考、作品生成或修改，及图片、视频、3D、文本执行 | `virse-creation`；找方向时取其 `references/inspiration-exploration.md` |
 | 图片或视频的表达、提示词和效果判断 | `virse-image-craft`、`virse-video-craft` 的相关参考 |
 | 独立画布创作子任务、继续会话与结果观察 | `virse-composer` |
-| 建立或完善品牌系统 | `brand-center-creator`；已有依据足够就直接取用 |
-| 从画布提炼并制作审美或智能工具 | `aesthetic-creator`、`smart-tool-creator` 的 `references/from-canvas.md`；候选先推荐并确认用途 |
+| 建立或完善品牌系统 | `virse-brand-center-creator`；已有依据足够就直接取用 |
+| 从画布提炼并制作审美或智能工具 | `virse-aesthetic-creator`、`virse-smart-tool-creator` 的 `references/from-canvas.md`；候选先推荐并确认用途 |
 | 使用已有工具或查阅已有审美 | `virse-tools` 或 `virse-assets`，沿用业务短路径 |
 
 只在需要对应动作时补入口，缺包或连接时具体引导补齐，继续可独立推进的工作。宿主负责消化 Context 并交办必要事实、真实材料、保留项和验收要求；Skill 名称不自动加载内容，Composer 也不继承宿主全部上下文。

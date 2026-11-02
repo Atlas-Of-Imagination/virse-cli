@@ -23,7 +23,7 @@ Composer 是平台内 Agent 的独立画布节点与会话。用户明确委派�
 
 混合任务由外部 Agent 统筹宿主与其他应用上下文、安排适合的 Virse 创作环节，可把范围明确的画布子任务交给 Composer，再整合并验收全部交付。委派不保证解决排版问题，也不补足未公开的功能。
 
-完整品牌中心任务由 `brand-center-creator` 统筹建设计划、规范与品牌文件夹；Composer 按本次交办承担画布子任务，不把单回合完成当成整个品牌系统已交付。
+完整品牌中心任务由 `virse-brand-center-creator` 统筹建设计划、规范与品牌文件夹；Composer 按本次交办承担画布子任务，不把单回合完成当成整个品牌系统已交付。
 
 宿主准备图片创作 brief 或检查图片时，按问题读取 `virse-image-craft`；视频模式、动作镜头、连续性与声音使用 `virse-video-craft`。把本次选定的目标、参考分工、保留项和验收要求写进 brief，Composer 不会因为消息中出现 Skill 名称就自动加载宿主的技巧或上下文。
 
@@ -43,7 +43,7 @@ virse --org "$ORG" --canvas "$CANVAS" --json composer send "$COMPOSER" --input "
 
 | 用户正在做什么 | 需要的参考 |
 | --- | --- |
-| 开启 Ultra Design／全能创作，或统筹需组合多能力的完整创作项目 | `ultra-design` |
+| 开启 Ultra Design／全能创作，或统筹需组合多能力的完整创作项目 | `virse-ultra-design` |
 | 查找、创建、读取、改名或删除创作家节点 | [独立节点与会话](references/sessions.md) |
 | 交办、引用材料、传入长任务或在原会话继续 | [消息、上下文与继续会话](references/messages-and-continuation.md) |
 | 读历史、观察指定回合、断线续看或请求停止 | [观察、历史与停止](references/observe-and-stop.md) |

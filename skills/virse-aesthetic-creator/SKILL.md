@@ -1,5 +1,5 @@
 ---
-name: aesthetic-creator
+name: virse-aesthetic-creator
 description: 从 Virse 画布理解视觉偏好、发现和发展审美方向，提炼成审美模块；使用 CLI 从参考素材创建训练审美，读取获准草稿、修订正文、固定快照测试并保存。适用于审美作者；只查已有审美详情使用 virse-assets，创作中取用随对应业务参考。
 ---
 

@@ -1,5 +1,5 @@
 ---
-name: brand-center-creator
+name: virse-brand-center-creator
 description: >-
   在 Virse 与用户共建、完善或接续品牌中心，发展品牌叙事、规范与资产，用画布探索并交付可复用的品牌文件夹；也用于整库交付检查。按已明确规范制作单个作品走 virse-creation，纯归档走 virse-assets，画布作品验收走 virse-creation 的品牌验收参考。
 ---
@@ -47,6 +47,6 @@ Virse 是 AI native 的创作系统，以画布连接想法、素材、审美、
 
 目录和文件用 `virse-assets`，画布用 `virse-canvas`，作品用 `virse-creation`；表现方法按需取 `virse-image-craft`、`virse-video-craft`，文档与外部材料用宿主可用能力。只补当前动作所需入口，缺失则协助补齐，名称不自动加载内容。
 
-画布创作子任务可交给 `virse-composer`，提供目标、真实材料、保留项及验收要求；宿主负责全部交付。用户认可方向或方法的复用价值后，再取 `aesthetic-creator` 或 `smart-tool-creator`，核实真实消费与放置能力。
+画布创作子任务可交给 `virse-composer`，提供目标、真实材料、保留项及验收要求；宿主负责全部交付。用户认可方向或方法的复用价值后，再取 `virse-aesthetic-creator` 或 `virse-smart-tool-creator`，核实真实消费与放置能力。
 
 连接或身份不明取[连接](references/shared/contracts/connection.md)，资源身份取[对象](references/shared/context/objects.md)；取得文件取[文件交付](references/shared/contracts/delivery.md)，受理不明按[执行与恢复](references/shared/contracts/execution.md)对账。核实约定内容、文件可用性及取用路径后，交付同一品牌文件夹的真实位置或已核实链接。

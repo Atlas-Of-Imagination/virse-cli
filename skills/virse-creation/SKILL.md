@@ -40,13 +40,13 @@ virse --org "$ORG" --canvas "$CANVAS" --json generation image --model "$MODEL" -
 
 | 用户正在做什么 | 只读需要的参考 |
 | --- | --- |
-| 开启 Ultra Design／全能创作，或统筹需组合多能力的完整创作项目 | `ultra-design` |
-| 建设、接续品牌中心或核对整库交付 | `brand-center-creator` |
-| 依据已有品牌中心制作作品，尚需定位相关规则与资产 | `brand-center-creator` → `references/deliver-and-reuse.md`；依据已明确时直接创作 |
+| 开启 Ultra Design／全能创作，或统筹需组合多能力的完整创作项目 | `virse-ultra-design` |
+| 建设、接续品牌中心或核对整库交付 | `virse-brand-center-creator` |
+| 依据已有品牌中心制作作品，尚需定位相关规则与资产 | `virse-brand-center-creator` → `references/deliver-and-reuse.md`；依据已明确时直接创作 |
 | 开启灵感探索、找参考或做情绪板，从描述、图片或画布发展概念、故事与视觉方向 | [灵感探索](references/inspiration-exploration.md) |
 | 对照品牌标准验收画布作品，将依据、问题与建议写回画布 | [品牌验收](references/brand-review.md) |
-| 从画布提炼可复用任务和创作方法、总结成智能工具 | `smart-tool-creator` → `references/from-canvas.md` |
-| 理解画布中的视觉偏好、推荐审美方向并沉淀模块 | `aesthetic-creator` → `references/from-canvas.md` |
+| 从画布提炼可复用任务和创作方法、总结成智能工具 | `virse-smart-tool-creator` → `references/from-canvas.md` |
+| 理解画布中的视觉偏好、推荐审美方向并沉淀模块 | `virse-aesthetic-creator` → `references/from-canvas.md` |
 | 准备生图或改图方案、提示词，或诊断具体图片的形准与视觉表现 | `virse-image-craft`，再选其相关参考 |
 | 准备视频方案、提示词，判断模式、动作镜头与声音，或诊断具体视频 | `virse-video-craft`，再选其相关参考 |
 | 结合外部材料策划创作、选方案、复用原图输入或比较迭代 | [目标、输入依据与效果迭代](references/plan-and-iterate.md) |

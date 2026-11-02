@@ -50,14 +50,14 @@ virse canvas layout --group "$GROUP" --mode row --gap 40 --x 100 --y 200 --org "
 
 | 当前任务 | 读取 |
 | --- | --- |
-| 开启 Ultra Design／全能创作，或统筹需组合多能力的完整创作项目 | `ultra-design` |
-| 在画布共同发展品牌系统，最终交付品牌文件夹 | `brand-center-creator`；本入口承担画布操作 |
+| 开启 Ultra Design／全能创作，或统筹需组合多能力的完整创作项目 | `virse-ultra-design` |
+| 在画布共同发展品牌系统，最终交付品牌文件夹 | `virse-brand-center-creator`；本入口承担画布操作 |
 | 把资源目录中的多张画布及素材按项目归档或重新分类 | `virse-assets` → `references/organize-library.md` |
 | 把当前画布、本地或外部平台的素材汇集成个人或团队资产库 | `virse-assets` → `references/build-library.md` |
 | 整理画布、归类收纳、重新分组排版，先理解现状并商定整理方式 | [画布整理](references/organize-canvas.md) |
 | 对照品牌标准验收画布作品，并把结果对应到作品 | `virse-creation` → `references/brand-review.md` |
-| 从画布自动发现可复用流程，推荐并总结为智能工具 | `smart-tool-creator` → `references/from-canvas.md` |
-| 从画布理解视觉偏好、推荐发展方向并总结审美模块 | `aesthetic-creator` → `references/from-canvas.md` |
+| 从画布自动发现可复用流程，推荐并总结为智能工具 | `virse-smart-tool-creator` → `references/from-canvas.md` |
+| 从画布理解视觉偏好、推荐发展方向并总结审美模块 | `virse-aesthetic-creator` → `references/from-canvas.md` |
 | 找画布、理解区域、读取文字、成员、连线或生成配置 | [理解与取材](references/read-select.md) |
 | 创建画布、节点、组合、连线，修改字段或组合事务 | [编辑对象与关系](references/edit-graph.md) |
 | 放入现有素材、执行已明确的排版、复制到当前或另一画布 | [放置、排版与复制](references/layout-copy.md) |
