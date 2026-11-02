@@ -41,6 +41,7 @@ Virse 是 AI native 的创作系统，以画布连接想法、素材、审美、
 
 | 当前需要 | 参考 |
 | --- | --- |
+| 共建品牌系统、探索应用并交付规范和资产文件夹 | `brand-center-creator`；具体图片方法仍按当前问题取用 |
 | 验收画布作品是否符合品牌标准，并在画布交付结果 | `virse-creation` → `references/brand-review.md` |
 | 把想法写成 prompt、删去冲突要求，或适配已选模型的写法 | [提示词取舍与表达](references/prompt-craft.md) |
 | 使用单图、多图、原图，保持身份或系列一致 | [参考与一致性](references/references-and-consistency.md) |

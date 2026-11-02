@@ -45,6 +45,7 @@ virse resource upload ./product.png '/项目素材' --conflict rename --idempote
 
 | 当前任务 | 读取 |
 | --- | --- |
+| 共建品牌叙事、规范和应用，交付或核对品牌文件夹 | `brand-center-creator`；仅归档已有品牌资料沿用本入口 |
 | 从本地、其他平台或项目汇集素材，迁入并组织成方便取用的个人或团队资产库 | [资产库构建](references/build-library.md) |
 | 整理资产库、商定分类收纳方案、保存现状，或按记录评估撤回本次整理 | [资产库整理](references/organize-library.md) |
 | 找到素材、浏览目录、判断来源与身份 | [查找与读取](references/browse.md) |

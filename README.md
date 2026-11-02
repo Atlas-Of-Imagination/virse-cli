@@ -298,6 +298,7 @@ The [skills directory](skills/) contains task-oriented instructions and creative
 - [Composer](skills/virse-composer/SKILL.md)
 - [Tool use](skills/virse-tools/SKILL.md) and [tool creation](skills/smart-tool-creator/SKILL.md)
 - [Aesthetic creation](skills/aesthetic-creator/SKILL.md)
+- [Brand center creation](skills/brand-center-creator/SKILL.md): co-develop brand narrative, guidelines and assets, test applications on canvases, and deliver a reusable brand folder
 
 Creative craft skills can guide prompt-only work independently. For generation in Virse, combine them with the generation skill. Each entry links to references for the current task; names and links do not load those references automatically.
 

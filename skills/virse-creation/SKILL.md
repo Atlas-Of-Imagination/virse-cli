@@ -40,6 +40,7 @@ virse --org "$ORG" --canvas "$CANVAS" --json generation image --model "$MODEL" -
 
 | 用户正在做什么 | 只读需要的参考 |
 | --- | --- |
+| 构建品牌中心、核对品牌文件夹交付，或依据其中规范与资产继续设计 | `brand-center-creator`，按当前问题取参考 |
 | 开启灵感探索、找参考或做情绪板，从描述、图片或画布发展概念、故事与视觉方向 | [灵感探索](references/inspiration-exploration.md) |
 | 对照品牌标准验收画布作品，将依据、问题与建议写回画布 | [品牌验收](references/brand-review.md) |
 | 从画布提炼可复用任务和创作方法、总结成智能工具 | `smart-tool-creator` → `references/from-canvas.md` |

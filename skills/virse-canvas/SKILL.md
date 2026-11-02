@@ -50,6 +50,7 @@ virse canvas layout --group "$GROUP" --mode row --gap 40 --x 100 --y 200 --org "
 
 | 当前任务 | 读取 |
 | --- | --- |
+| 在画布共同发展品牌系统，最终交付品牌文件夹 | `brand-center-creator`；本入口承担画布操作 |
 | 把资源目录中的多张画布及素材按项目归档或重新分类 | `virse-assets` → `references/organize-library.md` |
 | 把当前画布、本地或外部平台的素材汇集成个人或团队资产库 | `virse-assets` → `references/build-library.md` |
 | 整理画布、归类收纳、重新分组排版，先理解现状并商定整理方式 | [画布整理](references/organize-canvas.md) |
