@@ -194,14 +194,58 @@ pub async fn login(
     let file = name(profile, backend, "pending");
     let _flow_lock = guard(store, profile, backend)?;
     let existing: Option<Pending> = store.read(&file)?;
+    let mut existing =
+        existing.filter(|p| p.key.is_some() || p.expires.saturating_add(300) > now());
+    loop {
+        let resuming = existing.is_some();
+        let result = login_attempt(
+            store,
+            profile,
+            backend,
+            device,
+            no_browser,
+            compact,
+            existing.take(),
+        )
+        .await;
+        if let Err(error) = &result {
+            let stale = matches!(
+                error.code.as_str(),
+                "AUTHORIZATION_EXPIRED"
+                    | "DELIVERY_EXPIRED"
+                    | "INVALID_AUTHORIZATION_PROOF"
+                    | "AUTHORIZATION_ALREADY_CLAIMED"
+                    | "AUTHORIZATION_NOT_ISSUED"
+                    | "ACCESS_DENIED"
+            ) || error.status == Some(401);
+            if stale || error.code == "WAIT_TIMEOUT" {
+                // 只丢弃失效的登录流程；新凭据验证成功前保留当前账号。
+                {
+                    let _lock = store.lock()?;
+                    store.save(&file, &Option::<Pending>::None)?;
+                }
+                if resuming && stale {
+                    eprintln!("Previous authorization is no longer valid; starting a new login.");
+                    continue;
+                }
+            }
+        }
+        return result;
+    }
+}
+
+async fn login_attempt(
+    store: &Store,
+    profile: &str,
+    backend: &str,
+    device: bool,
+    no_browser: bool,
+    compact: bool,
+    existing: Option<Pending>,
+) -> Result<u8> {
+    let file = name(profile, backend, "pending");
     let listener;
     let mut pending = if let Some(p) = existing {
-        if p.expires.saturating_add(300) <= now() && p.key.is_none() {
-            return Err(Error::new(
-                "AUTHORIZATION_EXPIRED",
-                "Saved authorization expired; run auth logout before starting again",
-            ));
-        }
         listener = match &p.redirect {
             Some(uri) => {
                 let url = url::Url::parse(uri)
@@ -282,7 +326,7 @@ pub async fn login(
     let auth = CliAuthClient::new(backend)?;
     if pending.key.is_none() {
         let key = tokio::select! {
-            result=tokio::time::timeout(Duration::from_secs(pending.expires.saturating_sub(now()).max(30)),receive(&auth,&pending,listener.as_ref()))=>result.map_err(|_|Error::new("WAIT_TIMEOUT","Authorization expired; run auth logout to discard the pending request"))??,
+            result=tokio::time::timeout(Duration::from_secs(pending.expires.saturating_sub(now()).max(30)),receive(&auth,&pending,listener.as_ref()))=>result.map_err(|_|Error::new("WAIT_TIMEOUT","Authorization expired; rerun auth login to start again"))??,
             _=tokio::signal::ctrl_c()=>return Err(Error::new("INTERRUPTED","Authorization paused; rerun auth login to resume")),
         };
         pending.key = Some(key);

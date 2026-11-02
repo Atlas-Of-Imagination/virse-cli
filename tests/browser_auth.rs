@@ -5,6 +5,7 @@ use axum::{
     routing::{delete, get, post},
 };
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
 use std::{
     path::Path,
     process::Stdio,
@@ -157,5 +158,222 @@ async fn device_login_waits_without_callback_and_rejected_logout_keeps_credentia
             .status
             .success()
     );
+    server.abort();
+}
+
+fn scope(base: &str) -> String {
+    format!(
+        "{:x}",
+        Sha256::digest(json!(["default", format!("{base}/")]).to_string())
+    )
+}
+
+fn seed_credentials(dir: &Path, base: &str) -> Value {
+    let credentials = json!({scope(base): "virse_sk_old_login"});
+    write_json(dir.join("credentials.json"), &credentials);
+    write_json(
+        dir.join(format!("cli-auth-origin-{}.json", scope(base))),
+        &json!({"key_id":"old-key", "user_id":"old-account"}),
+    );
+    credentials
+}
+
+fn write_json(path: impl AsRef<Path>, value: &Value) {
+    std::fs::write(&path, value.to_string()).unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600)).unwrap();
+    }
+}
+
+fn read_json(path: impl AsRef<Path>) -> Value {
+    serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap()
+}
+
+fn seed_pending(dir: &Path, base: &str, expires: u64, issued: bool) {
+    let pending = json!({
+        "start": {"request_id":"old-request", "device_secret":"old-secret",
+            "user_code":"OLD", "authorization_url":"https://app.example.test/old",
+            "expires_in":600,"interval":5},
+        "proof":{"request_id":"old-request","device_secret":"old-secret","code_verifier":"old-proof"},
+        "state":"old-state", "redirect":null, "expires":expires,
+        "key":if issued {json!({"access_token":"virse_sk_revoked", "key_id":ID,"user_id":ID})} else {Value::Null}
+    });
+    write_json(
+        dir.join(format!("cli-auth-pending-{}.json", scope(base))),
+        &pending,
+    );
+}
+
+async fn replacement_server(
+    stale_code: &'static str,
+    reject_new: bool,
+) -> (String, Arc<Mock>, tokio::task::JoinHandle<()>) {
+    let state = Arc::new(Mock::default());
+    let app = Router::new()
+        .route(
+            "/auth/cli/start",
+            post(|State(s): State<Arc<Mock>>| async move {
+                s.starts.fetch_add(1, Ordering::SeqCst);
+                Json(
+                    json!({"request_id":ID,"device_secret":"secret","user_code":"NEW",
+                "authorization_url":"https://app.example.test/new","expires_in":600,"interval":5}),
+                )
+            }),
+        )
+        .route(
+            "/auth/cli/token",
+            post(move |Json(body): Json<Value>| async move {
+                if body["request_id"] == "old-request" {
+                    (
+                        StatusCode::GONE,
+                        Json(json!({"detail":{"code":stale_code}})),
+                    )
+                } else if reject_new {
+                    (
+                        StatusCode::FORBIDDEN,
+                        Json(json!({"detail":{"code":"ACCESS_DENIED"}})),
+                    )
+                } else {
+                    (
+                        StatusCode::OK,
+                        Json(json!({"access_token":TOKEN,"key_id":ID,"user_id":ID})),
+                    )
+                }
+            }),
+        )
+        .route(
+            "/auth/cli/ack",
+            post(|State(s): State<Arc<Mock>>| async move {
+                s.acks.fetch_add(1, Ordering::SeqCst);
+                Json(json!({"status":"acknowledged"}))
+            }),
+        )
+        .route(
+            "/auth/me",
+            get(|headers: HeaderMap| async move {
+                if headers["authorization"] == "Bearer virse_sk_revoked" {
+                    (
+                        StatusCode::UNAUTHORIZED,
+                        Json(json!({"detail":"Invalid token"})),
+                    )
+                } else {
+                    assert_eq!(headers["authorization"], format!("Bearer {TOKEN}"));
+                    (StatusCode::OK, Json(json!({"id":ID})))
+                }
+            }),
+        )
+        .with_state(state.clone());
+    let socket = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let base = format!("http://{}", socket.local_addr().unwrap());
+    let server = tokio::spawn(async move { axum::serve(socket, app).await.unwrap() });
+    (base, state, server)
+}
+
+#[tokio::test]
+async fn repeated_login_replaces_saved_account_without_logout() {
+    let (base, state, server) = replacement_server("", false).await;
+    let dir = tempfile::tempdir().unwrap();
+    seed_credentials(dir.path(), &base);
+    for _ in 0..2 {
+        let result = run(
+            dir.path(),
+            &base,
+            &["auth", "login", "--device", "--no-browser"],
+        )
+        .await;
+        assert!(
+            result.status.success(),
+            "{}",
+            String::from_utf8_lossy(&result.stderr)
+        );
+        assert_eq!(
+            read_json(dir.path().join("credentials.json"))[scope(&base)],
+            TOKEN
+        );
+        let origin = read_json(
+            dir.path()
+                .join(format!("cli-auth-origin-{}.json", scope(&base))),
+        );
+        assert_eq!(origin["user_id"], ID);
+        assert_eq!(origin["key_id"], ID);
+    }
+    assert_eq!(state.starts.load(Ordering::SeqCst), 2);
+    assert_eq!(state.acks.load(Ordering::SeqCst), 2);
+    server.abort();
+}
+
+#[tokio::test]
+async fn stale_login_automatically_starts_new_authorization() {
+    let future = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
+        + 600;
+    for (expires, issued, code) in [
+        (1, false, ""),
+        (future, false, "AUTHORIZATION_EXPIRED"),
+        (future, false, "DELIVERY_EXPIRED"),
+        (future, false, "INVALID_AUTHORIZATION_PROOF"),
+        (future, false, "AUTHORIZATION_ALREADY_CLAIMED"),
+        (future, false, "ACCESS_DENIED"),
+        (1, true, ""),
+    ] {
+        let (base, state, server) = replacement_server(code, false).await;
+        let dir = tempfile::tempdir().unwrap();
+        seed_credentials(dir.path(), &base);
+        seed_pending(dir.path(), &base, expires, issued);
+        let result = run(
+            dir.path(),
+            &base,
+            &["auth", "login", "--device", "--no-browser"],
+        )
+        .await;
+        assert!(
+            result.status.success(),
+            "{code}: {}",
+            String::from_utf8_lossy(&result.stderr)
+        );
+        assert_eq!(
+            read_json(dir.path().join("credentials.json"))[scope(&base)],
+            TOKEN
+        );
+        assert_eq!(state.starts.load(Ordering::SeqCst), 1);
+        assert_eq!(state.acks.load(Ordering::SeqCst), 1);
+        server.abort();
+    }
+}
+
+#[tokio::test]
+async fn rejected_replacement_keeps_current_login_and_allows_retry() {
+    let (base, state, server) = replacement_server("", true).await;
+    let dir = tempfile::tempdir().unwrap();
+    let credentials = seed_credentials(dir.path(), &base);
+    let origin_path = dir
+        .path()
+        .join(format!("cli-auth-origin-{}.json", scope(&base)));
+    let origin = json!({"key_id":"old-key", "user_id":"old-account"});
+    write_json(&origin_path, &origin);
+    for _ in 0..2 {
+        let result = run(
+            dir.path(),
+            &base,
+            &["auth", "login", "--device", "--no-browser"],
+        )
+        .await;
+        assert_eq!(result.status.code(), Some(4));
+        assert_eq!(read_json(dir.path().join("credentials.json")), credentials);
+        assert_eq!(read_json(&origin_path), origin);
+        assert!(
+            read_json(
+                dir.path()
+                    .join(format!("cli-auth-pending-{}.json", scope(&base)))
+            )
+            .is_null()
+        );
+    }
+    assert_eq!(state.starts.load(Ordering::SeqCst), 2);
+    assert_eq!(state.acks.load(Ordering::SeqCst), 0);
     server.abort();
 }
