@@ -1,6 +1,6 @@
 ---
 name: virse-canvas
-description: 使用 Virse CLI 理解画布内容与区域、读取节点配置和关系、放入已有资产，并编辑节点、组合、连线、布局、复制、恢复和画布讨论。适用于画布结构与取材；生成或修改像素内容属于 virse-creation，资源目录整理属于 virse-assets。
+description: 使用 Virse CLI 理解画布内容与区域、整理归类与收纳、协商分组排版，读取节点配置和关系、放入已有资产，并编辑节点、组合、连线、布局、复制、恢复和画布讨论。适用于画布结构与取材；生成或修改像素内容属于 virse-creation，资源目录整理属于 virse-assets。
 ---
 
 # 画布操作
@@ -35,7 +35,9 @@ virse canvas add --resource '/项目素材/产品.png' --x 100 --y 200 --org "$O
 
 手动连线把已有内容作为目标创作框的输入或参考，供其继续创作；一般说明与阅读顺序用文字、分组和布局表达。系统维护的 Composer 产物来源边另作区分。创建或调整前读[编辑对象与关系](references/edit-graph.md)。
 
-## 简单整理
+## 整理与明确对象的调整
+
+用户要整理画布、归类收纳或重新分组排版时，先按[画布整理](references/organize-canvas.md)查看内容、提出方案并确认，再执行；已有确认的约定沿用。具体对象和调整方式已明确时，按用户指令处理。
 
 ```bash
 virse canvas element name "$ELEMENT" '产品主图' --org "$ORG" --canvas "$CANVAS" --json
@@ -48,9 +50,10 @@ virse canvas layout --group "$GROUP" --mode row --gap 40 --x 100 --y 200 --org "
 
 | 当前任务 | 读取 |
 | --- | --- |
+| 整理画布、归类收纳、重新分组排版，先理解现状并商定整理方式 | [画布整理](references/organize-canvas.md) |
 | 找画布、理解区域、读取文字、成员、连线或生成配置 | [理解与取材](references/read-select.md) |
 | 创建画布、节点、组合、连线，修改字段或组合事务 | [编辑对象与关系](references/edit-graph.md) |
-| 放入现有素材、整理排版、复制到当前或另一画布 | [放置、排版与复制](references/layout-copy.md) |
+| 放入现有素材、执行已明确的排版、复制到当前或另一画布 | [放置、排版与复制](references/layout-copy.md) |
 | 创建、回复、编辑、移动或解决画布讨论 | [画布讨论](references/discussions.md) |
 | 查询近期删除并恢复媒体 | [媒体恢复](references/recovery.md) |
 | 下载素材或把画布媒体打包 | [文件交付](references/shared/contracts/delivery.md) |
