@@ -46,6 +46,7 @@ Virse 是 AI native 的创作系统，以画布连接想法、素材、审美、
 
 | 当前要解决的问题 | 读取 |
 | --- | --- |
+| 验收画布作品是否符合品牌标准，并在画布交付结果 | `virse-creation` 的品牌验收参考 |
 | 写 prompt、消除堆叠与歧义，或适配已选模型的写法 | [提示词](references/prompt-craft.md) |
 | 多参考分工、首尾之间的路径、人物或产品保持一致 | [参考与连续性](references/references-and-continuity.md) |
 | 动作、速度或运镜不对，主体和相机混淆，首帧运动线索冲突 | [动作与镜头](references/motion-and-camera.md) |
