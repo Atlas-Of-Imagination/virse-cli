@@ -6,7 +6,8 @@ param(
     [string]$Target = $env:VIRSE_TARGET,
     [string]$Repository = $env:VIRSE_REPO,
     [switch]$NoPathUpdate,
-    [switch]$SkipSkills = ($env:VIRSE_SKIP_SKILLS -eq '1')
+    [switch]$SkipSkills = ($env:VIRSE_SKIP_SKILLS -eq '1'),
+    [string]$SkillsAgent = $env:VIRSE_SKILLS_AGENT
 )
 
 Set-StrictMode -Version 2.0
@@ -19,6 +20,10 @@ if ($PSVersionTable.PSVersion.Major -lt 6) {
 }
 if ([string]::IsNullOrWhiteSpace($Version)) { $Version = 'latest' }
 if ([string]::IsNullOrWhiteSpace($Repository)) { $Repository = 'Atlas-Of-Imagination/virse-cli' }
+if ([string]::IsNullOrWhiteSpace($SkillsAgent)) { $SkillsAgent = 'universal' }
+if (-not $SkipSkills -and $SkillsAgent -cnotmatch '^[a-z0-9][a-z0-9-]*$') {
+    throw 'SkillsAgent must be a single agent name, such as universal or claude-code.'
+}
 $useGh = $false
 if (Get-Command gh -ErrorAction SilentlyContinue) {
     try {
@@ -136,12 +141,12 @@ try {
     else { Write-Host 'Open a new terminal if virse is not available in your current shell.' }
     if (-not $SkipSkills) {
         $skillsSource = "https://github.com/$Repository/tree/$Version/skills"
-        $retry = "npx -y skills add `"$skillsSource`" --skill '*' -y -g"
+        $retry = "npx -y skills add `"$skillsSource`" --skill '*' -y -g --agent $SkillsAgent"
         $npxCommand = Get-Command npx.cmd -ErrorAction SilentlyContinue
         if (-not $npxCommand) { $npxCommand = Get-Command npx -ErrorAction SilentlyContinue }
         if ($npxCommand) {
             try {
-                & $npxCommand -y skills add $skillsSource --skill '*' -y -g
+                & $npxCommand -y skills add $skillsSource --skill '*' -y -g --agent $SkillsAgent
                 if ($LASTEXITCODE -ne 0) { throw "skills exited with code $LASTEXITCODE" }
                 Write-Host "Installed/updated Virse skills for $Version."
             } catch {

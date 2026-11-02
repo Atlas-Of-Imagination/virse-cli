@@ -7,16 +7,18 @@ VERSION=${VIRSE_VERSION:-latest}
 INSTALL_DIR=${VIRSE_INSTALL_DIR:-}
 TARGET=${VIRSE_TARGET:-}
 SKIP_SKILLS=${VIRSE_SKIP_SKILLS:-0}
+SKILLS_AGENT=${VIRSE_SKILLS_AGENT:-universal}
 
 die() { printf 'virse install: %s\n' "$*" >&2; exit 1; }
 usage() {
   cat <<EOF
 Install virse from GitHub Releases.
 Usage: install.sh [--version VERSION] [--dir PATH] [--target TARGET] [--repo OWNER/REPO]
-                  [--skip-skills]
+                  [--skip-skills] [--skills-agent AGENT]
 Defaults: latest stable release; a writable bin directory in PATH, then ~/.local/bin.
-Environment: VIRSE_VERSION, VIRSE_INSTALL_DIR, VIRSE_TARGET, VIRSE_REPO.
-Skills: install all release-matched skills globally with npx; VIRSE_SKIP_SKILLS=1 skips this step.
+Environment: VIRSE_VERSION, VIRSE_INSTALL_DIR, VIRSE_TARGET, VIRSE_REPO, VIRSE_SKILLS_AGENT.
+Skills: install all release-matched skills globally for universal (shared ~/.agents/skills).
+Use --skills-agent for an agent-specific target; VIRSE_SKIP_SKILLS=1 skips skills.
 Private releases: install GitHub CLI and run gh auth login (or set GH_TOKEN).
 Linux defaults to musl; use --target x86_64-unknown-linux-gnu for the GNU build.
 EOF
@@ -25,18 +27,24 @@ while [ "$#" -gt 0 ]; do
   case "$1" in
     -h|--help) usage; exit 0 ;;
     --skip-skills) SKIP_SKILLS=1; shift ;;
-    --version|--dir|--install-dir|--target|--repo)
+    --version|--dir|--install-dir|--target|--repo|--skills-agent)
       [ "$#" -ge 2 ] && [ -n "$2" ] || die "$1 requires a value"
       case "$1" in
         --version) VERSION=$2 ;;
         --dir|--install-dir) INSTALL_DIR=$2 ;;
         --target) TARGET=$2 ;;
         --repo) REPO=$2 ;;
+        --skills-agent) SKILLS_AGENT=$2 ;;
       esac
       shift 2 ;;
     *) die "unknown option: $1" ;;
   esac
 done
+if [ "$SKIP_SKILLS" != 1 ]; then
+  case "$SKILLS_AGENT" in
+    ''|-*|*[!a-z0-9-]*) die 'skills agent must be a single agent name, such as universal or claude-code' ;;
+  esac
+fi
 
 USE_GH=false
 if command -v gh >/dev/null 2>&1 && gh auth status --hostname github.com >/dev/null 2>&1; then
@@ -147,14 +155,15 @@ fi
 
 # 固定到二进制同一发布 tag，避免旧 CLI 搭配 main 上较新的技能说明。
 if [ "$SKIP_SKILLS" != 1 ]; then
+  # 显式目标避免 npx 自动加入不支持全局安装的 Agent。
   SKILLS_SOURCE="https://github.com/$REPO/tree/$VERSION/skills"
   if command -v npx >/dev/null 2>&1; then
-    if npx -y skills add "$SKILLS_SOURCE" --skill '*' -y -g </dev/null; then
+    if npx -y skills add "$SKILLS_SOURCE" --skill '*' -y -g --agent "$SKILLS_AGENT" </dev/null; then
       printf 'Installed/updated Virse skills for %s.\n' "$VERSION"
     else
-      printf 'Virse binary installed, but skills installation failed. Retry:\n  npx -y skills add "%s" --skill '\''*'\'' -y -g\n' "$SKILLS_SOURCE" >&2
+      printf 'Virse binary installed, but skills installation failed. Retry:\n  npx -y skills add "%s" --skill '\''*'\'' -y -g --agent %s\n' "$SKILLS_SOURCE" "$SKILLS_AGENT" >&2
     fi
   else
-    printf 'Virse binary installed. Install Node.js/npm to add skills, then run:\n  npx -y skills add "%s" --skill '\''*'\'' -y -g\n' "$SKILLS_SOURCE" >&2
+    printf 'Virse binary installed. Install Node.js/npm to add skills, then run:\n  npx -y skills add "%s" --skill '\''*'\'' -y -g --agent %s\n' "$SKILLS_SOURCE" "$SKILLS_AGENT" >&2
   fi
 fi
