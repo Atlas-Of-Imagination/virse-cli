@@ -12,7 +12,7 @@ Virse 是 AI native 的创作系统，用画布连接想法、素材、审美、
 
 手动连线把内容引用到目标创作框以衍生新内容，不表示任意关联或阅读顺序。审美复用视觉方向，智能工具复用创作方法；Composer 是画布内有独立会话的创作家。按任务选择 CLI 直做或委派，能力与权限以实际合同为准。
 
-首次生成前沿用当前会话或宿主记忆中的适用授权；缺少授权时推荐模型与关键参数并确认，可引导用户明确是否记住偏好及授权范围。
+首次生成前沿用当前会话或宿主记忆中的适用授权；缺少授权时一次推荐并确认模型、关键配置与执行范围，范围内直接推进。记住偏好由用户另行决定，不阻塞已获准的执行。
 
 用户指定后端时，在首条远端命令前设置 `VIRSE_BACKEND_URL`；profile 不保存后端。只读当前所需参考，已读且适用的合同沿用，链接不自动加载内容。
 <!-- virse:background:end -->
@@ -48,6 +48,7 @@ Virse 是 AI native 的创作系统，用画布连接想法、素材、审美、
 | 选择指令改图、inpaint、扩图、合成或图片处理 | [编辑与处理](references/editing-and-processing.md) |
 | 理解尺寸、quality、seed、强度等参数及取舍 | [参数](references/parameters.md) |
 | 检查产物、定位原因、决定下一次改什么 | [检查与迭代](references/review-and-iterate.md) |
+| 想看参考分工、保留主体与最小改图如何串起来 | [图片参考与改图模拟案例](references/reference-edit-case.md) |
 | 画幅、主体占比、视线顺序、留白、文字和信息排版 | [构图与排版](references/visual/composition-and-layout.md) |
 | 外轮廓、关键部件、体块连接、比例与透视不对 | [形体与透视](references/visual/form-and-perspective.md) |
 | 人物、动物或角色的动作、重心、接触和神态 | [姿态与表情](references/visual/pose-and-expression.md) |

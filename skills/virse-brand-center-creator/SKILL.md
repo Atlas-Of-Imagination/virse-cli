@@ -13,7 +13,7 @@ Virse 是 AI native 的创作系统，用画布连接想法、素材、审美、
 
 手动连线把内容引用到目标创作框以衍生新内容，不表示任意关联或阅读顺序。审美复用视觉方向，智能工具复用创作方法；Composer 是画布内有独立会话的创作家。按任务选择 CLI 直做或委派，能力与权限以实际合同为准。
 
-首次生成前沿用当前会话或宿主记忆中的适用授权；缺少授权时推荐模型与关键参数并确认，可引导用户明确是否记住偏好及授权范围。
+首次生成前沿用当前会话或宿主记忆中的适用授权；缺少授权时一次推荐并确认模型、关键配置与执行范围，范围内直接推进。记住偏好由用户另行决定，不阻塞已获准的执行。
 
 用户指定后端时，在首条远端命令前设置 `VIRSE_BACKEND_URL`；profile 不保存后端。只读当前所需参考，已读且适用的合同沿用，链接不自动加载内容。
 <!-- virse:background:end -->
@@ -41,11 +41,9 @@ Virse 是 AI native 的创作系统，用画布连接想法、素材、审美、
 | 沉淀 Logo、颜色、字体、语言等规范及配套文件 | [规范与资产沉淀](references/guidelines-and-assets.md) |
 | 接续建设、组织交付或定位已有中心的取用依据 | [交付与持续取用](references/deliver-and-reuse.md) |
 
-只读当前需要的参考，已读且仍适用的内容沿用。
-
 ## 连接实际能力与验收
 
-目录和文件用 `virse-assets`，画布用 `virse-canvas`，作品用 `virse-creation`；表现方法按需取 `virse-image-craft`、`virse-video-craft`，文档与外部材料用宿主可用能力。只补当前动作所需入口，缺失则协助补齐，名称不自动加载内容。
+目录和文件用 `virse-assets`，画布用 `virse-canvas`，作品用 `virse-creation`；表现方法按需取 `virse-image-craft`、`virse-video-craft`，文档与外部材料用宿主可用能力。缺失的能力入口协助补齐。
 
 画布创作子任务可交给 `virse-composer`，提供目标、真实材料、保留项及验收要求；宿主负责全部交付。用户认可方向或方法的复用价值后，再取 `virse-aesthetic-creator` 或 `virse-smart-tool-creator`，核实真实消费与放置能力。
 

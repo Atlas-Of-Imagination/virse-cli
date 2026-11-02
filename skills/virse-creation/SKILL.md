@@ -12,27 +12,41 @@ Virse 是 AI native 的创作系统，用画布连接想法、素材、审美、
 
 手动连线把内容引用到目标创作框以衍生新内容，不表示任意关联或阅读顺序。审美复用视觉方向，智能工具复用创作方法；Composer 是画布内有独立会话的创作家。按任务选择 CLI 直做或委派，能力与权限以实际合同为准。
 
-首次生成前沿用当前会话或宿主记忆中的适用授权；缺少授权时推荐模型与关键参数并确认，可引导用户明确是否记住偏好及授权范围。
+首次生成前沿用当前会话或宿主记忆中的适用授权；缺少授权时一次推荐并确认模型、关键配置与执行范围，范围内直接推进。记住偏好由用户另行决定，不阻塞已获准的执行。
 
 用户指定后端时，在首条远端命令前设置 `VIRSE_BACKEND_URL`；profile 不保存后端。只读当前所需参考，已读且适用的合同沿用，链接不自动加载内容。
 <!-- virse:background:end -->
 
 ## 从目标到作品
 
-结合已有材料明确用途、保留项和改变项，信息足够就准备。首次生成前按[模型与提交方式](references/models-and-submit.md)推荐当前可用、目录靠前且适合任务的模型与关键参数；缺少适用授权时确认，已有约定或自主授权就在范围内执行。
+结合已有材料明确用途、保留项和改变项，信息足够就准备。按用户要求、实际输入能力与输出规格选择当前可用模型；质量判断需有依据，目录顺序不证明质量。需要选型细节、授权范围不清或特殊提交时再读[模型与提交方式](references/models-and-submit.md)。
 
-灵感搜集、品牌验收先读任务参考。准备图片或视频方案、提示词及效果诊断时，分别取 `virse-image-craft`、`virse-video-craft` 的相关参考；本入口负责真实能力与执行。只查状态、取消任务或按确定配置执行处理时无需预读技巧；用户只要提示词就在技巧入口交付。
+首次生成缺少适用授权时，一次建议模型、关键配置与本轮总输出（含修正版）或迭代范围，确认后执行；用户已确认配置或授予自主权就在范围内推进，超出范围再确认。“偏好高质量”本身不授予自主选型权，查询与准备素材可先做。记住偏好的邀请留到交付后，不打断首次创作。
+
+灵感搜集、品牌验收先读任务参考。准备方案、提示词或诊断效果时，分别取 `virse-image-craft`、`virse-video-craft` 中当前问题需要的方法；已读内容直接沿用，返回执行时无需重读入口导航。本入口负责真实能力与执行。
 
 按目标选择直接生成、图片处理或已有工具，需要新的执行逻辑才制作工具。精确管理与指定模型、工具产物优先 CLI 直做；适合画布内连续创作与反馈的子任务可主动委派 `virse-composer`。宿主统筹混合任务并验收全部交付。
 
-完成选型确认或已有相应授权后，可用下面的普通生图短路径。示例变量来自当前任务与真实查询；`MODEL` 使用当前可用 model_key，`KEY` 为本次输入固定保存的幂等键。
+## 常见任务短路径
+
+| 当前任务 | 最小读取与执行 |
+| --- | --- |
+| 写图片／视频 prompt、选择表现方法或诊断效果 | 按问题取 `virse-image-craft`／`virse-video-craft` 的相关参考；只要 prompt 时不登录、不提交 |
+| 普通生图，目标和品牌依据已明确 | 本入口执行；需要提示表达或参考分工才补相应技巧，不进入品牌中心建设 |
+| 参考图生成、改图或图片处理 | 补[图片创作与处理](references/image-and-edit.md)的对应操作；只补当前缺少的参考理解或编辑方法 |
+| 查询状态、取消，或按确定配置执行处理 | 直达对应操作或[任务合同](references/shared/contracts/generation.md)，不预读创作技巧 |
+
+普通生图沿用适用授权或完成上述一次确认后即可提交。`ORG/CANVAS` 来自已选空间与画布，`MODEL` 来自当前可用能力查询；已知型号先 `model get`，需要选型才列目录。`KEY` 为本次输入固定保存的幂等键。
 
 ```bash
-virse --org "$ORG" --json model list --mode image
 virse --org "$ORG" --canvas "$CANVAS" --json generation image --model "$MODEL" --prompt "$PROMPT" --idempotency-key "$KEY" --wait
+virse --org "$ORG" --canvas "$CANVAS" --json generation get "$TASK"
+virse --org "$ORG" --canvas "$CANVAS" --json asset preview "$ASSET" --representation content --output ./result.bin
 ```
 
-模型已知且仍适用时无需重复列全目录。未知操作或特殊输入才查询 `generation operations`；参数不清楚时查对应命令 help。快捷命令没有通用 `--aesthetic`，取用审美必须有当前消费方真实支持的输入合同。
+`TASK` 来自提交回执，`ASSET` 来自该任务实际成功输出的 asset_id，不能把节点或资源项 ID 代入。若提交尚未终态或受理不明，转[任务合同](references/shared/contracts/generation.md)等待或查证，不再次创建。查看展示文件的真实格式与内容，输出路径必须不存在，扩展名不转换格式；预览不等于原件。需要下载原件、打包或接续时才展开[文件交付](references/shared/contracts/delivery.md)。
+
+当前模型能力已核清且仍适用时无需重复查询。未知操作或特殊输入才查询 `generation operations`；参数不清楚时查对应命令 help。快捷命令没有通用 `--aesthetic`，取用审美必须有当前消费方真实支持的输入合同。
 
 执行后核对 task 和逐输出状态，取得实际内容并按用户要求检查。发现问题时说清具体差异、这次改变和保留项；改变输入是新创作，使用新键。查找原受理结果与按原输入、原键恢复是另一条路径，不能混同为效果迭代。
 
@@ -47,18 +61,13 @@ virse --org "$ORG" --canvas "$CANVAS" --json generation image --model "$MODEL" -
 | 对照品牌标准验收画布作品，将依据、问题与建议写回画布 | [品牌验收](references/brand-review.md) |
 | 从画布提炼可复用任务和创作方法、总结成智能工具 | `virse-smart-tool-creator` → `references/from-canvas.md` |
 | 理解画布中的视觉偏好、推荐审美方向并沉淀模块 | `virse-aesthetic-creator` → `references/from-canvas.md` |
-| 准备生图或改图方案、提示词，或诊断具体图片的形准与视觉表现 | `virse-image-craft`，再选其相关参考 |
-| 准备视频方案、提示词，判断模式、动作镜头与声音，或诊断具体视频 | `virse-video-craft`，再选其相关参考 |
 | 结合外部材料策划创作、选方案、复用原图输入或比较迭代 | [目标、输入依据与效果迭代](references/plan-and-iterate.md) |
 | 选模型、管理模型收藏、构造特殊请求或多个输出 | [模型与提交方式](references/models-and-submit.md) |
-| 生图、指令改图、蒙版局部重绘、去背景、放大或扩图 | [图片创作与处理](references/image-and-edit.md) |
 | 做视频 | [视频创作](references/video.md) |
 | 文本或图片建模 | [3D 生成的实际边界](references/3d.md) |
 | 生成或改写画布文本 | [文本创作](references/text.md) |
-| 定位任务、等待、取消、失败重试或恢复未知受理 | [生成任务合同](references/shared/contracts/generation.md) |
 | 选择并运行现有工具 | [固定工具产物与运行合同](references/shared/contracts/tool-run.md) |
 | 查阅或取用已有审美 | [审美身份与消费条件](references/shared/context/aesthetics.md) |
-| 取得实际预览、原件或交付文件 | [文件交付](references/shared/contracts/delivery.md) |
 
 只缺连接信息、对象身份或输出解释时，分别直读[连接](references/shared/contracts/connection.md)、[对象](references/shared/context/objects.md)或[执行](references/shared/contracts/execution.md)合同，不将它们全部预读。需要画布结构修改、资源归档或改权时，补该职责的最小合同；职责确实切换时再选相应入口。
 
