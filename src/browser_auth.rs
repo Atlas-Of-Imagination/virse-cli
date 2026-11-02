@@ -111,7 +111,10 @@ async fn callback(listener: &TcpListener, pending: &Pending) -> Result<()> {
                 && q.get("code").map(|v| v.as_ref()) == Some(pending.start.request_id.as_str())
         });
         let response = if valid {
-            "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nCache-Control: no-store\r\nConnection: close\r\n\r\nReturn to Virse CLI to finish signing in."
+            concat!(
+                "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nConnection: close\r\n\r\n",
+                include_str!("auth_complete.html")
+            )
         } else {
             "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\nInvalid authorization callback."
         };
