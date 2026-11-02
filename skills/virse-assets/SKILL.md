@@ -1,6 +1,6 @@
 ---
 name: virse-assets
-description: 使用 Virse CLI 查找和整理资产、协商个人或团队素材库的归类收纳方案、查阅已有审美详情、上传文件或目录、替换原件、恢复资源，以及预览、下载和打包交付。适用于资产管理与资源目录任务；画布节点布局不在此入口，改变分享规则使用 virse-sharing 的职责。
+description: 从本地和其他平台汇集素材、构建个人或企业素材库；使用 Virse CLI 查找整理资产、协商归类收纳、查阅已有审美详情、上传替换、批量导入、恢复资源，以及预览下载和打包交付。适用于资产管理与资源目录任务；画布节点布局不在此入口，改变分享规则使用 virse-sharing 的职责。
 ---
 
 # 资产管理
@@ -31,7 +31,7 @@ virse resource get "$RESOURCE" --org "$ORG" --json
 
 示例变量均替换为本次真实查询或用户明确给出的身份。列表未读完不作全集判断；遇到同名候选先辨明对象，不选第一个。已知资源路径时优先使用它的读取、预览或下载入口，不猜 asset ID。
 
-整库或多目录的归类收纳先读[资产库整理](references/organize-library.md)，理解范围与内容后，与用户敲定详细方案再执行；具体对象与调整方式已明确时按用户指令处理。
+跨来源汇集素材、构建个人或企业素材库先读[资产库构建](references/build-library.md)。已有整库或多目录的归类收纳读[资产库整理](references/organize-library.md)，理解范围与内容后，与用户敲定详细方案再执行；具体对象与调整方式已明确时按用户指令处理。
 
 上传一个文件：
 
@@ -45,6 +45,7 @@ virse resource upload ./product.png '/项目素材' --conflict rename --idempote
 
 | 当前任务 | 读取 |
 | --- | --- |
+| 从本地、其他平台或项目汇集素材，迁入并组织成方便取用的个人或团队资产库 | [资产库构建](references/build-library.md) |
 | 整理资产库、商定分类收纳方案、保存现状，或按记录评估撤回本次整理 | [资产库整理](references/organize-library.md) |
 | 找到素材、浏览目录、判断来源与身份 | [查找与读取](references/browse.md) |
 | 建目录、改名移动、复制、置顶收藏、排序、移除外部入口或画布另存 | [整理与归档](references/organize.md) |
