@@ -5,11 +5,7 @@ description: >-
 ---
 # 创作与迭代
 
-<!-- virse:background:start -->
-Virse 是 AI native 的创作系统，用画布连接想法、素材、审美、工具与模型，支持图片、视频、3D 和文本。资源目录管理素材与归属，画布组织创作输入、过程与结果。
-
-只读当前任务所需参考，已读且适用的内容沿用，链接不自动加载内容。
-<!-- virse:background:end -->
+依赖 `virse-base`。首次使用本技能时，从宿主技能列表定位并读取 base 的 `SKILL.md`；已读且适用的内容沿用。下文 `virse-base/references/...` 均相对于该技能的实际目录，按任务读取，不假定安装在全局目录。缺少 base 时先补齐同来源、同版本、同安装范围的 base，再执行依赖它的 Virse 操作。
 
 用户指定后端时，在首条远端命令前设置 `VIRSE_BACKEND_URL`。
 
@@ -65,7 +61,7 @@ virse --org "$ORG" --canvas "$CANVAS" --json asset preview "$ASSET" --representa
 | 选择并运行现有工具 | [固定工具产物与运行合同](references/shared/contracts/tool-run.md) |
 | 查阅或取用已有审美 | [审美身份与消费条件](references/shared/context/aesthetics.md) |
 
-只缺连接信息、对象身份或输出解释时，分别直读[连接](references/shared/contracts/connection.md)、[对象](references/shared/context/objects.md)或[执行](references/shared/contracts/execution.md)合同，不将它们全部预读。需要画布结构修改、资源归档或改权时，补该职责的最小合同；职责确实切换时再选相应入口。
+只缺连接信息、对象身份或输出解释时，分别直读连接（`virse-base/references/contracts/connection.md`）、对象（`virse-base/references/context/objects.md`）或执行（`virse-base/references/contracts/execution.md`）合同，不将它们全部预读。需要画布结构修改、资源归档或改权时，补该职责的最小合同；职责确实切换时再选相应入口。
 
 ## 完成判断
 

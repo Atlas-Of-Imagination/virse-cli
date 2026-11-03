@@ -5,11 +5,7 @@ description: >-
 ---
 # 使用与管理已有智能工具
 
-<!-- virse:background:start -->
-Virse 是 AI native 的创作系统，用画布连接想法、素材、审美、工具与模型，支持图片、视频、3D 和文本。资源目录管理素材与归属，画布组织创作输入、过程与结果。
-
-只读当前任务所需参考，已读且适用的内容沿用，链接不自动加载内容。
-<!-- virse:background:end -->
+依赖 `virse-base`。首次使用本技能时，从宿主技能列表定位并读取 base 的 `SKILL.md`；已读且适用的内容沿用。下文 `virse-base/references/...` 均相对于该技能的实际目录，按任务读取，不假定安装在全局目录。缺少 base 时先补齐同来源、同版本、同安装范围的 base，再执行依赖它的 Virse 操作。
 
 用户指定后端时，在首条远端命令前设置 `VIRSE_BACKEND_URL`。
 
@@ -23,7 +19,7 @@ Virse 是 AI native 的创作系统，用画布连接想法、素材、审美、
 | 判断产物是否符合要求并交付 | [检查工具结果](references/inspect-results.md)与[文件交付](references/shared/contracts/delivery.md) |
 | Schema 明确支持审美输入，需理解其身份或资格 | [审美消费条件](references/shared/context/aesthetics.md) |
 
-先按上表选择当前任务所需参考。查详情、收藏、启停或范围等管理任务不强制读取运行合同或输入 Schema。仅在缺连接、对象或输出概念时直读[连接](references/shared/contracts/connection.md)、[对象](references/shared/context/objects.md)、[执行](references/shared/contracts/execution.md)合同。修改包内容、拉源码、构建或发布时进入作者职责；作者测试未发布 artifact 直接复用运行合同，不必先读整个工具使用入口。
+先按上表选择当前任务所需参考。查详情、收藏、启停或范围等管理任务不强制读取运行合同或输入 Schema。仅在缺连接、对象或输出概念时直读连接（`virse-base/references/contracts/connection.md`）、对象（`virse-base/references/context/objects.md`）、执行（`virse-base/references/contracts/execution.md`）合同。修改包内容、拉源码、构建或发布时进入作者职责；作者测试未发布 artifact 直接复用运行合同，不必先读整个工具使用入口。
 
 ## 固定产物再运行
 

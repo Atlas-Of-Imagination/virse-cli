@@ -1,0 +1,3 @@
+interface:
+  display_name: "Virse 操作基础"
+  short_description: "连接账号、确认空间与对象身份，理解执行结果与恢复并定位业务入口"

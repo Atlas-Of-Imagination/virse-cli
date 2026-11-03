@@ -64,4 +64,4 @@ virse tool publish ./product-shot-tool --org <org-id> --json
 | 源码或发布基准冲突 | 读取当前状态与差异；必要时按[源码与作者管理](source-management.md)显式放弃已知草稿，拉到新目录并重新应用修改，不自动覆盖。 |
 | 测试观察断线或超时 | 找回原 run 并读取状态，不因观察失败重新运行收费任务。 |
 
-CLI 的目录回执处理幂等和冻结请求，不保证已经完成远端发布；以返回的正式 release 为证据。详细未知状态处理见[执行与恢复](shared/contracts/execution.md)。实际文件交付见[交付合同](shared/contracts/delivery.md)。
+CLI 的目录回执处理幂等和冻结请求，不保证已经完成远端发布；以返回的正式 release 为证据。详细未知状态处理见执行与恢复（`virse-base/references/contracts/execution.md`）。实际文件交付见[交付合同](shared/contracts/delivery.md)。

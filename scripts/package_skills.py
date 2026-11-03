@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Synchronize shared Skill text; optionally export independent Skill folders."""
+"""同步领域参考，校验 base 依赖，并导出可一起安装的 Skill 集合。"""
 
 import argparse
 import re
@@ -8,9 +8,9 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
-START = '<!-- virse:background:start -->'
-END = '<!-- virse:background:end -->'
 LINK = re.compile(r'!?\[[^\]]*\]\(([^\s)]+)(?:\s+"[^"]*")?\)')
+BASE_REFERENCE = re.compile(r'`virse-base/(references/[^`#]+)(?:#[^`]*)?`')
+INDEPENDENT = {'virse-image-craft', 'virse-video-craft'}
 
 
 def local_links(text):
@@ -65,17 +65,6 @@ def shared_files(skill):
 
 def synchronize(skill, check):
     reject_linked_sources(skill)
-    entry = skill / 'SKILL.md'
-    text = entry.read_text()
-    if text.count(START) != 1 or text.count(END) != 1:
-        raise ValueError(f'{entry}: expected one shared-background block')
-    before, rest = text.split(START)
-    _, after = rest.split(END)
-    updated = before + START + '\n' + (ROOT / 'shared/product-background.md').read_text().strip() + '\n' + END + after
-    if text != updated:
-        if check:
-            raise ValueError(f'{entry}: shared background out of sync')
-        entry.write_text(updated)
     wanted = shared_files(skill)
     destination = skill / 'references/shared'
     actual = {p.relative_to(destination): p.read_bytes() for p in destination.rglob('*') if p.is_file()}
@@ -95,10 +84,31 @@ def synchronize(skill, check):
                 raise ValueError(f'{path}: broken or external local reference {link}')
 
 
+def validate_base_dependencies(skills):
+    """跨技能参考按技能名定位；不依赖安装后的兄弟目录或全局路径。"""
+    base = ROOT / 'skills/virse-base'
+    if not (base / 'SKILL.md').is_file():
+        raise ValueError('missing required virse-base/SKILL.md')
+    for skill in skills:
+        if skill != base and skill.name not in INDEPENDENT:
+            if '依赖 `virse-base`' not in (skill / 'SKILL.md').read_text():
+                raise ValueError(f'{skill.name}: declare the virse-base dependency')
+        for path in skill.rglob('*.md'):
+            for reference in BASE_REFERENCE.findall(path.read_text()):
+                # 入口中的路径格式说明不是实际文件引用。
+                if reference == 'references/...':
+                    continue
+                if skill.name in INDEPENDENT:
+                    raise ValueError(f'{path}: independent craft Skill depends on base')
+                target = base / reference
+                if not within(target, base) or not target.is_file():
+                    raise ValueError(f'{path}: missing base reference {reference}')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true', help='Check without modifying source files')
-    parser.add_argument('--output', type=Path, help='Export independent folders into a new directory')
+    parser.add_argument('--output', type=Path, help='Export the Skill set, including required base, into a new directory')
     args = parser.parse_args()
     skills_directory = ROOT / 'skills'
     skills = sorted(p.parent for p in skills_directory.glob('*/SKILL.md'))
@@ -113,13 +123,14 @@ def main():
         reject_linked_sources(ROOT / 'shared')
         for skill in skills:
             synchronize(skill, args.check)
+        validate_base_dependencies(skills)
     except ValueError as error:
         parser.exit(1, str(error) + '\n')
     if args.output:
         output.mkdir(parents=True)
         for skill in skills:
             shutil.copytree(skill, output / skill.name)
-    print(f'{len(skills)} Skills: background and standalone reference closure verified')
+    print(f'{len(skills)} Skills: domain references and base dependencies verified')
 
 
 if __name__ == '__main__':

@@ -5,11 +5,7 @@ description: >-
 ---
 # Composer 创作家委派
 
-<!-- virse:background:start -->
-Virse 是 AI native 的创作系统，用画布连接想法、素材、审美、工具与模型，支持图片、视频、3D 和文本。资源目录管理素材与归属，画布组织创作输入、过程与结果。
-
-只读当前任务所需参考，已读且适用的内容沿用，链接不自动加载内容。
-<!-- virse:background:end -->
+依赖 `virse-base`。首次使用本技能时，从宿主技能列表定位并读取 base 的 `SKILL.md`；已读且适用的内容沿用。下文 `virse-base/references/...` 均相对于该技能的实际目录，按任务读取，不假定安装在全局目录。缺少 base 时先补齐同来源、同版本、同安装范围的 base，再执行依赖它的 Virse 操作。
 
 用户指定后端时，在首条远端命令前设置 `VIRSE_BACKEND_URL`。
 
@@ -45,7 +41,7 @@ virse --org "$ORG" --canvas "$CANVAS" --json composer send "$COMPOSER" --input "
 | 读历史、观察指定回合、断线续看或请求停止 | [观察、历史与停止](references/observe-and-stop.md) |
 | 检查或取回已交付文件 | [文件交付](references/shared/contracts/delivery.md) |
 
-仅在缺相关信息时直读[连接](references/shared/contracts/connection.md)、[对象](references/shared/context/objects.md)、[执行](references/shared/contracts/execution.md)合同。引用审美等特殊对象时，按[审美消费条件](references/shared/context/aesthetics.md)及 Composer 实际允许的请求字段处理，不能把作者草稿正文自动暴露给普通委派。
+仅在缺相关信息时直读连接（`virse-base/references/contracts/connection.md`）、对象（`virse-base/references/context/objects.md`）、执行（`virse-base/references/contracts/execution.md`）合同。引用审美等特殊对象时，按[审美消费条件](references/shared/context/aesthetics.md)及 Composer 实际允许的请求字段处理，不能把作者草稿正文自动暴露给普通委派。
 
 ## 完成判断
 

@@ -5,17 +5,13 @@ description: 查看和调整 Virse 资源访问权限、继承、分享链接与
 
 # Virse 资源访问与分享
 
-<!-- virse:background:start -->
-Virse 是 AI native 的创作系统，用画布连接想法、素材、审美、工具与模型，支持图片、视频、3D 和文本。资源目录管理素材与归属，画布组织创作输入、过程与结果。
-
-只读当前任务所需参考，已读且适用的内容沿用，链接不自动加载内容。
-<!-- virse:background:end -->
+依赖 `virse-base`。首次使用本技能时，从宿主技能列表定位并读取 base 的 `SKILL.md`；已读且适用的内容沿用。下文 `virse-base/references/...` 均相对于该技能的实际目录，按任务读取，不假定安装在全局目录。缺少 base 时先补齐同来源、同版本、同安装范围的 base，再执行依赖它的 Virse 操作。
 
 用户指定后端时，在首条远端命令前设置 `VIRSE_BACKEND_URL`。
 
 ## 先确认对象、受众和结果
 
-资源项身份用于分享，不拿 asset ID、画布 Space ID 或团队角色代替。沿用当前已明确身份与组织；确需核对时读[连接](references/shared/contracts/connection.md)或[对象身份](references/shared/context/objects.md)。
+资源项身份用于分享，不拿 asset ID、画布 Space ID 或团队角色代替。沿用当前已明确身份与组织；确需核对时读连接（`virse-base/references/contracts/connection.md`）或对象身份（`virse-base/references/context/objects.md`）。
 
 用户只问谁能访问时，只读：
 
@@ -33,4 +29,4 @@ virse --org "$org" resource permissions get "$resource" --json
 
 ## 完成标准
 
-报告实际资源、目标受众、应用档位或认领结果。撤权核对剩余来源，改权核对写后设置。`applied:true` 加刷新失败仍是已写入；补读规则，不能重复变更。网络结果未知按[执行结果与恢复](references/shared/contracts/execution.md)先对账。
+报告实际资源、目标受众、应用档位或认领结果。撤权核对剩余来源，改权核对写后设置。`applied:true` 加刷新失败仍是已写入；补读规则，不能重复变更。网络结果未知按执行结果与恢复（`virse-base/references/contracts/execution.md`）先对账。

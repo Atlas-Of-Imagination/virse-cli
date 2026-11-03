@@ -292,7 +292,7 @@ A successful query can return a failed task; use task status as well as the proc
 
 ## Agent skills
 
-The [skills directory](skills/) contains task-oriented instructions and creative methods for AI agents. Choose the relevant guide directly; use [Virse](skills/virse-setup/SKILL.md) for setup or help locating an unclear task:
+The [skills directory](skills/) contains task-oriented instructions and creative methods for AI agents. [Virse Base](skills/virse-base/SKILL.md) provides shared guidance for connection, identity, object IDs, execution and recovery, and helps locate an unclear task. Business skills require Base; choose the relevant workflow:
 
 - [Ultra Design](skills/virse-ultra-design/SKILL.md): coordinate complete creative projects across capabilities, from context and exploration to production, review, and delivery
 - [Assets](skills/virse-assets/SKILL.md) and [sharing](skills/virse-sharing/SKILL.md)
@@ -303,17 +303,33 @@ The [skills directory](skills/) contains task-oriented instructions and creative
 - [Aesthetic creation](skills/virse-aesthetic-creator/SKILL.md)
 - [Brand center creation](skills/virse-brand-center-creator/SKILL.md): co-develop brand narrative, guidelines and assets, test applications on canvases, and deliver a reusable brand folder
 
-Creative craft skills can guide prompt-only work independently. For generation in Virse, combine them with the generation skill. Each entry links to references for the current task; names and links do not load those references automatically.
+Image craft and video craft can guide prompt-only work independently, without Base. For generation in Virse, combine them with Base and the generation skill. On first use of a business skill, locate Base through the host's skill catalog and read its entrypoint; reuse it while applicable. References written as `virse-base/references/...` are resolved from Base's actual installation directory, not the working directory or a hardcoded global path. Read only the references needed for the task; names and links do not load them automatically.
 
 Use Ultra Design to coordinate a complete creative project and the brand-center skill to build a brand system. Specific asset, canvas, generation, tool or authoring actions can start in their own entry; project coordination is optional for those tasks.
 
-Installers include release-matched skills unless skill installation is skipped. Skills can also be installed separately using your agent's supported mechanism, for example:
+Installers include all release-matched skills, including Base, unless skill installation is skipped. For selective installation, install Base with the business skill in the same command and scope (`-g` for global, otherwise project):
+
+```sh
+npx skills add Atlas-Of-Imagination/virse-cli --skill virse-base virse-canvas
+```
+
+`skills add` does not install skill dependencies automatically. If Base is absent, install it before running dependent Virse operations. Keep Base and business skills on the same source/ref; for release-matched installation, use `https://github.com/Atlas-Of-Imagination/virse-cli/tree/<release-tag>/skills` as the source. Update them together if references are missing or versions differ. The two craft skills can still be installed on their own:
 
 ```sh
 npx skills add Atlas-Of-Imagination/virse-cli --skill virse-image-craft virse-video-craft
 ```
 
-When updating an existing installation, check for renamed entries using the [Skill migration guide](shared/contracts/skill-migration.md). Verify the installation scope and remaining directories after cleanup; installing a new name does not guarantee removal of the old one.
+Base replaces `virse-setup` (and the earlier `virse` entry). When updating an existing installation, follow the [Skill migration guide](skills/virse-base/references/contracts/skill-migration.md). Install Base before removing old entries; verify the scope and remaining directories after cleanup. Installing a new name does not guarantee removal of the old one.
+
+Shared operational guidance is maintained directly in `skills/virse-base/references/`. Domain-specific references remain in `shared/`; `python3 scripts/package_skills.py` copies only the referenced files into each skill's `references/shared/`. Edit the source, not generated copies, and commit the synchronized output so installation directly from the repository works. Product context lives in Base's entrypoint. Check or export the complete skill set with:
+
+```sh
+python3 scripts/package_skills.py --check
+python3 -m unittest discover -s scripts -p 'test_*.py'
+python3 scripts/package_skills.py --check --output /tmp/virse-skills-export
+```
+
+The export destination must not exist. Validation checks local links, domain reference synchronization and Base references; an exported business skill must be installed together with the exported Base.
 
 ## Rust SDK
 
