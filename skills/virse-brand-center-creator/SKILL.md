@@ -6,11 +6,7 @@ description: >-
 
 # 品牌中心构建
 
-<!-- virse:background:start -->
-Virse 是 AI native 的创作系统，用画布连接想法、素材、审美、工具与模型，支持图片、视频、3D 和文本。资源目录管理素材与归属，画布组织创作输入、过程与结果。
-
-只读当前任务所需参考，已读且适用的内容沿用，链接不自动加载内容。
-<!-- virse:background:end -->
+依赖 `virse-base`。首次使用本技能时，从宿主技能列表定位并读取 base 的 `SKILL.md`；已读且适用的内容沿用。下文 `virse-base/references/...` 均相对于该技能的实际目录，按任务读取，不假定安装在全局目录。缺少 base 时先补齐同来源、同版本、同安装范围的 base，再执行依赖它的 Virse 操作。
 
 用户指定后端时，在首条远端命令前设置 `VIRSE_BACKEND_URL`。
 
@@ -43,4 +39,4 @@ Virse 是 AI native 的创作系统，用画布连接想法、素材、审美、
 
 画布创作子任务可交给 `virse-composer`，提供目标、真实材料、保留项及验收要求；宿主负责全部交付。用户认可方向或方法的复用价值后，再取 `virse-aesthetic-creator` 或 `virse-smart-tool-creator`，核实真实消费与放置能力。
 
-连接或身份不明取[连接](references/shared/contracts/connection.md)，资源身份取[对象](references/shared/context/objects.md)；取得文件取[文件交付](references/shared/contracts/delivery.md)，受理不明按[执行与恢复](references/shared/contracts/execution.md)对账。核实约定内容、文件可用性及取用路径后，交付同一品牌文件夹的真实位置或已核实链接。
+连接或身份不明取连接（`virse-base/references/contracts/connection.md`），资源身份取对象（`virse-base/references/context/objects.md`）；取得文件取文件交付（`virse-base/references/contracts/delivery.md`），受理不明按执行与恢复（`virse-base/references/contracts/execution.md`）对账。核实约定内容、文件可用性及取用路径后，交付同一品牌文件夹的真实位置或已核实链接。

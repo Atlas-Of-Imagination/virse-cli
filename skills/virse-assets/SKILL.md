@@ -5,17 +5,13 @@ description: 汇集本地和其他平台素材，构建或整理个人、团队�
 
 # 资产管理
 
-<!-- virse:background:start -->
-Virse 是 AI native 的创作系统，用画布连接想法、素材、审美、工具与模型，支持图片、视频、3D 和文本。资源目录管理素材与归属，画布组织创作输入、过程与结果。
-
-只读当前任务所需参考，已读且适用的内容沿用，链接不自动加载内容。
-<!-- virse:background:end -->
+依赖 `virse-base`。首次使用本技能时，从宿主技能列表定位并读取 base 的 `SKILL.md`；已读且适用的内容沿用。下文 `virse-base/references/...` 均相对于该技能的实际目录，按任务读取，不假定安装在全局目录。缺少 base 时先补齐同来源、同版本、同安装范围的 base，再执行依赖它的 Virse 操作。
 
 用户指定后端时，在首条远端命令前设置 `VIRSE_BACKEND_URL`。
 
 ## 对象与短路径
 
-按用户指定的组织处理资源。资源路径是该组织内的绝对目录路径，`/` 是组织根；资源项 ID、资产 ID、画布空间 ID 是不同身份。缺少连接或身份时读[连接与空间](references/shared/contracts/connection.md)，身份不明确时读[对象关系](references/shared/context/objects.md)。已有上下文足够时直接做任务。
+按用户指定的组织处理资源。资源路径是该组织内的绝对目录路径，`/` 是组织根；资源项 ID、资产 ID、画布空间 ID 是不同身份。缺少连接或身份时读连接与空间（`virse-base/references/contracts/connection.md`），身份不明确时读对象关系（`virse-base/references/context/objects.md`）。已有上下文足够时直接做任务。
 
 普通查找可以直接用：
 
@@ -51,8 +47,8 @@ virse resource upload ./product.png '/项目素材' --conflict rename --idempote
 | 导入目录、查看进度、暂停取消或恢复未确认项 | [导入批次](references/import-batches.md) |
 | 查看回收站、恢复或永久清理 | [回收与清理](references/recycle.md) |
 | 跟踪资源变化或从快照接续增量 | [资源变化](references/resource-changes.md) |
-| 查看预览、下载原件、断点续传或打包 ZIP | [文件交付](references/shared/contracts/delivery.md) |
-| 读取或复用审美资源 | [审美取用](references/shared/context/aesthetics.md)，不先读完整作者流程 |
+| 查看预览、下载原件、断点续传或打包 ZIP | 文件交付（`virse-base/references/contracts/delivery.md`） |
+| 读取或复用审美资源 | 审美取用（`virse-base/references/context/aesthetics.md`），不先读完整作者流程 |
 
 资源移动可能改变继承权限；设置分享规则属于 `virse-sharing`。要把资产放入画布、布局或建立连线，按 `virse-canvas` 的职责继续，不要求安装全部兄弟 Skill。
 
@@ -62,4 +58,4 @@ virse resource upload ./product.png '/项目素材' --conflict rename --idempote
 
 回报实际资源身份、最终位置和逐项结果；有本地交付时确认文件与清单。不能把 `skip` 当作字节一致、把部分成功当作全部完成、把收藏或隐藏入口当作权限变更。任务只要求整理时，不额外生成内容或扩大分享范围。
 
-按[执行与恢复](references/shared/contracts/execution.md)解释回执、退出码和未知结果，再用当前任务参考中的具体恢复方式；不统一套用重试循环。
+按执行与恢复（`virse-base/references/contracts/execution.md`）解释回执、退出码和未知结果，再用当前任务参考中的具体恢复方式；不统一套用重试循环。

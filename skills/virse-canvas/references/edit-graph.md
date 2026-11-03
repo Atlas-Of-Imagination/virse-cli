@@ -76,4 +76,4 @@ virse canvas edge delete "$EDGE" --org "$ORG" --canvas "$CANVAS" --json
 virse canvas transaction --file transaction.json --idempotency-key "$KEY" --org "$ORG" --canvas "$CANVAS" --json
 ```
 
-服务端返回 mutation_id 和逐操作结果。结果不明使用原请求和原键；不能变更补丁或刷新修订号后强制重放。修订冲突先读当前对象并比较，再决定如何合并。一般恢复边界见[执行与恢复](shared/contracts/execution.md)。
+服务端返回 mutation_id 和逐操作结果。结果不明使用原请求和原键；不能变更补丁或刷新修订号后强制重放。修订冲突先读当前对象并比较，再决定如何合并。一般恢复边界见执行与恢复（`virse-base/references/contracts/execution.md`）。

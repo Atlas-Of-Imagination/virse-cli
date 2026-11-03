@@ -5,17 +5,13 @@ description: 理解 Virse 画布内容、节点和引用关系，放入素材，
 
 # 画布操作
 
-<!-- virse:background:start -->
-Virse 是 AI native 的创作系统，用画布连接想法、素材、审美、工具与模型，支持图片、视频、3D 和文本。资源目录管理素材与归属，画布组织创作输入、过程与结果。
-
-只读当前任务所需参考，已读且适用的内容沿用，链接不自动加载内容。
-<!-- virse:background:end -->
+依赖 `virse-base`。首次使用本技能时，从宿主技能列表定位并读取 base 的 `SKILL.md`；已读且适用的内容沿用。下文 `virse-base/references/...` 均相对于该技能的实际目录，按任务读取，不假定安装在全局目录。缺少 base 时先补齐同来源、同版本、同安装范围的 base，再执行依赖它的 Virse 操作。
 
 用户指定后端时，在首条远端命令前设置 `VIRSE_BACKEND_URL`。
 
 ## 先理解当前对象
 
-画布自身是资源，但节点与组合属于画布空间。`canvas get` 使用画布空间 ID，`canvas contents` 使用画布资源路径或资源项 ID；不互换。缺少连接时读[连接与空间](references/shared/contracts/connection.md)，身份关系见[对象关系](references/shared/context/objects.md)。示例变量均来自本次真实查询或用户明确给出的身份。
+画布自身是资源，但节点与组合属于画布空间。`canvas get` 使用画布空间 ID，`canvas contents` 使用画布资源路径或资源项 ID；不互换。缺少连接时读连接与空间（`virse-base/references/contracts/connection.md`），身份关系见对象关系（`virse-base/references/context/objects.md`）。示例变量均来自本次真实查询或用户明确给出的身份。
 
 普通读取和放置可直接做：
 
@@ -59,8 +55,8 @@ virse canvas layout --group "$GROUP" --mode row --gap 40 --x 100 --y 200 --org "
 | 放入现有素材、执行已明确的排版、复制到当前或另一画布 | [放置、排版与复制](references/layout-copy.md) |
 | 创建、回复、编辑、移动或解决画布讨论 | [画布讨论](references/discussions.md) |
 | 查询近期删除并恢复媒体 | [媒体恢复](references/recovery.md) |
-| 下载素材或把画布媒体打包 | [文件交付](references/shared/contracts/delivery.md) |
-| 识别或取用已有审美 | [审美取用](references/shared/context/aesthetics.md)，不先进入作者流程 |
+| 下载素材或把画布媒体打包 | 文件交付（`virse-base/references/contracts/delivery.md`） |
+| 识别或取用已有审美 | 审美取用（`virse-base/references/context/aesthetics.md`），不先进入作者流程 |
 
 ## 完成与恢复
 
@@ -68,4 +64,4 @@ virse canvas layout --group "$GROUP" --mode row --gap 40 --x 100 --y 200 --org "
 
 核对实际对象、保存字段与修订，复制时核对新身份和内部关系，讨论核对真实状态。连线保存不表示下游任务已经运行，节点删除不等于取消任务或永久删除资产。通用 JSON 写入口没有全量节点字段 Schema，不猜任意类型和属性都可写。
 
-使用[执行与恢复](references/shared/contracts/execution.md)解释未知结果与冲突，并按当前参考保留原内容、目标与请求键。连线没有名称，`canvas edge name` 会被拒绝。
+使用执行与恢复（`virse-base/references/contracts/execution.md`）解释未知结果与冲突，并按当前参考保留原内容、目标与请求键。连线没有名称，`canvas edge name` 会被拒绝。

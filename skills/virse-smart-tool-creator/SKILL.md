@@ -5,11 +5,7 @@ description: 从 Virse 画布自动发现可复用任务、总结工作流并制
 
 # 智能工具制作
 
-<!-- virse:background:start -->
-Virse 是 AI native 的创作系统，用画布连接想法、素材、审美、工具与模型，支持图片、视频、3D 和文本。资源目录管理素材与归属，画布组织创作输入、过程与结果。
-
-只读当前任务所需参考，已读且适用的内容沿用，链接不自动加载内容。
-<!-- virse:background:end -->
+依赖 `virse-base`。首次使用本技能时，从宿主技能列表定位并读取 base 的 `SKILL.md`；已读且适用的内容沿用。下文 `virse-base/references/...` 均相对于该技能的实际目录，按任务读取，不假定安装在全局目录。缺少 base 时先补齐同来源、同版本、同安装范围的 base，再执行依赖它的 Virse 操作。
 
 用户指定后端时，在首条远端命令前设置 `VIRSE_BACKEND_URL`。
 
@@ -26,7 +22,7 @@ Virse 是 AI native 的创作系统，用画布连接想法、素材、审美、
 | 构建、测试确定产物、发布和恢复不确定结果 | [产物测试与发布](references/artifact-lifecycle.md) |
 | 拉取历史源码、查看正式版本、放弃已知草稿、准备封面 | [源码与作者管理](references/source-management.md) |
 
-本地 `init` 与本地 `validate` 无需登录；需要远端操作或身份修复时读[连接与范围](references/shared/contracts/connection.md)。复用确定工具产物时读[运行合同](references/shared/contracts/tool-run.md)；需要交付实际文件时读[交付合同](references/shared/contracts/delivery.md)。不预读所有参考。
+本地 `init` 与本地 `validate` 无需登录；需要远端操作或身份修复时读连接与范围（`virse-base/references/contracts/connection.md`）。复用确定工具产物时读运行合同（`virse-base/references/contracts/tool-run.md`）；需要交付实际文件时读交付合同（`virse-base/references/contracts/delivery.md`）。不预读所有参考。
 
 先明确工具用途、必需输入和可观察输出，再编写。build 不执行包内脚本，也不发布正式 release；运行验证必须固定 build 返回的 artifact，查看真实结果。测试涉及生成时，沿用适用授权；缺少时先确认可见配置与执行范围，不把固定工具内部模型当作可选择参数。包有变化后重新 build，不把旧产物测试当成新包测试。
 
