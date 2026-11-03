@@ -35,4 +35,4 @@ virse canvas copy --group "$GROUP" --to-canvas "$TARGET_CANVAS" --idempotency-ke
 
 ## 核对保存结果
 
-用返回的新身份与 `element/group/edge get/list` 检查位置、组合成员和内部连线。不要因为复制成功就声称引用的外部材料、运行状态或完整历史都一并迁移。需要交付媒体文件时直接读[文件交付](shared/contracts/delivery.md)，不把画布结构复制当成 ZIP 工程导出。
+用返回的新身份与 `element/group/edge get/list` 检查位置、组合成员和内部连线。不要因为复制成功就声称引用的外部材料、运行状态或完整历史都一并迁移。需要交付媒体文件时直接读文件交付（`virse-base/references/contracts/delivery.md`），不把画布结构复制当成 ZIP 工程导出。

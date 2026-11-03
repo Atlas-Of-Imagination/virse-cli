@@ -39,6 +39,6 @@ virse --org "$ORG" --canvas "$CANVAS" --json composer stop "$COMPOSER" --wait --
 
 ## 检查平台实际交付
 
-从对应回合记录与实际画布对象确认交付，必要时按对象身份（`virse-base/references/context/objects.md`）定位，依[文件交付](shared/contracts/delivery.md)取得真实内容。外部 Agent 按用户目标检查产物；仅看到文字“已完成”不能宣称文件已保存、图片已生成或质量已通过。
+从对应回合记录与实际画布对象确认交付，必要时按对象身份（`virse-base/references/context/objects.md`）定位，依文件交付（`virse-base/references/contracts/delivery.md`）取得真实内容。外部 Agent 按用户目标检查产物；仅看到文字“已完成”不能宣称文件已保存、图片已生成或质量已通过。
 
 图片的参考保留、形准、构图与材质问题按需使用 `virse-image-craft`；视频的运动、节奏、连续性与声音问题使用 `virse-video-craft`。只检查实际取得且能够查看的内容，形成具体反馈后在原会话继续，不把生成一次新结果称为对旧片逐帧精修。

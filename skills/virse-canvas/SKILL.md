@@ -55,8 +55,8 @@ virse canvas layout --group "$GROUP" --mode row --gap 40 --x 100 --y 200 --org "
 | 放入现有素材、执行已明确的排版、复制到当前或另一画布 | [放置、排版与复制](references/layout-copy.md) |
 | 创建、回复、编辑、移动或解决画布讨论 | [画布讨论](references/discussions.md) |
 | 查询近期删除并恢复媒体 | [媒体恢复](references/recovery.md) |
-| 下载素材或把画布媒体打包 | [文件交付](references/shared/contracts/delivery.md) |
-| 识别或取用已有审美 | [审美取用](references/shared/context/aesthetics.md)，不先进入作者流程 |
+| 下载素材或把画布媒体打包 | 文件交付（`virse-base/references/contracts/delivery.md`） |
+| 识别或取用已有审美 | 审美取用（`virse-base/references/context/aesthetics.md`），不先进入作者流程 |
 
 ## 完成与恢复
 

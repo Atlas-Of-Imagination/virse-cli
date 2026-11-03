@@ -16,13 +16,13 @@ description: 从 Virse 画布发现审美方向，或用参考素材创建、训
 | 当前任务 | 直接读取 |
 | --- | --- |
 | 看复杂画布，理解视觉偏好、推荐发展方向并提炼成审美模块 | [从画布发现并制作审美](references/from-canvas.md) |
-| 查详情或准备使用已有审美 | [审美身份与普通取用](references/shared/context/aesthetics.md)；不读取作者私有正文 |
+| 查详情或准备使用已有审美 | 审美身份与普通取用（`virse-base/references/context/aesthetics.md`）；不读取作者私有正文 |
 | 创建、更新展示信息、替换参考图、发起或观察训练 | [创建与训练](references/create-and-train.md) |
 | 创建测试现场、读取草稿、修订正文、固定快照并比较效果 | [草稿与测试](references/draft-and-test.md) |
-| 查看或下载测试作品 | [文件交付](references/shared/contracts/delivery.md) |
+| 查看或下载测试作品 | 文件交付（`virse-base/references/contracts/delivery.md`） |
 | 保存选定修订、存入资源目录、恢复旧修订或清理测试画布 | [保存与清理](references/save-and-cleanup.md) |
 
-需要认证或切换后端时读连接与范围（`virse-base/references/contracts/connection.md`）；测试生成读[生成合同](references/shared/contracts/generation.md)，以当前 operation 和模型实际支持的字段绑定审美。测试生成沿用已确认的配置与执行范围或适用的自主授权；缺少时一次确认模型、关键配置及含修正版的数量范围，范围内不重复问，超出范围再确认。
+需要认证或切换后端时读连接与范围（`virse-base/references/contracts/connection.md`）；测试生成读生成合同（`virse-base/references/contracts/generation.md`），以当前 operation 和模型实际支持的字段绑定审美。测试生成沿用已确认的配置与执行范围或适用的自主授权；缺少时一次确认模型、关键配置及含修正版的数量范围，范围内不重复问，超出范围再确认。
 
 需要分析图片参考、设计测试提示词或诊断视觉效果时，按需读取 `virse-image-craft`；视频测试的模式、运动与连续性使用 `virse-video-craft`。仅训练、查询修订或保存草稿时不预读技巧；实际生成与审美绑定仍遵守本入口合同。
 

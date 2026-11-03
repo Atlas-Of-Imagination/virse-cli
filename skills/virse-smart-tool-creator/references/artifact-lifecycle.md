@@ -21,7 +21,7 @@ virse tool schema <tool-id> --artifact-id <artifact-id> --canvas <canvas-id> --o
 virse tool run <tool-id> --artifact-id <artifact-id> --inputs ./test-inputs.json --idempotency-key "$TEST_KEY" --canvas <canvas-id> --org <org-id> --wait --json
 ```
 
-运行前保存本次 `TEST_KEY` 和输入；同次未知受理保持同一输入与同一键，新测试使用新键。无表单工具可按实际合同提供 `--instruction`。输入来源、目标节点、幂等与 run 观察见[运行合同](shared/contracts/tool-run.md)，不另做一套轮询或重连。
+运行前保存本次 `TEST_KEY` 和输入；同次未知受理保持同一输入与同一键，新测试使用新键。无表单工具可按实际合同提供 `--instruction`。输入来源、目标节点、幂等与 run 观察见运行合同（`virse-base/references/contracts/tool-run.md`），不另做一套轮询或重连。
 
 未发布 artifact 仅由作者在工具所属组织的可访问画布试运行；不能把团队可见或能用某正式版本理解成能测试作者草稿。记录 tool、artifact、run、输入与输出身份，查看真实图片、文本或其他产物，检查用户关心的行为和质量。运行 succeeded 与作品符合要求分别判断。
 
@@ -64,4 +64,4 @@ virse tool publish ./product-shot-tool --org <org-id> --json
 | 源码或发布基准冲突 | 读取当前状态与差异；必要时按[源码与作者管理](source-management.md)显式放弃已知草稿，拉到新目录并重新应用修改，不自动覆盖。 |
 | 测试观察断线或超时 | 找回原 run 并读取状态，不因观察失败重新运行收费任务。 |
 
-CLI 的目录回执处理幂等和冻结请求，不保证已经完成远端发布；以返回的正式 release 为证据。详细未知状态处理见执行与恢复（`virse-base/references/contracts/execution.md`）。实际文件交付见[交付合同](shared/contracts/delivery.md)。
+CLI 的目录回执处理幂等和冻结请求，不保证已经完成远端发布；以返回的正式 release 为证据。详细未知状态处理见执行与恢复（`virse-base/references/contracts/execution.md`）。实际文件交付见交付合同（`virse-base/references/contracts/delivery.md`）。

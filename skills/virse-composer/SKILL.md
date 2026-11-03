@@ -39,9 +39,9 @@ virse --org "$ORG" --canvas "$CANVAS" --json composer send "$COMPOSER" --input "
 | 查找、创建、读取、改名或删除创作家节点 | [独立节点与会话](references/sessions.md) |
 | 交办、引用材料、传入长任务或在原会话继续 | [消息、上下文与继续会话](references/messages-and-continuation.md) |
 | 读历史、观察指定回合、断线续看或请求停止 | [观察、历史与停止](references/observe-and-stop.md) |
-| 检查或取回已交付文件 | [文件交付](references/shared/contracts/delivery.md) |
+| 检查或取回已交付文件 | 文件交付（`virse-base/references/contracts/delivery.md`） |
 
-仅在缺相关信息时直读连接（`virse-base/references/contracts/connection.md`）、对象（`virse-base/references/context/objects.md`）、执行（`virse-base/references/contracts/execution.md`）合同。引用审美等特殊对象时，按[审美消费条件](references/shared/context/aesthetics.md)及 Composer 实际允许的请求字段处理，不能把作者草稿正文自动暴露给普通委派。
+仅在缺相关信息时直读连接（`virse-base/references/contracts/connection.md`）、对象（`virse-base/references/context/objects.md`）、执行（`virse-base/references/contracts/execution.md`）合同。引用审美等特殊对象时，按审美消费条件（`virse-base/references/context/aesthetics.md`）及 Composer 实际允许的请求字段处理，不能把作者草稿正文自动暴露给普通委派。
 
 ## 完成判断
 

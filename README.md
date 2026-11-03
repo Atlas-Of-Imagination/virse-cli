@@ -321,15 +321,17 @@ npx skills add Atlas-Of-Imagination/virse-cli --skill virse-image-craft virse-vi
 
 Base replaces `virse-setup` (and the earlier `virse` entry). When updating an existing installation, follow the [Skill migration guide](skills/virse-base/references/contracts/skill-migration.md). Install Base before removing old entries; verify the scope and remaining directories after cleanup. Installing a new name does not guarantee removal of the old one.
 
-Shared operational guidance is maintained directly in `skills/virse-base/references/`. Domain-specific references remain in `shared/`; `python3 scripts/package_skills.py` copies only the referenced files into each skill's `references/shared/`. Edit the source, not generated copies, and commit the synchronized output so installation directly from the repository works. Product context lives in Base's entrypoint. Check or export the complete skill set with:
+Shared references are maintained once in `skills/virse-base/references/`, including generation, tool execution, aesthetics and file delivery. References used by only one skill live in that skill, such as `skills/virse-sharing/references/access.md`. Edit these files directly; there is no synchronization or export step. Base's entrypoint indexes shared references for reading on demand.
+
+The validator requires Python 3.9+ and PyYAML. It checks YAML names/descriptions, local file references and Base dependencies without modifying files:
 
 ```sh
-python3 scripts/package_skills.py --check
+python3 -m pip install -r scripts/requirements.txt
+python3 scripts/validate_skills.py
 python3 -m unittest discover -s scripts -p 'test_*.py'
-python3 scripts/package_skills.py --check --output /tmp/virse-skills-export
 ```
 
-The export destination must not exist. Validation checks local links, domain reference synchronization and Base references; an exported business skill must be installed together with the exported Base.
+To check a selected installation, pass a directory containing only the selected Virse skills, for example `python3 scripts/validate_skills.py /path/to/test-project/.agents/skills`. A set containing only the two craft skills does not require Base. Install directly from the repository with `npx skills add`; no generated package is needed.
 
 ## Rust SDK
 

@@ -1,3 +1,3 @@
 interface:
   display_name: "Virse 操作基础"
-  short_description: "连接账号、确认空间与对象身份，理解执行结果与恢复并定位业务入口"
+  short_description: "共用连接、对象身份、执行恢复及生成、工具运行与文件交付参考"

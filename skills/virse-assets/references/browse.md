@@ -17,7 +17,7 @@ virse asset get "$ASSET" --org "$ORG" --canvas "$CANVAS" --json
 
 资源资料支持图片、视频、DOCX、PDF、GLB；发现、上传或下载能力不等于能在 Virse 内编辑、解析全文或渲染所有格式。JSON、TXT、SVG 不作为这些入口已支持的原件格式；任务需要时仅按用户授权转换到可支持格式，保留原件及转换关系，不改扩展名冒充转换。
 
-不要把目录条目的 ID 填入资产接口。需要实际字节时读[文件交付](shared/contracts/delivery.md)，需要分享资格时查询权限，不从团队角色猜资源可用性。标识关系见对象关系（`virse-base/references/context/objects.md`）。
+不要把目录条目的 ID 填入资产接口。需要实际字节时读文件交付（`virse-base/references/contracts/delivery.md`），需要分享资格时查询权限，不从团队角色猜资源可用性。标识关系见对象关系（`virse-base/references/context/objects.md`）。
 
 ## 列表与搜索
 

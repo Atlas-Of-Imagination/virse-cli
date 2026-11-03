@@ -44,4 +44,4 @@ description: >-
 
 只在需要对应动作时补入口，缺包或连接时具体引导补齐，继续可独立推进的工作。宿主负责消化 Context 并交办必要事实、真实材料、保留项和验收要求；Skill 名称不自动加载内容，Composer 也不继承宿主全部上下文。
 
-连接不明读连接（`virse-base/references/contracts/connection.md`），身份不明读对象（`virse-base/references/context/objects.md`），取得实际内容读[文件交付](references/shared/contracts/delivery.md)，受理不明按执行与恢复（`virse-base/references/contracts/execution.md`）对账。完成以约定成果、真实质量和可用入口为依据，返回同一项目文件夹及相关画布的真实位置或已核实链接。
+连接不明读连接（`virse-base/references/contracts/connection.md`），身份不明读对象（`virse-base/references/context/objects.md`），取得实际内容读文件交付（`virse-base/references/contracts/delivery.md`），受理不明按执行与恢复（`virse-base/references/contracts/execution.md`）对账。完成以约定成果、真实质量和可用入口为依据，返回同一项目文件夹及相关画布的真实位置或已核实链接。

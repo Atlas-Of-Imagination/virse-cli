@@ -47,8 +47,8 @@ virse resource upload ./product.png '/项目素材' --conflict rename --idempote
 | 导入目录、查看进度、暂停取消或恢复未确认项 | [导入批次](references/import-batches.md) |
 | 查看回收站、恢复或永久清理 | [回收与清理](references/recycle.md) |
 | 跟踪资源变化或从快照接续增量 | [资源变化](references/resource-changes.md) |
-| 查看预览、下载原件、断点续传或打包 ZIP | [文件交付](references/shared/contracts/delivery.md) |
-| 读取或复用审美资源 | [审美取用](references/shared/context/aesthetics.md)，不先读完整作者流程 |
+| 查看预览、下载原件、断点续传或打包 ZIP | 文件交付（`virse-base/references/contracts/delivery.md`） |
+| 读取或复用审美资源 | 审美取用（`virse-base/references/context/aesthetics.md`），不先读完整作者流程 |
 
 资源移动可能改变继承权限；设置分享规则属于 `virse-sharing`。要把资产放入画布、布局或建立连线，按 `virse-canvas` 的职责继续，不要求安装全部兄弟 Skill。
 

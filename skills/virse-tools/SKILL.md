@@ -15,9 +15,9 @@ description: >-
 | --- | --- |
 | 从画布发现创作流程并总结成新工具 | `virse-smart-tool-creator` → `references/from-canvas.md` |
 | 搜索、添加移除、启停收藏、修改作者范围或删除定义 | [查找与管理工具](references/find-and-manage.md) |
-| 填输入、固定版本、放置、执行、观察与控制 | [工具运行合同](references/shared/contracts/tool-run.md) |
-| 判断产物是否符合要求并交付 | [检查工具结果](references/inspect-results.md)与[文件交付](references/shared/contracts/delivery.md) |
-| Schema 明确支持审美输入，需理解其身份或资格 | [审美消费条件](references/shared/context/aesthetics.md) |
+| 填输入、固定版本、放置、执行、观察与控制 | 工具运行合同（`virse-base/references/contracts/tool-run.md`） |
+| 判断产物是否符合要求并交付 | [检查工具结果](references/inspect-results.md)与文件交付（`virse-base/references/contracts/delivery.md`） |
+| Schema 明确支持审美输入，需理解其身份或资格 | 审美消费条件（`virse-base/references/context/aesthetics.md`） |
 
 先按上表选择当前任务所需参考。查详情、收藏、启停或范围等管理任务不强制读取运行合同或输入 Schema。仅在缺连接、对象或输出概念时直读连接（`virse-base/references/contracts/connection.md`）、对象（`virse-base/references/context/objects.md`）、执行（`virse-base/references/contracts/execution.md`）合同。修改包内容、拉源码、构建或发布时进入作者职责；作者测试未发布 artifact 直接复用运行合同，不必先读整个工具使用入口。
 
