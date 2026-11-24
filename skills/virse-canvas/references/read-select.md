@@ -38,6 +38,6 @@ virse canvas edge get "$EDGE" --org "$ORG" --canvas "$CANVAS" --json
 
 ## 读内容绑定与生成配置
 
-`content_ref.kind/id` 表示节点当前绑定的资产或审美身份。要看真实图片、视频或文档，按[文件交付](shared/contracts/delivery.md)取得授权展示或原件；取用审美时读[审美取用](shared/context/aesthetics.md)。不能把当前绑定对象说成最初上传原件。
+`content_ref.kind/id` 表示节点当前绑定的资产或审美身份。要看真实图片、视频或文档，按文件交付（`virse-base/references/contracts/delivery.md`）取得授权展示或原件；取用审美时读审美取用（`virse-base/references/context/aesthetics.md`）。不能把当前绑定对象说成最初上传原件。
 
 `generation.config` 以及实际返回的 `artifact_id/artifact_version_id` 可用于理解当前配置。不要先假定 prompt、参数、参考字段一定齐全；外部上传图可能完全没有生成配置。指定任务的历史原输入也没有完整保证。需要继续生成时交付确实读到的配置、真实参考身份与用户保留项，不由图像内容猜造原 prompt。

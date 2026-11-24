@@ -54,4 +54,4 @@ virse resource save-canvas --element "$ELEMENT" --parent '/项目素材/交付' 
 virse resource save-canvas --group "$GROUP" --parent '/项目素材/交付' --idempotency-key "$KEY" --canvas "$CANVAS" --org "$ORG" --json
 ```
 
-可重复 `--element`，或选择一个组合，单次 1–200 个实际成员。首次固定成员和目标目录，逐项返回 `succeeded/failed/unknown` 及资源身份。组合不会合成为一张图；没有可另存字节的节点不能伪造成文件。另存保留画布原内容，结果不明按原选择与原键接续。下载与 ZIP 另见[文件交付](shared/contracts/delivery.md)。
+可重复 `--element`，或选择一个组合，单次 1–200 个实际成员。首次固定成员和目标目录，逐项返回 `succeeded/failed/unknown` 及资源身份。组合不会合成为一张图；没有可另存字节的节点不能伪造成文件。另存保留画布原内容，结果不明按原选择与原键接续。下载与 ZIP 另见文件交付（`virse-base/references/contracts/delivery.md`）。

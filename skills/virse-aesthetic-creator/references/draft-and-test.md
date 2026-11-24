@@ -61,8 +61,8 @@ virse aesthetic call snapshot --id <session-id> --data '{"expected_revision":1}'
 
 测试生成沿用已确认的配置与执行范围或适用自主授权；缺少时先确认模型、关键配置与数量范围，不能把“想看看效果”视为任意选型和无限测试。
 
-保存快照 style ID、会话修订、具体测试输入、模型/operation 和生成结果之间的对应关系。按[生成合同](shared/contracts/generation.md)查询当前支持审美的 operation，使用其真实字段绑定快照，保持可比较的主体、提示词和必要参数；不假定所有模型支持审美。
+保存快照 style ID、会话修订、具体测试输入、模型/operation 和生成结果之间的对应关系。按生成合同（`virse-base/references/contracts/generation.md`）查询当前支持审美的 operation，使用其真实字段绑定快照，保持可比较的主体、提示词和必要参数；不假定所有模型支持审美。
 
-调用生成只说明测试已提交。继续观察原 task，逐输出读取，按[文件交付](shared/contracts/delivery.md)取得获准预览或原件并查看真实图片或其他作品，判断本次具体问题是否改善。快照固定的是审美内容，不保证相同随机结果；不要把不同快照、不同测试输入的效果混成单一结论。
+调用生成只说明测试已提交。继续观察原 task，逐输出读取，按文件交付（`virse-base/references/contracts/delivery.md`）取得获准预览或原件并查看真实图片或其他作品，判断本次具体问题是否改善。快照固定的是审美内容，不保证相同随机结果；不要把不同快照、不同测试输入的效果混成单一结论。
 
 效果不合适时重新读当前 revision、修订完整正文、固定新快照并测试。用户要保留选定结果时读[保存与清理](save-and-cleanup.md)，不把测试成功说成源审美已经保存。

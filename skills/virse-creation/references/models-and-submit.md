@@ -45,7 +45,7 @@ virse --org "$ORG" --canvas "$CANVAS" --json generation operations
 virse --org "$ORG" --canvas "$CANVAS" --json generation submit --file request.json --idempotency-key "$KEY" --wait
 ```
 
-按当前 operation 的真实输入 Schema 填 input，不从功能名猜字段。通用请求的 envelope、输出约束、参考与受理语义见[生成任务合同](shared/contracts/generation.md)。operation 目录不是全站 Schema，也不能证明未声明的 3D 工作台或其他产品功能已开放。
+按当前 operation 的真实输入 Schema 填 input，不从功能名猜字段。通用请求的 envelope、输出约束、参考与受理语义见生成任务合同（`virse-base/references/contracts/generation.md`）。operation 目录不是全站 Schema，也不能证明未声明的 3D 工作台或其他产品功能已开放。
 
 ## 多输出与目标绑定
 

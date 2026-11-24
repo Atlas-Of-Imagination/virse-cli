@@ -5,11 +5,7 @@ description: >-
 ---
 # 创作与迭代
 
-<!-- virse:background:start -->
-Virse 是 AI native 的创作系统，用画布连接想法、素材、审美、工具与模型，支持图片、视频、3D 和文本。资源目录管理素材与归属，画布组织创作输入、过程与结果。
-
-只读当前任务所需参考，已读且适用的内容沿用，链接不自动加载内容。
-<!-- virse:background:end -->
+依赖 `virse-base`。首次使用本技能时，从宿主技能列表定位并读取 base 的 `SKILL.md`；已读且适用的内容沿用。下文 `virse-base/references/...` 均相对于该技能的实际目录，按任务读取，不假定安装在全局目录。缺少 base 时先补齐同来源、同版本、同安装范围的 base，再执行依赖它的 Virse 操作。
 
 用户指定后端时，在首条远端命令前设置 `VIRSE_BACKEND_URL`。
 
@@ -30,7 +26,7 @@ Virse 是 AI native 的创作系统，用画布连接想法、素材、审美、
 | 写图片／视频 prompt、选择表现方法或诊断效果 | 按问题取 `virse-image-craft`／`virse-video-craft` 的相关参考；只要 prompt 时不登录、不提交 |
 | 普通生图，目标和品牌依据已明确 | 本入口执行；需要提示表达或参考分工才补相应技巧，不进入品牌中心建设 |
 | 参考图生成、改图或图片处理 | 补[图片创作与处理](references/image-and-edit.md)的对应操作；只补当前缺少的参考理解或编辑方法 |
-| 查询状态、取消，或按确定配置执行处理 | 直达对应操作或[任务合同](references/shared/contracts/generation.md)，不预读创作技巧 |
+| 查询状态、取消，或按确定配置执行处理 | 直达对应操作或任务合同（`virse-base/references/contracts/generation.md`），不预读创作技巧 |
 
 普通生图沿用适用授权或完成上述一次确认后即可提交。`ORG/CANVAS` 来自已选空间与画布，`MODEL` 来自当前可用能力查询；已知型号先 `model get`，需要选型才列目录。`KEY` 为本次输入固定保存的幂等键。
 
@@ -40,7 +36,7 @@ virse --org "$ORG" --canvas "$CANVAS" --json generation get "$TASK"
 virse --org "$ORG" --canvas "$CANVAS" --json asset preview "$ASSET" --representation content --output ./result.bin
 ```
 
-`TASK` 来自提交回执，`ASSET` 来自该任务实际成功输出的 asset_id，不能把节点或资源项 ID 代入。若提交尚未终态或受理不明，转[任务合同](references/shared/contracts/generation.md)等待或查证，不再次创建。查看展示文件的真实格式与内容，输出路径必须不存在，扩展名不转换格式；预览不等于原件。需要下载原件、打包或接续时才展开[文件交付](references/shared/contracts/delivery.md)。
+`TASK` 来自提交回执，`ASSET` 来自该任务实际成功输出的 asset_id，不能把节点或资源项 ID 代入。若提交尚未终态或受理不明，转任务合同（`virse-base/references/contracts/generation.md`）等待或查证，不再次创建。查看展示文件的真实格式与内容，输出路径必须不存在，扩展名不转换格式；预览不等于原件。需要下载原件、打包或接续时才展开文件交付（`virse-base/references/contracts/delivery.md`）。
 
 当前模型能力已核清且仍适用时无需重复查询。未知操作或特殊输入才查询 `generation operations`；参数不清楚时查对应命令 help。快捷命令没有通用 `--aesthetic`，取用审美必须有当前消费方真实支持的输入合同。
 
@@ -62,10 +58,10 @@ virse --org "$ORG" --canvas "$CANVAS" --json asset preview "$ASSET" --representa
 | 做视频 | [视频创作](references/video.md) |
 | 文本或图片建模 | [3D 生成的实际边界](references/3d.md) |
 | 生成或改写画布文本 | [文本创作](references/text.md) |
-| 选择并运行现有工具 | [固定工具产物与运行合同](references/shared/contracts/tool-run.md) |
-| 查阅或取用已有审美 | [审美身份与消费条件](references/shared/context/aesthetics.md) |
+| 选择并运行现有工具 | 固定工具产物与运行合同（`virse-base/references/contracts/tool-run.md`） |
+| 查阅或取用已有审美 | 审美身份与消费条件（`virse-base/references/context/aesthetics.md`） |
 
-只缺连接信息、对象身份或输出解释时，分别直读[连接](references/shared/contracts/connection.md)、[对象](references/shared/context/objects.md)或[执行](references/shared/contracts/execution.md)合同，不将它们全部预读。需要画布结构修改、资源归档或改权时，补该职责的最小合同；职责确实切换时再选相应入口。
+只缺连接信息、对象身份或输出解释时，分别直读连接（`virse-base/references/contracts/connection.md`）、对象（`virse-base/references/context/objects.md`）或执行（`virse-base/references/contracts/execution.md`）合同，不将它们全部预读。需要画布结构修改、资源归档或改权时，补该职责的最小合同；职责确实切换时再选相应入口。
 
 ## 完成判断
 

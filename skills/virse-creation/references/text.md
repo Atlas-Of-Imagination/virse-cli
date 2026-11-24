@@ -16,4 +16,4 @@ virse --org "$ORG" --canvas "$CANVAS" --json generation text --model "$MODEL" --
 virse --org "$ORG" --canvas "$CANVAS" --json canvas element get "$ELEMENT"
 ```
 
-以实际保存的正文核对用户要求、事实、语气、长度和结构，不把任务受理响应或 Agent 解释当作最终正文。需要修改时针对具体问题和保留项形成新请求；任务恢复沿用[生成任务合同](shared/contracts/generation.md)。这不是本地文本文件编辑器，也不据此宣称 Word 正文或其他未开放文档格式可编辑。
+以实际保存的正文核对用户要求、事实、语气、长度和结构，不把任务受理响应或 Agent 解释当作最终正文。需要修改时针对具体问题和保留项形成新请求；任务恢复沿用生成任务合同（`virse-base/references/contracts/generation.md`）。这不是本地文本文件编辑器，也不据此宣称 Word 正文或其他未开放文档格式可编辑。

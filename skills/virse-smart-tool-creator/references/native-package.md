@@ -45,7 +45,7 @@ when_to_use: 需要围绕已有商品图制作新的展示画面时使用。
 
 字段 ID 使用字母或下划线开头，后续为字母、数字或下划线，不重复、不使用保留名 `module`。当前本地解析器接受 `text`、`textarea`、`image`、`file`、`style`、`select`、`video`、`multiselect`、`number`、`color`；选择类必须提供非空、不重复的 `options[].value`。正文模板和步骤中的输入引用用 `{{field_id}}`，不把 JavaScript 的 `${field_id}` 当成字段占位。
 
-输入表单描述工具接受什么，不决定每次模型或后端具有什么能力。发布后执行时仍读取固定 artifact 的 Schema，按字段 ID 提供真实资产或画布引用，见[运行合同](shared/contracts/tool-run.md)。
+输入表单描述工具接受什么，不决定每次模型或后端具有什么能力。发布后执行时仍读取固定 artifact 的 Schema，按字段 ID 提供真实资产或画布引用，见运行合同（`virse-base/references/contracts/tool-run.md`）。
 
 需要声明步骤和预期交付时，在同一 `interface.json` 中增加可选 `steps`、`outputs`，例如：
 
