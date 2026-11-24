@@ -571,6 +571,8 @@ async fn copy(
                 if node["content_ref"]["kind"] == "aesthetic" {
                     value["style_id"] = node["content_ref"]["id"].clone();
                 }
+                // 后端按来源行校验类型、权限和会话归属，每个节点都必须带来源身份。
+                value["source_element_id"] = json!(id);
                 if node["type"] == "agent" {
                     value["source_block_id"] = json!(id);
                 }
@@ -594,8 +596,7 @@ async fn copy(
             let mut groups = vec![];
             if let Some(original) = group_value {
                 let id = group.unwrap();
-                let mut value =
-                    json!({"group_id":mapping[&id.to_string()],"elements":original["elements"]});
+                let mut value = json!({"group_id":mapping[&id.to_string()],"source_group_id":id,"elements":original["elements"]});
                 for field in [
                     "title",
                     "kind",

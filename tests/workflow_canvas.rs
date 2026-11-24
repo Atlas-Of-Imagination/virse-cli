@@ -150,6 +150,9 @@ async fn copy_remaps_only_selected_relationships_and_reuses_frozen_plan() {
     let id1 = &body["elements"][0]["element_id"];
     let id2 = &body["elements"][1]["element_id"];
     assert_ne!(id1, ONE);
+    assert_eq!(body["elements"][0]["source_element_id"], ONE);
+    assert_eq!(body["elements"][1]["source_element_id"], TWO);
+    assert_eq!(body["groups"][0]["source_group_id"], GROUP);
     assert_eq!(&body["edges"][0]["source_element_id"], id1);
     assert_eq!(&body["edges"][0]["target_element_id"], id2);
     assert_eq!(&body["groups"][0]["elements"][0], id1);
