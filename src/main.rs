@@ -265,6 +265,7 @@ async fn run(cli: &Cli) -> Result<u8> {
         Command::Model { command } => {
             return discovery::models(command, &client, org()?, cli.json).await;
         }
+        Command::Voices { command } => return discovery::voices(command, &client, cli.json).await,
         Command::Balance => print(&client.balance(org()?).await?, cli.json)?,
         Command::Resource { command } => {
             return resource::run(
@@ -440,6 +441,21 @@ async fn run(cli: &Cli) -> Result<u8> {
                             generation::media_request(
                                 virse_api::MediaKind::Model3d,
                                 args.prompt.as_deref().unwrap_or(""),
+                                &args.options,
+                            )
+                            .await?,
+                            &args.options.submission,
+                        )
+                        .await;
+                }
+                Generation::Audio(args) => {
+                    return context
+                        .submit(
+                            generation::audio_request(
+                                &client,
+                                org()?,
+                                &args.prompt,
+                                args.count,
                                 &args.options,
                             )
                             .await?,

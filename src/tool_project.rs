@@ -538,6 +538,7 @@ fn interface(value: &Value) -> Result<()> {
                 | "style"
                 | "select"
                 | "video"
+                | "audio"
                 | "multiselect"
                 | "number"
                 | "color"

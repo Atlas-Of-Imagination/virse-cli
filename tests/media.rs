@@ -102,6 +102,16 @@ async fn serve(s: Shared) -> (String, tokio::task::JoinHandle<()>) {
             let mut s=s.lock().unwrap();s.source_reads+=1;
             Json(json!({"request_id":"read","data":{"items":if s.source_removed {vec![]}else{vec![json!({"id":SOURCE,"parent_id":null,"name":"reference.png","kind":"asset_image"})]},"next_cursor":null,"snapshot":"s","truncated":false}}))
         }))
+        .route("/generation/models/catalog",post(|State(s):State<Shared>,Json(body):Json<Value>|async move{
+            assert_eq!(body["organization_id"],ORG);assert_eq!(body["modes"],json!(["audio"]));
+            s.lock().unwrap().requests.push(("catalog".into(),String::new(),body));
+            Json(json!({"schema_version":2,"catalog_version":"c","models":[{"model_key":"audio-model","mode":"audio","display_name":"Audio","audio_modes":["tts","stem_split","transcribe"],
+                "generation_capabilities":{"audio_modes":{
+                    "tts":{"inputs":[],"outputs":{"tracks":["mix"]}},
+                    "stem_split":{"inputs":["source_audio"],"outputs":{"tracks":["vocals","drums","bass","other"],"tracks_by":{"param":"stem_mode","values":{"6":["vocals","drums","bass","other","guitar","piano"]}}}},
+                    "transcribe":{"inputs":["source_audio"],"outputs":{"tracks":["mix"],"kind":"text"}}
+                }}}]}))
+        }))
         .route(&format!("/v2/canvas/projects/{CANVAS}/generations"),post(generations))
         .route(&format!("/v2/canvas/projects/{CANVAS}/generations/{TASK}"),get(||async{Json(task("succeeded"))}))
         .route(&format!("/v2/canvas/projects/{CANVAS}/elements"),post(create)).with_state(s);
@@ -324,6 +334,7 @@ async fn placing_all_asset_types_uses_server_layout_without_generating() {
         ("image", None, "image"),
         ("video", None, "video"),
         ("model3d", None, "3d"),
+        ("audio", None, "audio"),
         ("document", Some("word"), "document"),
         ("document", Some("pdf"), "document"),
     ] {
@@ -475,5 +486,169 @@ async fn invalid_sources_and_disabled_api_do_not_fallback_or_create_blanks() {
     .unwrap();
     assert_eq!(error["error"]["code"], "CANVAS_HTTP_COMMANDS_NOT_ENABLED");
     assert_eq!(s.lock().unwrap().requests.len(), 1);
+    server.abort();
+}
+#[tokio::test]
+async fn audio_generation_creates_one_placeholder_per_catalog_output() {
+    let s = state();
+    let (base, server) = serve(s.clone()).await;
+    let dir = tempfile::tempdir().unwrap();
+    let submitted = |s: &Shared| {
+        let s = s.lock().unwrap();
+        let last = s.requests.last().unwrap();
+        assert_eq!(last.0, "generation");
+        last.2.clone()
+    };
+    // 分轨无需提示词；6 轨 × 2 次 = 12 个占位，自上而下排列
+    output(
+        &run(
+            dir.path(),
+            &base,
+            &[
+                "generation",
+                "audio",
+                "--model",
+                "audio-model",
+                "--reference",
+                SOURCE,
+                "--count",
+                "2",
+                "--parameters",
+                r#"{"audio_mode":"stem_split","stem_mode":"6"}"#,
+                "--x",
+                "10",
+                "--y",
+                "20",
+                "--json",
+            ],
+        )
+        .await,
+    );
+    let body = submitted(&s);
+    assert_eq!(body["operation"], "audio_generate");
+    assert_eq!(body["input"]["user_query"], "");
+    assert_eq!(body["input"]["audio_count"], 2);
+    assert_eq!(body["input"]["parameters"]["stem_mode"], "6");
+    assert_eq!(
+        body["input"]["references"]["$1"]["source"]["element_id"],
+        SOURCE
+    );
+    let outputs = body["outputs"].as_array().unwrap();
+    assert_eq!(outputs.len(), 12);
+    assert_eq!(outputs[11]["output_index"], 11);
+    assert_eq!(
+        outputs[1]["create_element"]["position"],
+        json!({"x":10.0,"y":380.0})
+    );
+    assert_eq!(
+        outputs[0]["create_element"]["size"],
+        json!({"width":1024.0,"height":320.0})
+    );
+    // 单轨任务可绑定已有节点；转写的占位按文本节点尺寸建
+    output(
+        &run(
+            dir.path(),
+            &base,
+            &[
+                "generation",
+                "audio",
+                "--model",
+                "audio-model",
+                "--prompt",
+                "hello",
+                "--parameters",
+                r#"{"audio_mode":"tts"}"#,
+                "--target-element",
+                ELEMENT,
+                "--json",
+            ],
+        )
+        .await,
+    );
+    assert_eq!(
+        submitted(&s),
+        json!({"operation":"audio_generate","input":{"model":"audio-model","user_query":"hello","audio_count":1,"references":{},"parameters":{"audio_mode":"tts"}},"outputs":[{"output_index":0,"element_id":ELEMENT}]})
+    );
+    output(
+        &run(
+            dir.path(),
+            &base,
+            &[
+                "generation",
+                "audio",
+                "--model",
+                "audio-model",
+                "--reference",
+                SOURCE,
+                "--parameters",
+                r#"{"audio_mode":"transcribe"}"#,
+                "--json",
+            ],
+        )
+        .await,
+    );
+    assert_eq!(
+        submitted(&s)["outputs"][0]["create_element"]["size"],
+        json!({"width":512.0,"height":256.0})
+    );
+    let generations = |s: &Shared| {
+        s.lock()
+            .unwrap()
+            .requests
+            .iter()
+            .filter(|r| r.0 == "generation")
+            .count()
+    };
+    assert_eq!(generations(&s), 3);
+    for args in [
+        // 缺 audio_mode 在读目录前拒绝
+        vec![
+            "generation",
+            "audio",
+            "--model",
+            "audio-model",
+            "--prompt",
+            "hi",
+        ],
+        vec![
+            "generation",
+            "audio",
+            "--model",
+            "audio-model",
+            "--parameters",
+            r#"{"audio_mode":"sfx"}"#,
+        ],
+        vec![
+            "generation",
+            "audio",
+            "--model",
+            "other-model",
+            "--parameters",
+            r#"{"audio_mode":"tts"}"#,
+        ],
+        vec![
+            "generation",
+            "audio",
+            "--model",
+            "audio-model",
+            "--parameters",
+            r#"{"audio_mode":"stem_split"}"#,
+            "--target-element",
+            ELEMENT,
+        ],
+        vec![
+            "generation",
+            "audio",
+            "--model",
+            "audio-model",
+            "--parameters",
+            r#"{"audio_mode":"tts"}"#,
+            "--count",
+            "0",
+        ],
+    ] {
+        assert_eq!(run(dir.path(), &base, &args).await.status.code(), Some(2));
+    }
+    assert_eq!(generations(&s), 3);
     server.abort();
 }

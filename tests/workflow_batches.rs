@@ -404,3 +404,31 @@ async fn explicit_file_binding_requires_server_checksum_and_does_not_reupload() 
     assert_eq!(state.data.lock().unwrap().uploads.len(), 1);
     server.abort();
 }
+#[tokio::test]
+async fn directory_import_uploads_all_five_audio_extensions() {
+    let state = StateData::default();
+    let (base, server) = app(state.clone()).await;
+    let dir = tempfile::tempdir().unwrap();
+    let source = dir.path().join("sounds");
+    std::fs::create_dir(&source).unwrap();
+    for name in ["a.mp3", "b.WAV", "c.m4a", "d.aac", "e.flac", "f.ogg"] {
+        std::fs::write(source.join(name), name.as_bytes()).unwrap();
+    }
+    let result = value(
+        &run(
+            dir.path(),
+            &base,
+            &["resource", "import", source.to_str().unwrap()],
+        )
+        .await,
+    );
+    let items = result["items"].as_array().unwrap();
+    let skipped: Vec<_> = items
+        .iter()
+        .filter(|v| v["status"] == "skipped")
+        .map(|v| v["error"]["code"].clone())
+        .collect();
+    assert_eq!(skipped, vec![json!("UNSUPPORTED_TYPE")]);
+    assert_eq!(state.data.lock().unwrap().uploads.len(), 5);
+    server.abort();
+}

@@ -12,7 +12,7 @@ virse batch run "$BATCH" --org "$ORG" --json
 
 不带 `--defer` 时创建批次后继续执行。批次冻结原始字节、父子关系和目标，运行时不重读已经变化的原件。后续用返回的 `batch_id`，不是文件项 ID。
 
-支持 PNG/JPG/JPEG/WebP/GIF/BMP/AVIF、MP4/MOV/WebM/M4V、DOCX/PDF/GLB。每文件最多 100 MiB，总字节快照最多 2 GiB；不支持格式、符号链接与特殊项会记录跳过。项目或目录深度超限应拆分范围。目录 `skip` 跳过整棵同名子树，不合并目录；`rename` 的真实名称以结果为准。
+支持 PNG/JPG/JPEG/WebP/GIF/BMP/AVIF、MP4/MOV/WebM/M4V、MP3/WAV/M4A/AAC/FLAC、DOCX/PDF/GLB。每文件最多 100 MiB，总字节快照最多 2 GiB；不支持格式、符号链接与特殊项会记录跳过。项目或目录深度超限应拆分范围。目录 `skip` 跳过整棵同名子树，不合并目录；`rename` 的真实名称以结果为准。
 
 ## 查看本机进度
 

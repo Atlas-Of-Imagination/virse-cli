@@ -4,7 +4,7 @@
 
 首次生成提交前，先核对当前会话或宿主记忆中的适用约定与明确自主授权；缺少时先推荐模型和关键参数并取得确认。已有授权按范围执行，单纯模型偏好不替代自主授权。同一任务在已确认或已授权的模型、参数和数量范围内迭代，无需每次重问；超出范围再确认。按原输入查证或恢复未知受理，不重新确认选型。
 
-已知模式优先使用 `generation image/video/3d/text/edit/remove-bg/upscale/outpaint`。需要特殊 operation、输入或多个输出时，先取目标画布当前操作目录，再按其中真实的输入合同准备 JSON：
+已知模式优先使用 `generation image/video/audio/3d/text/edit/remove-bg/upscale/outpaint`。需要特殊 operation、输入或多个输出时，先取目标画布当前操作目录，再按其中真实的输入合同准备 JSON：
 
 ```bash
 virse --org "$ORG" --canvas "$CANVAS" --json generation operations
@@ -13,13 +13,15 @@ virse --org "$ORG" --canvas "$CANVAS" --json generation submit --file request.js
 
 `--file -` 从 stdin 读取。请求不超过 10 MiB，顶层只有 `operation`、对象 `input`、数组 `outputs`；通用 submit 不是任意 HTTP 或全站 Schema 入口。保留完整 request.json，参数与 operation 以本次目录为准，不把另一个画布或后端的合同直接套用。
 
-每项输出使用 `output_index`，并且恰好选择 `element_id` 或 `create_element`。后者包含 `position:{x,y}`、`size:{width,height}`，可附新节点 `id/title`。索引不重复且在输出数组范围内，目标 ID 不冲突，尺寸为正有限数。通用校验允许 1–100 个输出，实际 operation 是否支持及支持几个由运行时决定；媒体快捷命令各只提交一个输出。
+每项输出使用 `output_index`，并且恰好选择 `element_id` 或 `create_element`。后者包含 `position:{x,y}`、`size:{width,height}`，可附新节点 `id/title`。索引不重复且在输出数组范围内，目标 ID 不冲突，尺寸为正有限数。通用校验允许 1–100 个输出，实际 operation 是否支持及支持几个由运行时决定；图片、视频、3D 快捷命令各只提交一个输出，`generation audio` 按下文规则提交全部输出。
+
+音频 operation 是 `audio_generate`，`input` 与视频同形，差异只有：次数字段是 `audio_count`（默认 1）；`parameters.audio_mode` 必填，取所选模型 `generation_capabilities.audio_modes` 已声明的任务；`user_query` 可为空，换声、分轨等无文本任务不必写，任务把 `prompt` 列为必填时才要写。输出数必须等于 `audio_count` × 该任务轨数：轨道取 `audio_modes[任务].outputs.tracks`，`outputs.tracks_by` 指定的参数取到其中声明的值时改用对应那组；不等时服务端以 422 `GENERATION_OUTPUT_COUNT_MISMATCH` 拒绝。`output_index` 先按生成次序、再按轨道顺序排列，第 g 次（从 0 起）的第 t 条轨道是 g × 轨数 + t。`outputs.kind` 为 `text` 的任务（转写）产出文本：新建输出由服务端建成 text 节点，`element_id` 须指向 text 节点；其余任务产出 audio 节点。`generation audio` 从所选组织的模型目录算出轨数（因此需要 `--org` 或已配置的组织），按 `--count` × 轨数逐个新建输出，未给坐标时自上而下排列；`--target-element` 只用于恰好一个输出的任务。
 
 ## 输出位置与参考
 
 快捷命令用 `--target-element "$ELEMENT"` 将本次结果写入已有匹配类型节点，不能同时给新节点坐标尺寸。它不恢复原 prompt、模型或参数；本次输入仍须明确提供。新建输出可用 `--x/--y/--width/--height`，仅控制画布显示位置与尺寸，不控制图内主体或模型输出分辨率。
 
-支持引用的快捷命令按重复 `--reference "$ELEMENT"` 的顺序绑定 `$1`、`$2` 等。图片 edit 将主图固定为第一参考，额外参考从 `$2` 开始。总参考上限 100，模型可更少；通用请求按所选 operation 的真实参考结构填写，不能把快捷 flag 机械翻成任意 JSON 字段。参考顺序不能保证构图、角色或多视图一致。
+支持引用的快捷命令按重复 `--reference "$ELEMENT"` 的顺序绑定 `$1`、`$2` 等。图片 edit 将主图固定为第一参考，额外参考从 `$2` 开始。音频引用项另可带 `slot`，值是目录槽位 id（`source_audio`、`reference_audios`、`music_style_reference`、`melody_reference`、`voice_reference`，以及图片 `reference_image`、视频 `source_video`）；同一类型素材在当前任务里有多个槽位时必须写明；快捷命令的 `--reference` 不带 slot，这时用通用请求。总参考上限 100，模型可更少；通用请求按所选 operation 的真实参考结构填写，不能把快捷 flag 机械翻成任意 JSON 字段。参考顺序不能保证构图、角色或多视图一致。
 
 ## 定位与逐输出结果
 

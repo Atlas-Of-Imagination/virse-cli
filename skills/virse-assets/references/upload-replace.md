@@ -8,7 +8,7 @@
 virse resource upload ./product.png '/项目素材' --conflict rename --idempotency-key "$KEY" --org "$ORG" --json
 ```
 
-支持图片、视频、DOCX、PDF、GLB，具体格式与限制见[导入批次](import-batches.md)。JSON、TXT、SVG 不作为已支持上传格式；需要转换时保留原件和来源关系，转换后核对实际格式与内容。单个普通文件上限 100 MiB，实际格式由服务端检查，不靠扩展名转换。`rename` 为同名另起名，`skip` 只表示跳过，不证明远端字节相同；`error` 遇到冲突失败。保留返回的真实资源项、asset ID、名称和内容修订，不猜服务器最后选中的文件名。
+支持图片、视频、音频、DOCX、PDF、GLB，具体格式与限制见[导入批次](import-batches.md)。JSON、TXT、SVG 不作为已支持上传格式；需要转换时保留原件和来源关系，转换后核对实际格式与内容。单个普通文件上限 100 MiB，实际格式由服务端检查，不靠扩展名转换。`rename` 为同名另起名，`skip` 只表示跳过，不证明远端字节相同；`error` 遇到冲突失败。保留返回的真实资源项、asset ID、名称和内容修订，不猜服务器最后选中的文件名。
 
 上传不自动放入画布或创建生成任务。整目录或多个文件需要持久进度时用[导入批次](import-batches.md)。
 

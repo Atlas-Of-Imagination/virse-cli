@@ -2,6 +2,7 @@ use axum::{
     Json, Router,
     extract::State,
     http::{HeaderMap, StatusCode, Uri},
+    response::IntoResponse,
     routing::{get, patch, post},
 };
 use serde_json::{Value, json};
@@ -47,13 +48,16 @@ async fn space_discovery_requires_no_org_and_preserves_server_roles() {
     server.abort();
 }
 #[tokio::test]
-async fn catalog_requests_all_four_modes_and_keeps_pricing_and_context() {
+async fn catalog_requests_all_five_modes_and_keeps_pricing_and_context() {
     let (client, server) = serve(Router::new().route(
         "/generation/models/catalog",
         post(|Json(body): Json<Value>| async move {
             assert_eq!(body["organization_id"], ORG);
             assert_eq!(body["schema_version"], 2);
-            assert_eq!(body["modes"], json!(["image", "text", "video", "3d"]));
+            assert_eq!(
+                body["modes"],
+                json!(["image", "text", "video", "3d", "audio"])
+            );
             assert_eq!(body["include_user_preferences"], true);
             assert_eq!(body["include_disabled"], true);
             Json(catalog())
@@ -128,7 +132,154 @@ async fn canvas_creation_and_contents_use_resource_identity_and_v2_content_contr
     query.document_types = vec!["pdf".into()];
     query.sort_by = "size_bytes".into();
     assert!(client.canvas_contents(&query).await.unwrap().has_more);
+    // 内容类型最多六种（含 audio），超出或未知类型在本地拒绝
+    query.types = [
+        "image",
+        "video",
+        "model3d",
+        "audio",
+        "document",
+        "aesthetic",
+        "audio",
+    ]
+    .map(String::from)
+    .to_vec();
+    assert_eq!(
+        client.canvas_contents(&query).await.unwrap_err().code,
+        "INVALID_INPUT"
+    );
+    query.types = vec!["sound".into()];
+    assert_eq!(
+        client.canvas_contents(&query).await.unwrap_err().code,
+        "INVALID_INPUT"
+    );
     server.abort();
+}
+#[tokio::test]
+async fn voice_catalog_posts_model_key_and_checks_response_identity() {
+    let (client, server) = serve(Router::new().route(
+        "/generation/voices/catalog",
+        post(|Json(body): Json<Value>| async move {
+            match body["model_key"].as_str() {
+                Some("tts-model") => Json(json!({"model_key":"tts-model","voices":[{"id":"v1","names":{"zh":"小雨","en":"Rain"},"gender":"female","language":"zh","tags":[],"preview_url":null,"source":"preset"}]})).into_response(),
+                Some("empty-model") => Json(json!({"model_key":"other","voices":[]})).into_response(),
+                _ => (StatusCode::NOT_FOUND, Json(json!({"detail":"Unknown voice model"}))).into_response(),
+            }
+        }),
+    ))
+    .await;
+    let result = client.voice_catalog("tts-model").await.unwrap();
+    assert_eq!(result.voices[0].id, "v1");
+    assert_eq!(result.voices[0].extra["names"]["en"], "Rain");
+    assert_eq!(
+        client.voice_catalog("empty-model").await.unwrap_err().code,
+        "INVALID_RESPONSE"
+    );
+    assert_eq!(
+        client
+            .voice_catalog("image-model")
+            .await
+            .unwrap_err()
+            .status,
+        Some(404)
+    );
+    assert_eq!(
+        client.voice_catalog(" ").await.unwrap_err().code,
+        "INVALID_INPUT"
+    );
+    server.abort();
+}
+fn audio_model() -> CatalogModel {
+    serde_json::from_value(json!({"model_key":"stems","mode":"audio","display_name":"Stems","audio_modes":["stem_split","transcribe","tts"],
+        "generation_capabilities":{"audio_modes":{
+            "stem_split":{"inputs":["source_audio"],"outputs":{"tracks":["vocals","drums","bass","other"],"tracks_by":{"param":"stem_mode","values":{"4":["vocals","drums","bass","other"],"6":["vocals","drums","bass","other","guitar","piano"]}}}},
+            "transcribe":{"inputs":["source_audio"],"outputs":{"tracks":["mix"],"kind":"text"}},
+            "tts":{"inputs":[],"outputs":{}}
+        }}}))
+    .unwrap()
+}
+#[test]
+fn audio_outputs_follow_catalog_tracks_like_the_server() {
+    let model = audio_model();
+    let params = |value: Value| value.as_object().cloned().unwrap();
+    let stems = model.audio_outputs("stem_split", None).unwrap();
+    assert_eq!(stems.tracks.len(), 4);
+    assert!(!stems.is_text());
+    let six = params(json!({"stem_mode":"6"}));
+    assert_eq!(
+        model
+            .audio_outputs("stem_split", Some(&six))
+            .unwrap()
+            .tracks[5],
+        "piano"
+    );
+    // 未声明的取值或非字符串取值回到默认轨道
+    for value in [json!({"stem_mode":"5"}), json!({"stem_mode":6})] {
+        assert_eq!(
+            model
+                .audio_outputs("stem_split", Some(&params(value)))
+                .unwrap()
+                .tracks
+                .len(),
+            4
+        );
+    }
+    assert!(model.audio_outputs("transcribe", None).unwrap().is_text());
+    assert_eq!(
+        model.audio_outputs("tts", None).unwrap(),
+        AudioOutputs {
+            kind: "audio".into(),
+            tracks: vec!["mix".into()]
+        }
+    );
+    assert!(model.audio_outputs("sfx", None).is_none());
+    let mut video = model.clone();
+    video.mode = "video".into();
+    assert!(video.audio_outputs("tts", None).is_none());
+}
+#[test]
+fn audio_submit_uses_audio_count_optional_prompt_and_required_mode() {
+    let output = |index| OutputTarget {
+        output_index: index,
+        element_id: None,
+        create_element: Some(NewElement {
+            id: None,
+            title: None,
+            position: Point { x: 0.0, y: 0.0 },
+            size: Size {
+                width: 1024.0,
+                height: 320.0,
+            },
+        }),
+    };
+    let params = json!({"audio_mode":"stem_split"}).as_object().cloned();
+    let task = SubmitTask::audio(
+        "stems",
+        "",
+        vec![],
+        params.clone(),
+        2,
+        vec![output(0), output(1)],
+    )
+    .unwrap();
+    assert_eq!(task.operation, "audio_generate");
+    assert_eq!(task.input["audio_count"], 2);
+    assert_eq!(task.input["user_query"], "");
+    assert!(!task.input.contains_key("video_count"));
+    assert_eq!(task.outputs.len(), 2);
+    let single =
+        SubmitTask::media(MediaKind::Audio, "stems", "", vec![], params, output(0)).unwrap();
+    assert_eq!(single.input["audio_count"], 1);
+    for params in [None, json!({"audio_mode":" "}).as_object().cloned()] {
+        assert_eq!(
+            SubmitTask::audio("stems", "hi", vec![], params, 1, vec![output(0)])
+                .unwrap_err()
+                .code,
+            "INVALID_INPUT"
+        );
+    }
+    // 视频仍要求提示词
+    assert!(SubmitTask::media(MediaKind::Video, "v", "", vec![], None, output(0)).is_err());
 }
 #[tokio::test]
 async fn uncertain_canvas_create_is_sent_once_and_response_identity_is_checked() {

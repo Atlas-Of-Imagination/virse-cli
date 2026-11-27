@@ -47,6 +47,17 @@ pub struct Model3d {
     pub options: MediaOptions,
 }
 #[derive(Args)]
+pub struct Audio {
+    /// Optional for tasks without text, such as voice change or stem splitting.
+    #[arg(long)]
+    pub prompt: Option<String>,
+    /// Number of generations; placeholders = count x tracks of the chosen audio_mode.
+    #[arg(long, default_value_t = 1, value_parser = clap::value_parser!(u32).range(1..=100))]
+    pub count: u32,
+    #[command(flatten)]
+    pub options: MediaOptions,
+}
+#[derive(Args)]
 pub struct CanvasAdd {
     /// Existing resource path or @UUID; automatically determines the element type.
     #[arg(long, required_unless_present = "asset", conflicts_with = "asset")]

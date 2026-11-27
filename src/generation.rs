@@ -4,18 +4,12 @@ use serde_json::{Value, json};
 use std::time::Duration;
 use uuid::Uuid;
 use virse_api::{
-    Client, Error, GenerationReference, MediaKind, NewElement, OutputTarget, Point,
+    Client, Error, GenerationReference, MediaKind, ModelMode, NewElement, OutputTarget, Point,
     ReferenceSource, Result, Size, SubmitTask, Task,
 };
 
-pub async fn media_request(
-    kind: MediaKind,
-    prompt: &str,
-    args: &MediaOptions,
-) -> Result<SubmitTask> {
-    let parameters = read_media_parameters(args).await?;
-    let references = args
-        .reference
+fn canvas_references(args: &MediaOptions) -> Vec<GenerationReference> {
+    args.reference
         .iter()
         .map(|id| GenerationReference {
             source: ReferenceSource::CanvasElement {
@@ -24,7 +18,15 @@ pub async fn media_request(
                 expected_text: None,
             },
         })
-        .collect();
+        .collect()
+}
+pub async fn media_request(
+    kind: MediaKind,
+    prompt: &str,
+    args: &MediaOptions,
+) -> Result<SubmitTask> {
+    let parameters = read_media_parameters(args).await?;
+    let references = canvas_references(args);
     let (width, height) = kind.default_size();
     let output = OutputTarget {
         output_index: 0,
@@ -43,6 +45,86 @@ pub async fn media_request(
         }),
     };
     SubmitTask::media(kind, &args.model, prompt, references, parameters, output)
+}
+/// 音频的输出槽位数 = count × 目录里该任务的轨数，每个槽位一个占位；转写（outputs.kind
+/// = text）的占位由服务端建成文本节点。未指定位置时多个占位自上而下排列。
+pub async fn audio_request(
+    client: &Client,
+    org: Uuid,
+    prompt: &Option<String>,
+    count: u32,
+    args: &MediaOptions,
+) -> Result<SubmitTask> {
+    let parameters = read_media_parameters(args).await?;
+    let mode = parameters
+        .as_ref()
+        .and_then(|p| p.get("audio_mode"))
+        .and_then(Value::as_str)
+        .filter(|m| !m.trim().is_empty())
+        .ok_or_else(|| {
+            Error::new(
+                "INVALID_INPUT",
+                "Audio generation requires parameters.audio_mode, e.g. {\"audio_mode\":\"tts\"}",
+            )
+        })?
+        .to_owned();
+    let catalog = client
+        .model_catalog(org, &[ModelMode::Audio], false)
+        .await?;
+    let outputs = catalog
+        .models
+        .iter()
+        .find(|m| m.model_key == args.model && m.mode == "audio")
+        .and_then(|m| m.audio_outputs(&mode, parameters.as_ref()))
+        .ok_or_else(|| {
+            Error::new(
+                "INVALID_INPUT",
+                format!(
+                    "Selected model is unavailable or does not support audio_mode {mode}; see model list --mode audio"
+                ),
+            )
+        })?;
+    let total = usize::try_from(count)
+        .ok()
+        .and_then(|n| n.checked_mul(outputs.tracks.len()))
+        .filter(|n| *n <= 100)
+        .ok_or_else(|| Error::new("INVALID_INPUT", "At most 100 outputs per generation"))?;
+    if args.target_element.is_some() && total != 1 {
+        return Err(Error::new(
+            "INVALID_INPUT",
+            format!("--target-element needs a single output; this task produces {total}"),
+        ));
+    }
+    // 转写产物写回文本节点，占位尺寸照文本节点默认值
+    let (width, height) = if outputs.is_text() {
+        (512.0, 256.0)
+    } else {
+        MediaKind::Audio.default_size()
+    };
+    let (width, height) = (args.width.unwrap_or(width), args.height.unwrap_or(height));
+    let targets = (0..total)
+        .map(|index| OutputTarget {
+            output_index: index,
+            element_id: args.target_element,
+            create_element: args.target_element.is_none().then(|| NewElement {
+                id: None,
+                title: None,
+                position: Point {
+                    x: args.x.unwrap_or(0.0),
+                    y: args.y.unwrap_or(0.0) + index as f64 * (height + 40.0),
+                },
+                size: Size { width, height },
+            }),
+        })
+        .collect();
+    SubmitTask::audio(
+        &args.model,
+        prompt.as_deref().unwrap_or(""),
+        canvas_references(args),
+        parameters,
+        count,
+        targets,
+    )
 }
 fn parse_parameters(value: &str) -> Result<serde_json::Map<String, Value>> {
     if value.len() > 1024 * 1024 {

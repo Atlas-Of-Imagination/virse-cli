@@ -75,12 +75,13 @@ async fn record(
     match path{
         "/get_organization_by_user"=>Json(json!({"status":1,"organizations":[{"id":ORG,"name":"Team","org_type":"team","my_role":"admin","relation_type":"has_owner"}]})).into_response(),
         "/generation/models/catalog"=>{
-            assert_eq!(body["organization_id"],ORG);assert_eq!(body["modes"],json!(["image","text","video","3d"]));
+            assert_eq!(body["organization_id"],ORG);assert_eq!(body["modes"],json!(["image","text","video","3d","audio"]));
             Json(json!({"schema_version":2,"catalog_version":"c","models":[
                 {"model_key":"image-model","mode":"image","display_name":"Image","user_preferences":{"is_favorite":false}},
                 {"model_key":"3d-model","mode":"3d","display_name":"3D","user_preferences":{"is_favorite":true},"capabilities":{"triangle_limit":1000}}
             ],"defaults":{"3d":"3d-model"}})).into_response()
         }
+        "/generation/voices/catalog"=>Json(json!({"model_key":body["model_key"],"voices":[{"id":"narrator","names":{"en":"Narrator"},"source":"preset"}]})).into_response(),
         "/billing/balance"=>{assert_eq!(body["organization_id"],ORG);Json(json!({"status":1,"org_id":ORG,"total_balance":"15.00000001","member_budget":{"credit_remaining":null}})).into_response()},
         "/versa/canvas/create"=>{
             if state.broken_create{return (StatusCode::OK,"broken response").into_response();}
@@ -100,7 +101,7 @@ async fn record(
 }
 async fn serve(state: Shared) -> (String, tokio::task::JoinHandle<()>) {
     let app=Router::new().route("/client-compatibility", axum::routing::get(|| async { axum::Json(serde_json::json!({"minimum_contract_version":1,"require_web_version":false,"policy_id":"test-1"})) })).route("/auth/me",get(||async{Json(json!({"status":1,"id":USER}))}))
-        .route("/get_organization_by_user",post(record)).route("/generation/models/catalog",post(record)).route("/billing/balance",post(record))
+        .route("/get_organization_by_user",post(record)).route("/generation/models/catalog",post(record)).route("/generation/voices/catalog",post(record)).route("/billing/balance",post(record))
         .route("/versa/canvas/create",post(record)).route("/versa/canvas/contents",post(record)).route("/api/v1/resources/query",post(record))
         .route("/generation/models/{key}/favorite",patch(|State(s):State<Shared>,ApiPath(key):ApiPath<String>,Json(body):Json<Value>|async move{
             let mut state=s.lock().unwrap();state.calls.push(("favorite".into(),body.clone()));
@@ -264,6 +265,8 @@ async fn canvas_contents_preserve_filters_offset_and_resource_identity() {
             "/canvas",
             "--kind",
             "document",
+            "--kind",
+            "audio",
             "--document-type",
             "pdf",
             "--offset",
@@ -288,6 +291,7 @@ async fn canvas_contents_preserve_filters_offset_and_resource_identity() {
     assert_eq!(body["sort_by"], "size_bytes");
     assert_eq!(body["sort_order"], "desc");
     assert_eq!(body["document_types"], json!(["pdf"]));
+    assert_eq!(body["types"], json!(["document", "audio"]));
     server.abort();
 }
 #[tokio::test]
@@ -316,6 +320,8 @@ async fn resource_filters_and_pagination_are_forwarded_without_affecting_path_re
                 "manage",
                 "--cursor",
                 "same-snapshot",
+                "--kind",
+                "audio",
             ],
         )
         .await,
@@ -327,6 +333,7 @@ async fn resource_filters_and_pagination_are_forwarded_without_affecting_path_re
     assert_eq!(body["created_by_me"], true);
     assert_eq!(body["access_levels"], json!([3, 4]));
     assert_eq!(body["cursor"], "same-snapshot");
+    assert_eq!(body["kinds"], json!(["asset_audio"]));
     server.abort();
 }
 #[tokio::test]
@@ -567,4 +574,26 @@ async fn oversized_batch_is_rejected_before_network_calls() {
     let out = run(dir.path(), "http://127.0.0.1:9", &args).await;
     assert_eq!(out.status.code(), Some(2));
     assert_eq!(error(&out)["error"]["code"], "INVALID_INPUT");
+}
+#[tokio::test]
+async fn voices_list_reads_the_model_voice_catalog_without_org() {
+    let state = Shared::default();
+    let (base, server) = serve(state.clone()).await;
+    let dir = tempfile::tempdir().unwrap();
+    let out = run(
+        dir.path(),
+        &base,
+        &["voices", "list", "--model", "tts-model"],
+    )
+    .await;
+    assert_eq!(value(&out)["voices"][0]["id"], "narrator");
+    let data = state.lock().unwrap();
+    assert_eq!(
+        data.calls.last().unwrap(),
+        &(
+            "/generation/voices/catalog".to_owned(),
+            json!({"model_key":"tts-model"})
+        )
+    );
+    server.abort();
 }

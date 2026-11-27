@@ -1,12 +1,12 @@
 ---
 name: virse-creation
 description: >-
-  在 Virse 探索灵感、搜集参考、验收画布作品的品牌一致性，或生成、修改图片、视频、3D 和文本并迭代。提示词与表现方法配合图片／视频技巧；单纯布局走 virse-canvas，完整跨能力项目走 virse-ultra-design。
+  在 Virse 探索灵感、搜集参考、验收画布作品的品牌一致性，或生成、修改图片、视频、音频、3D 和文本并迭代。提示词与表现方法配合图片／视频／音频技巧；单纯布局走 virse-canvas，完整跨能力项目走 virse-ultra-design。
 ---
 # 创作与迭代
 
 <!-- virse:background:start -->
-Virse 是 AI native 的创作系统，用画布连接想法、素材、审美、工具与模型，支持图片、视频、3D 和文本。资源目录管理素材与归属，画布组织创作输入、过程与结果。
+Virse 是 AI native 的创作系统，用画布连接想法、素材、审美、工具与模型，支持图片、视频、音频、3D 和文本。资源目录管理素材与归属，画布组织创作输入、过程与结果。
 
 只读当前任务所需参考，已读且适用的内容沿用，链接不自动加载内容。
 <!-- virse:background:end -->
@@ -19,7 +19,7 @@ Virse 是 AI native 的创作系统，用画布连接想法、素材、审美、
 
 首次生成缺少适用授权时，一次建议模型、关键配置与本轮总输出（含修正版）或迭代范围，确认后执行；用户已确认配置或授予自主权就在范围内推进，超出范围再确认。“偏好高质量”本身不授予自主选型权，查询与准备素材可先做。记住偏好的邀请留到交付后，不打断首次创作。
 
-灵感搜集、品牌验收先读任务参考。准备方案、提示词或诊断效果时，分别取 `virse-image-craft`、`virse-video-craft` 中当前问题需要的方法；已读内容直接沿用，返回执行时无需重读入口导航。本入口负责真实能力与执行。
+灵感搜集、品牌验收先读任务参考。准备方案、提示词或诊断效果时，分别取 `virse-image-craft`、`virse-video-craft`、`virse-audio-craft` 中当前问题需要的方法；已读内容直接沿用，返回执行时无需重读入口导航。本入口负责真实能力与执行。
 
 按目标选择直接生成、图片处理或已有工具，需要新的执行逻辑才制作工具。精确管理与指定模型、工具产物优先 CLI 直做；适合画布内独立创作会话、连续制作与反馈的子任务可主动委派 `virse-composer`。宿主统筹混合任务并验收全部交付。
 
@@ -27,7 +27,7 @@ Virse 是 AI native 的创作系统，用画布连接想法、素材、审美、
 
 | 当前任务 | 最小读取与执行 |
 | --- | --- |
-| 写图片／视频 prompt、选择表现方法或诊断效果 | 按问题取 `virse-image-craft`／`virse-video-craft` 的相关参考；只要 prompt 时不登录、不提交 |
+| 写图片／视频／音频 prompt、选择表现方法或诊断效果 | 按问题取 `virse-image-craft`／`virse-video-craft`／`virse-audio-craft` 的相关参考；只要 prompt 时不登录、不提交 |
 | 普通生图，目标和品牌依据已明确 | 本入口执行；需要提示表达或参考分工才补相应技巧，不进入品牌中心建设 |
 | 参考图生成、改图或图片处理 | 补[图片创作与处理](references/image-and-edit.md)的对应操作；只补当前缺少的参考理解或编辑方法 |
 | 查询状态、取消，或按确定配置执行处理 | 直达对应操作或[任务合同](references/shared/contracts/generation.md)，不预读创作技巧 |
@@ -60,6 +60,7 @@ virse --org "$ORG" --canvas "$CANVAS" --json asset preview "$ASSET" --representa
 | 结合外部材料策划创作、选方案、复用原图输入或比较迭代 | [目标、输入依据与效果迭代](references/plan-and-iterate.md) |
 | 选模型、管理模型收藏、构造特殊请求或多个输出 | [模型与提交方式](references/models-and-submit.md) |
 | 做视频 | [视频创作](references/video.md) |
+| 做音频：语音、对白、音乐、音效、换声、分轨或转写 | [音频创作](references/audio.md) |
 | 文本或图片建模 | [3D 生成的实际边界](references/3d.md) |
 | 生成或改写画布文本 | [文本创作](references/text.md) |
 | 选择并运行现有工具 | [固定工具产物与运行合同](references/shared/contracts/tool-run.md) |

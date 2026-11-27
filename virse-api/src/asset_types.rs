@@ -158,6 +158,7 @@ pub enum AssetType {
     Document,
     #[serde(rename = "model3d")]
     Model3d,
+    Audio,
     /// 后端增加类型时仍能读取并无损输出 DTO。
     #[serde(untagged)]
     Other(String),
