@@ -100,7 +100,7 @@ pub async fn pack_canvas(
                 if node["content_ref"]["kind"] != "asset"
                     || !matches!(
                         node["type"].as_str(),
-                        Some("image" | "video" | "3d" | "document")
+                        Some("image" | "video" | "3d" | "audio" | "document")
                     )
                 {
                     entry.skipped = true;

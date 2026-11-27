@@ -22,7 +22,7 @@ pub use types::*;
 mod canvas;
 mod media;
 pub use canvas::*;
-pub use media::MediaKind;
+pub use media::{AudioOutputs, MediaKind};
 
 mod share_address;
 mod share_types;

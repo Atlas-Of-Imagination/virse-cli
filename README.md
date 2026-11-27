@@ -2,7 +2,7 @@
 
 A Rust command-line client for [Virse](https://virse.ai), built for interactive use, scripts, and AI agents.
 
-Manage assets, work with canvases, generate images and video, create reusable tools, and interact with canvas agents from your terminal. Commands support structured JSON output and resumable workflows.
+Manage assets, work with canvases, generate images, video and audio, create reusable tools, and interact with canvas agents from your terminal. Commands support structured JSON output and resumable workflows.
 
 [Installation](#installation) · [Quick start](#quick-start) · [Workflows](#common-workflows) · [Agent skills](#agent-skills) · [Rust SDK](#rust-sdk) · [Development](#development-and-releases)
 
@@ -141,6 +141,7 @@ virse resource mkdir '/Assets'
 virse resource upload ./photo.png '/Assets' --conflict rename --json
 virse resource tree '/Assets' --ids
 virse resource search 'photo' '/Assets' --kind image --json
+virse resource list '/Assets' --kind audio --json
 virse resource get '/Assets/photo.png' --json
 virse resource preview '/Assets/photo.png' --output preview.jpg
 virse resource download '/Assets/photo.png' --output photo.png
@@ -157,7 +158,7 @@ virse resource restore @<resource-id>
 
 Resources accept absolute paths or `@<resource-id>`; `/` is the selected workspace's root. Paths are case-sensitive. Duplicate names produce an ambiguity error with candidates instead of selecting an arbitrary resource. Use IDs when a path is ambiguous. Relative paths, wildcards, and an implicit remote working directory are not supported.
 
-Uploads support server-validated images, video, DOCX, PDF, and GLB, up to **100 MiB per file**. Content replacement preserves the asset ID and requires a previously read revision. Conflicts are never resolved by silently overwriting a newer version. `--conflict skip` only means a name already exists, not that the bytes match.
+Uploads support server-validated images, video, audio (MP3, WAV, M4A, AAC, FLAC), DOCX, PDF, and GLB, up to **100 MiB per file**. Content replacement preserves the asset ID and requires a previously read revision. Conflicts are never resolved by silently overwriting a newer version. `--conflict skip` only means a name already exists, not that the bytes match.
 
 List and search results are paginated; use the returned cursor with the same filters. `tree` reports when its depth or item limit leaves part of the tree unexpanded.
 
@@ -215,6 +216,9 @@ Canvas commands also manage groups, edges, transactions, copied elements, recent
 
 ```sh
 virse generation video --model <video-model> --prompt 'Slow camera movement around a ceramic cup' --wait
+virse voices list --model <audio-model> --json
+virse generation audio --model <audio-model> --prompt 'Welcome to the studio.' \
+  --parameters '{"audio_mode":"tts","voice":["<voice-id>"]}' --wait
 virse generation 3d --model <3d-model> --reference <image-element-id> --wait
 virse generation text --model <text-model> --prompt 'Write a short product description' --wait
 
@@ -229,6 +233,8 @@ virse generation cancel <task-id>
 ```
 
 Generation creates an output element by default, or targets an existing element when supported. Model-specific options can be supplied through `--parameters` or `--parameters-file`; `generation submit --file` supports structured requests. Additional commands include background removal, upscaling, outpainting, task listing, and retrying failed outputs.
+
+Audio generation requires `parameters.audio_mode`, one of the task modes the selected model declares in `generation_capabilities.audio_modes` (for example `tts`, `dialogue`, `voice_change`, `music_instrumental`, `sfx`, `video_foley`, `transcribe` or `stem_split`). `--prompt` may be omitted for tasks without text input, such as voice changing or stem splitting. Voice parameters are arrays of preset voice IDs from `voices list`. `generation audio` reads the task's output tracks from the selected organization's model catalog (so it needs `--org` or a configured organization) and creates `--count` × tracks output elements, stacked vertically unless positioned; stem splitting yields one element per stem, and transcription writes text elements instead of audio. `--target-element` applies only to tasks with a single output. When one task takes several inputs of the same media type, declare each reference's `slot` through `generation submit`.
 
 Image-edit masks are black-and-white PNGs: white selects the area to edit and black preserves the rest. Model behavior can still affect details outside the mask. Editing creates a new output by default; it is distinct from replacing an asset's original file.
 
@@ -297,7 +303,7 @@ The [skills directory](skills/) contains task-oriented instructions and creative
 - [Ultra Design](skills/virse-ultra-design/SKILL.md): coordinate complete creative projects across capabilities, from context and exploration to production, review, and delivery
 - [Assets](skills/virse-assets/SKILL.md) and [sharing](skills/virse-sharing/SKILL.md)
 - [Canvas editing](skills/virse-canvas/SKILL.md) and [generation](skills/virse-creation/SKILL.md)
-- [Image craft](skills/virse-image-craft/SKILL.md) and [video craft](skills/virse-video-craft/SKILL.md): prompt writing, reference use, creative choices, parameters, and output review
+- [Image craft](skills/virse-image-craft/SKILL.md), [video craft](skills/virse-video-craft/SKILL.md) and [audio craft](skills/virse-audio-craft/SKILL.md): prompt writing, reference use, creative choices, parameters, and output review; audio craft also covers task modes, voices, multi-track outputs and transcripts
 - [Composer](skills/virse-composer/SKILL.md)
 - [Tool use](skills/virse-tools/SKILL.md) and [tool creation](skills/virse-smart-tool-creator/SKILL.md)
 - [Aesthetic creation](skills/virse-aesthetic-creator/SKILL.md)
@@ -310,7 +316,7 @@ Use Ultra Design to coordinate a complete creative project and the brand-center 
 Installers include release-matched skills unless skill installation is skipped. Skills can also be installed separately using your agent's supported mechanism, for example:
 
 ```sh
-npx skills add Atlas-Of-Imagination/virse-cli --skill virse-image-craft virse-video-craft
+npx skills add Atlas-Of-Imagination/virse-cli --skill virse-image-craft virse-video-craft virse-audio-craft
 ```
 
 When updating an existing installation, check for renamed entries using the [Skill migration guide](shared/contracts/skill-migration.md). Verify the installation scope and remaining directories after cleanup; installing a new name does not guarantee removal of the old one.

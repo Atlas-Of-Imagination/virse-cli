@@ -955,6 +955,9 @@ fn offline_interface_checks_steps_outputs_and_controls() {
     }
     fs::write(p.join("interface.json"),json!({"fields":[{"id":"pick","type":"select","options":[{"value":"x"}]}],"steps":[{"body":"Choose {{pick}}"}],"outputs":[{"type":"image","count":1}]}).to_string()).unwrap();
     assert!(tool_project::validate(&p).is_ok());
+    // 音频字段与视频同形（值是资产引用），输出类型可为 audio
+    fs::write(p.join("interface.json"),json!({"fields":[{"id":"clip","type":"audio","required":true,"maxCount":2}],"steps":[{"body":"Use {{clip}}"}],"outputs":[{"type":"audio","count":1}]}).to_string()).unwrap();
+    assert!(tool_project::validate(&p).is_ok());
 }
 #[test]
 fn pull_accepts_one_wrapper_directory_and_rejects_multiple_skills() {

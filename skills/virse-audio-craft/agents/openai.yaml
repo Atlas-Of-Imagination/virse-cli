@@ -1,0 +1,4 @@
+interface:
+  display_name: "Virse 音频创作技巧"
+  short_description: "选择音频任务模式与音色，编写台词、歌词和声音描述，处理多轨与转写产物并听音诊断"
+  default_prompt: "使用 $virse-audio-craft，结合我的目标和素材，判断音频任务模式与音色，写出合适的台词或声音描述。"

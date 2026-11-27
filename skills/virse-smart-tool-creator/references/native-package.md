@@ -14,7 +14,7 @@ virse tool init ./product-shot-tool --name '商品图制作'
 
 ## 编写原生说明与输入
 
-设计图片或视频创作方法时，宿主作者可按需读取 `virse-image-craft` 或 `virse-video-craft`，把本工具需要的参考分工、创作判断与验收要求写进将交付的原生说明或随包参考。工具运行环境不自动拥有宿主的本地 Skill；不能只写一个技巧名称就当作方法已经随包交付。
+设计图片、视频或音频创作方法时，宿主作者可按需读取 `virse-image-craft`、`virse-video-craft` 或 `virse-audio-craft`，把本工具需要的参考分工、创作判断与验收要求写进将交付的原生说明或随包参考。工具运行环境不自动拥有宿主的本地 Skill；不能只写一个技巧名称就当作方法已经随包交付。
 
 原生包 `SKILL.md` 使用 UTF-8、单行标量 frontmatter；`name`、`description` 和正文非空。CLI 的原生包解析器不支持嵌套或多行 YAML；`when_to_use` 是发现提示，初始化时填写并按任务修订。
 
@@ -43,7 +43,7 @@ when_to_use: 需要围绕已有商品图制作新的展示画面时使用。
 }
 ```
 
-字段 ID 使用字母或下划线开头，后续为字母、数字或下划线，不重复、不使用保留名 `module`。当前本地解析器接受 `text`、`textarea`、`image`、`file`、`style`、`select`、`video`、`multiselect`、`number`、`color`；选择类必须提供非空、不重复的 `options[].value`。正文模板和步骤中的输入引用用 `{{field_id}}`，不把 JavaScript 的 `${field_id}` 当成字段占位。
+字段 ID 使用字母或下划线开头，后续为字母、数字或下划线，不重复、不使用保留名 `module`。当前本地解析器接受 `text`、`textarea`、`image`、`file`、`style`、`select`、`video`、`audio`、`multiselect`、`number`、`color`；选择类必须提供非空、不重复的 `options[].value`。正文模板和步骤中的输入引用用 `{{field_id}}`，不把 JavaScript 的 `${field_id}` 当成字段占位。
 
 输入表单描述工具接受什么，不决定每次模型或后端具有什么能力。发布后执行时仍读取固定 artifact 的 Schema，按字段 ID 提供真实资产或画布引用，见[运行合同](shared/contracts/tool-run.md)。
 

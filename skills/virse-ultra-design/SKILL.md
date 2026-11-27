@@ -7,7 +7,7 @@ description: >-
 # Ultra Design
 
 <!-- virse:background:start -->
-Virse 是 AI native 的创作系统，用画布连接想法、素材、审美、工具与模型，支持图片、视频、3D 和文本。资源目录管理素材与归属，画布组织创作输入、过程与结果。
+Virse 是 AI native 的创作系统，用画布连接想法、素材、审美、工具与模型，支持图片、视频、音频、3D 和文本。资源目录管理素材与归属，画布组织创作输入、过程与结果。
 
 只读当前任务所需参考，已读且适用的内容沿用，链接不自动加载内容。
 <!-- virse:background:end -->
@@ -39,8 +39,8 @@ Virse 是 AI native 的创作系统，用画布连接想法、素材、审美、
 | 读取本地或其他平台资料，在适合的工具中制作 | 宿主实际可用且获授权的 Skill、连接器、CLI 或工具 |
 | 目录、素材导入、归档与下载 | `virse-assets` |
 | 理解画布、放置内容、分组排版、生成引用与讨论 | `virse-canvas` |
-| 创意参考、作品生成或修改，及图片、视频、3D、文本执行 | `virse-creation`；找方向时取其 `references/inspiration-exploration.md` |
-| 图片或视频的表达、提示词和效果判断 | `virse-image-craft`、`virse-video-craft` 的相关参考 |
+| 创意参考、作品生成或修改，及图片、视频、音频、3D、文本执行 | `virse-creation`；找方向时取其 `references/inspiration-exploration.md` |
+| 图片、视频或音频的表达、提示词和效果判断 | `virse-image-craft`、`virse-video-craft`、`virse-audio-craft` 的相关参考 |
 | 独立画布创作子任务、继续会话与结果观察 | `virse-composer` |
 | 建立或完善品牌系统 | `virse-brand-center-creator`；已有依据足够就直接取用 |
 | 从画布提炼并制作审美或智能工具 | `virse-aesthetic-creator`、`virse-smart-tool-creator` 的 `references/from-canvas.md`；候选先推荐并确认用途 |

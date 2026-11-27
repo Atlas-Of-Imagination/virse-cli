@@ -28,6 +28,7 @@ pub enum ModelMode {
     Text,
     #[serde(rename = "3d")]
     Model3d,
+    Audio,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CatalogModel {
@@ -44,6 +45,21 @@ pub struct ModelCatalog {
     pub models: Vec<CatalogModel>,
     #[serde(default)]
     pub defaults: Value,
+    #[serde(flatten)]
+    pub extra: Map<String, Value>,
+}
+/// 音频模型的一条预置音色；字段以服务端为准（names、gender、language、tags、preview_url、source）。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Voice {
+    pub id: String,
+    #[serde(flatten)]
+    pub extra: Map<String, Value>,
+}
+/// `POST generation/voices/catalog` 的响应：预置音色尚未整理的模型返回空列表。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VoiceCatalog {
+    pub model_key: String,
+    pub voices: Vec<Voice>,
     #[serde(flatten)]
     pub extra: Map<String, Value>,
 }
@@ -111,11 +127,11 @@ impl CanvasContentsQuery {
     fn validate(&self) -> Result<()> {
         if !(1..=200).contains(&self.limit)
             || self.query.as_ref().is_some_and(|s| s.chars().count() > 255)
-            || self.types.len() > 5
+            || self.types.len() > 6
             || self.types.iter().any(|s| {
                 !matches!(
                     s.as_str(),
-                    "image" | "video" | "model3d" | "document" | "aesthetic"
+                    "image" | "video" | "model3d" | "audio" | "document" | "aesthetic"
                 )
             })
             || self.document_types.len() > 2
@@ -161,6 +177,7 @@ impl Client {
             ModelMode::Text,
             ModelMode::Video,
             ModelMode::Model3d,
+            ModelMode::Audio,
         ];
         let modes = if modes.is_empty() {
             &all_modes[..]
@@ -172,6 +189,29 @@ impl Client {
             return Err(Error::protocol());
         }
         Ok(catalog)
+    }
+    /// 某个音频模型的预置音色；不是带音色参数的音频模型时服务端返回 404。
+    pub async fn voice_catalog(&self, model_key: &str) -> Result<VoiceCatalog> {
+        if model_key.trim().is_empty()
+            || model_key.chars().count() > 150
+            || model_key.chars().any(char::is_control)
+        {
+            return Err(Error::new("INVALID_INPUT", "Invalid model key"));
+        }
+        let result: VoiceCatalog = parse(
+            self.request(
+                Method::POST,
+                "generation/voices/catalog",
+                &[],
+                Some(json!({"model_key":model_key})),
+                None,
+            )
+            .await?,
+        )?;
+        if result.model_key != model_key {
+            return Err(Error::protocol());
+        }
+        Ok(result)
     }
     /// One attempt; callers can reread preferences after uncertain results.
     pub async fn set_model_favorite(

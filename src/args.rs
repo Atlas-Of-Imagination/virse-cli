@@ -43,6 +43,11 @@ pub enum Command {
         #[command(subcommand)]
         command: crate::discovery::Model,
     },
+    /// List preset voices of audio models.
+    Voices {
+        #[command(subcommand)]
+        command: crate::discovery::Voice,
+    },
     /// Read this space's balance, budget and license information.
     Balance,
     /// Create, publish, manage and run intelligent tools.
@@ -114,7 +119,7 @@ pub enum Canvas {
     Create(crate::discovery::CreateCanvas),
     /// List the media/document content projection, separate from canvas layout.
     Contents(crate::discovery::Contents),
-    /// Place an existing image, video, GLB, Word or PDF asset on the canvas.
+    /// Place an existing image, video, audio, GLB, Word or PDF asset on the canvas.
     Add(crate::media_args::CanvasAdd),
     List {
         #[arg(long, default_value_t = 50, value_parser = clap::value_parser!(u16).range(1..=200))]
@@ -167,6 +172,11 @@ pub enum Generation {
     /// Create a 3D placeholder and generate a model from text or image references.
     #[command(name = "3d", visible_alias = "model3d")]
     Model3d(crate::media_args::Model3d),
+    /// Create audio placeholders and submit audio generation; --parameters must include audio_mode.
+    #[command(
+        after_help = "parameters.audio_mode is required (e.g. {\"audio_mode\":\"tts\"}); see the model's generation_capabilities.audio_modes in `model list --mode audio`.\nOne placeholder is created per output: --count x the tracks of the chosen audio_mode (stem splitting yields one element per stem). Transcription (outputs.kind text) creates text elements.\nPreset voices: `voices list --model <key>`. When one task uses several inputs of the same media type, declare each reference's slot through `generation submit`."
+    )]
+    Audio(crate::media_args::Audio),
     Get {
         id: Uuid,
     },

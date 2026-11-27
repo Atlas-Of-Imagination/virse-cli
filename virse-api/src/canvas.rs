@@ -12,6 +12,7 @@ pub enum AssetElementKind {
     #[serde(rename = "3d")]
     Model3d,
     Document,
+    Audio,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExistingAsset {
@@ -33,12 +34,13 @@ impl ExistingAsset {
             "image" => Ok(AssetElementKind::Image),
             "video" => Ok(AssetElementKind::Video),
             "model3d" => Ok(AssetElementKind::Model3d),
+            "audio" => Ok(AssetElementKind::Audio),
             "document" if matches!(self.document_type.as_deref(), Some("word" | "pdf")) => {
                 Ok(AssetElementKind::Document)
             }
             _ => Err(Error::new(
                 "UNSUPPORTED_ASSET",
-                "Supported assets are images, videos, GLB, Word and PDF",
+                "Supported assets are images, videos, audio, GLB, Word and PDF",
             )),
         }
     }

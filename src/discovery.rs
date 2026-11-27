@@ -16,6 +16,7 @@ pub enum Mode {
     Text,
     #[value(name = "3d")]
     Model3d,
+    Audio,
 }
 impl Mode {
     fn api(self) -> virse_api::ModelMode {
@@ -24,6 +25,7 @@ impl Mode {
             Self::Video => virse_api::ModelMode::Video,
             Self::Text => virse_api::ModelMode::Text,
             Self::Model3d => virse_api::ModelMode::Model3d,
+            Self::Audio => virse_api::ModelMode::Audio,
         }
     }
 }
@@ -49,6 +51,15 @@ pub enum Model {
     },
     Unfavorite {
         key: String,
+    },
+}
+#[derive(Subcommand)]
+pub enum Voice {
+    /// List preset voices of an audio model that has a voice parameter (no --org required).
+    List {
+        /// Audio model key, e.g. from `model list --mode audio`.
+        #[arg(long)]
+        model: String,
     },
 }
 #[derive(Clone, Copy, ValueEnum)]
@@ -130,7 +141,7 @@ pub struct Contents {
     pub limit: u16,
     #[arg(long)]
     pub search: Option<String>,
-    #[arg(long,value_parser=["image","video","model3d","document","aesthetic"])]
+    #[arg(long,value_parser=["image","video","model3d","audio","document","aesthetic"])]
     pub kind: Vec<String>,
     #[arg(long,value_parser=["word","pdf"])]
     pub document_type: Vec<String>,
@@ -199,6 +210,12 @@ pub async fn models(command: &Model, client: &Client, org: Uuid, json_output: bo
                 })?;
             print(&result, json_output)?;
         }
+    }
+    Ok(0)
+}
+pub async fn voices(command: &Voice, client: &Client, json_output: bool) -> Result<u8> {
+    match command {
+        Voice::List { model } => print(&client.voice_catalog(model).await?, json_output)?,
     }
     Ok(0)
 }

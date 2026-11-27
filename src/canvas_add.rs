@@ -76,7 +76,7 @@ pub async fn run(
                     let asset = detail.asset.ok_or_else(|| {
                         Error::new(
                             "UNSUPPORTED_ASSET",
-                            "Choose an image, video, GLB, Word or PDF resource",
+                            "Choose an image, video, audio, GLB, Word or PDF resource",
                         )
                     })?;
                     (asset, args.name.clone().or(Some(detail.resource.name)))
